@@ -1,6 +1,16 @@
-<script>
-	import Simpleicons from '../SVG/simpleicons.svg';
-</script>
+<div class="p-5 flex flex-wrap main flex-col">
+	<h1 class="text-2xl text-center text-nosferatu-100 my-2">Server</h1>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://img.icons8.com/ios-filled/344/linode.png" />
+		<a href="https://cloud.linode.com/linodes" target="_blank">Linode</a>
+	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://img.icons8.com/ios/344/google-cloud-platform.png" />
+		<a href="https://domains.google.com/registrar/?hl=en-US&pli=1&authuser=1" target="_blank">
+			GCP
+		</a>
+	</div>
+</div>
 
 <style>
 	img {
@@ -31,17 +41,3 @@
 		}
 	}
 </style>
-
-<div class="p-5 flex flex-wrap main flex-col">
-	<h1 class="text-2xl text-center text-nosferatu-100 my-2">Server</h1>
-	<div class=" flex m-1">
-		<img alt="github logo" src="https://img.icons8.com/ios-filled/344/linode.png" />
-		<a href="https://cloud.linode.com/linodes" target="_blank">Linode</a>
-	</div>
-	<div class=" flex m-1">
-		<img alt="github logo" src="https://img.icons8.com/ios/344/google-cloud-platform.png" />
-		<a href="https://domains.google.com/registrar/?hl=en-US&pli=1&authuser=1" target="_blank">
-			GCP
-		</a>
-	</div>
-</div>

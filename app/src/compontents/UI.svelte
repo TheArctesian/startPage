@@ -1,6 +1,21 @@
 <script>
-	import Simpleicons from '../SVG/simpleicons.svg';
 </script>
+
+<div class="p-5 flex flex-wrap main flex-col">
+	<h1 class="text-2xl text-center text-nosferatu-100 my-2">UI</h1>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://cdn-icons-png.flaticon.com/512/615/615579.png" />
+		<a href="https://tailwindcss.com/" target="_blank">Tailwind</a>
+	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://cdn-icons-png.flaticon.com/512/597/597560.png" />
+		<a href="https://draculatheme.com/" target="_blank">Dracula</a>
+	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://img.icons8.com/ios-glyphs/344/css3.png" />
+		<a href="https://www.w3schools.com/css/" target="_blank">CSS</a>
+	</div>
+</div>
 
 <style>
 	img {
@@ -30,21 +45,3 @@
 		}
 	}
 </style>
-
-<div class="p-5 flex flex-wrap main flex-col">
-	<h1 class="text-2xl text-center text-nosferatu-100 my-2">UI</h1>
-	<div class=" flex m-1">
-		<img alt="github logo" src="https://cdn-icons-png.flaticon.com/512/615/615579.png" />
-		<a href="https://tailwindcss.com/" target="_blank">Tailwind</a>
-	</div>
-	<div class=" flex m-1">
-		<img alt="github logo" src="https://cdn-icons-png.flaticon.com/512/597/597560.png" />
-		<a href="https://draculatheme.com/" target="_blank">Dracula</a>
-	</div>
-	<div class=" flex m-1">
-		<img
-			alt="github logo"
-			src="https://uxwing.com/wp-content/themes/uxwing/download/10-brands-and-social-media/w3schools-logo.png" />
-		<a href="https://www.w3schools.com/css/" target="_blank">W3 schools CSS</a>
-	</div>
-</div>
