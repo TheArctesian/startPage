@@ -1,3 +1,4 @@
+#!/bin/bash
 cd /home/arctesian/startPage/app
 yarn install
 yarn run build
