@@ -8,7 +8,7 @@
 >
 	<img src="https://img.icons8.com/color/344/duckduckgo.png" />
 	<input
-		class="rounded border-dracula-400 bg-aro-900 flex-grow border-2 px-3 py-2"
+		class="rounded border-dracula-400 bg-aro-900 text-vonCount-50  flex-grow border-2 px-3 py-2"
 		name="q"
 		placeholder="Enter Your query"
 	/>
