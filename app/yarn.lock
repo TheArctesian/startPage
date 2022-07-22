@@ -564,6 +564,16 @@ cssesc@^3.0.0:
   resolved "https://registry.npmjs.org/cssesc/-/cssesc-3.0.0.tgz"
   integrity sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==
 
+dayjs@1.10.1:
+  version "1.10.1"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.10.1.tgz#114f678624842035396667a24eb1436814bc16fd"
+  integrity sha512-2xg7JrHQeLBQFkvTumLoy62x1siyeocc98QwjtURgvRqOPYmAkMUdmSjrOA+MlmL6QMQn5MUhDf6rNZNuPc1LQ==
+
+dayjs@^1.11.4:
+  version "1.11.4"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.4.tgz#3b3c10ca378140d8917e06ebc13a4922af4f433e"
+  integrity sha512-Zj/lPM5hOvQ1Bf7uAvewDaUcsJoI6JmNqmHhHl3nyumwe0XHwt8sWdOVAPACJzCebL8gQCi+K49w7iKWnGwX9g==
+
 debug@4, debug@^4.1.1, debug@^4.3.2, debug@^4.3.4:
   version "4.3.4"
   resolved "https://registry.npmjs.org/debug/-/debug-4.3.4.tgz"
@@ -650,6 +660,11 @@ doctrine@^3.0.0:
   integrity sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==
   dependencies:
     esutils "^2.0.2"
+
+dst@0.X.X:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/dst/-/dst-0.0.4.tgz#d4945037d122105bc7f2bf87bb93f9724d2ac661"
+  integrity sha512-SYo50JgqdpooSLyl+ZhvWZrLK7cZ0cyPmAo2MIoEPOOlpyXr32n7dKRbotqJEwY1JR+sX3ToSbRcHeQaAU/03w==
 
 electron-to-chromium@^1.4.147:
   version "1.4.161"
@@ -2020,6 +2035,13 @@ svelte-check@^2.7.1:
     svelte-preprocess "^4.0.0"
     typescript "*"
 
+svelte-countdown@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/svelte-countdown/-/svelte-countdown-1.1.1.tgz#953ff5c5a9c874ad10cfa885e4eb5d973c0c4233"
+  integrity sha512-lIPOs8i55g/Kq0WAlKi9p3wmZ7U6s37q8SEYunIPP8vVJMr+UXngMPrVEIPG4smkFwM4UEyfunBGVKkzI/IzUw==
+  dependencies:
+    dayjs "1.10.1"
+
 svelte-hmr@^0.14.12:
   version "0.14.12"
   resolved "https://registry.npmjs.org/svelte-hmr/-/svelte-hmr-0.14.12.tgz"
@@ -2158,6 +2180,13 @@ typescript@*, typescript@^4.7.2:
   version "4.7.4"
   resolved "https://registry.npmjs.org/typescript/-/typescript-4.7.4.tgz"
   integrity sha512-C0WQT0gezHuw6AdY1M2jxUO83Rjf0HP7Sk1DtXj6j1EwkQNZrHAg2XPWlq62oqEhYvONq5pkC2Y9oPljWToLmQ==
+
+tz@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/tz/-/tz-0.1.1.tgz#534a89cd45a841cc84e085ea43c54d54513110d9"
+  integrity sha512-ioWQEhvsjjl3ZB241xYxTAg2olatI2nK5GfsVs7lKje2BgKuhzNdr2/0dH9W9AoL8XyDiUAqBttFcdx4ILdzHg==
+  dependencies:
+    dst "0.X.X"
 
 uri-js@^4.2.2:
   version "4.4.1"

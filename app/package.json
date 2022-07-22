@@ -34,5 +34,10 @@
 		"tslib": "^2.3.1",
 		"typescript": "^4.7.2"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"dayjs": "^1.11.4",
+		"svelte-countdown": "^1.1.1",
+		"tz": "^0.1.1"
+	}
 }
