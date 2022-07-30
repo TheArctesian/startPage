@@ -8,7 +8,7 @@
 
 <style>
 	.head {
-		padding-top: 2.4rem;
+		padding-top: 1rem;
 		padding-left: 2.4rem;
 		padding-bottom: 1rem;
 	}
