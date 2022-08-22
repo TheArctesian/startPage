@@ -49,7 +49,7 @@
 <Countdown from="2022-10-15" dateFormat="YYYY-MM-DD" zone="Asia/Hong_Kong" let:remaining>
 	<div class="count text-nosferatu-100 text-center bg-nosfeatu-300 transition-all duration-100 ">
 		{#if remaining.done === false}
-			<span style="color: #ff79c6;">Time till school starts</span>
+			<span style="color: #ff79c6;">Time till mid term</span>
 			<hr />
 			<span>{remaining.weeks} 星期</span>
 			<span>{remaining.days} 天</span>
