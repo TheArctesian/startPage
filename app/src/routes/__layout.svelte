@@ -1,6 +1,6 @@
 <script>
 	import '../app.css';
-	import Countdown from '../compontents/count.svelte';
+	import Countdown from '../compontents/Layout/count.svelte';
 	import dayjs from 'dayjs';
 	import tz from 'dayjs/plugin/timezone.js';
 	import { Wave } from 'svelte-loading-spinners';
@@ -56,7 +56,7 @@
 	.count {
 		position: absolute;
 		text-align: center;
-		top: 13rem;
+		top: 4rem;
 		left: 25%;
 		right: 25%;
 	}
@@ -66,9 +66,14 @@
 		left: 40%;
 		right: 40%;
 	}
-	@media (min-width: 1030px) {
+	@media (max-width: 750px) {
 		.count {
-			top: 2rem;
+			top: 3rem;
+		}
+		.nav {
+			padding: 0;
+			left: 0;
+			text-align: center;
 		}
 	}
 </style>

@@ -1,11 +1,28 @@
 <script>
-	import Searchbar from '../compontents/searchbar.svelte';
-	import Lib from '../compontents/lib.svelte';
-	import Langs from '../compontents/langs.svelte';
-	import UI from '../compontents/UI.svelte';
-	import Icons from '../compontents/Icons.svelte';
-	import Server from '..//compontents/server.svelte';
+	import Searchbar from '../compontents/Layout/searchbar.svelte';
+	import Lib from '../compontents/Dev/lib.svelte';
+	import Langs from '../compontents/Dev/langs.svelte';
+	import UI from '../compontents/Dev/UI.svelte';
+	import Icons from '../compontents/Dev/Icons.svelte';
+	import Server from '../compontents/Dev/server.svelte';
 </script>
+
+<div class="bag">
+	<div class="head">
+		<h1 class="text-nosferatu-100 p-1 text-4xl ">Dev Links</h1>
+		<h1 class="text-blade-100 p-1 text-l ">The Arctesian</h1>
+	</div>
+	<div class="search">
+		<Searchbar />
+	</div>
+	<div class="items flex w-full flex-row lg:justify-around md:flex-wrap sm:flex-warp">
+		<Langs />
+		<Lib />
+		<UI />
+		<Icons />
+		<Server />
+	</div>
+</div>
 
 <style>
 	.head {
@@ -35,20 +52,3 @@
 		}
 	}
 </style>
-
-<div class="bag">
-	<div class="head">
-		<h1 class="text-nosferatu-100 p-1 text-4xl ">Dev Links</h1>
-		<h1 class="text-blade-100 p-1 text-l ">The Arctesian</h1>
-	</div>
-	<div class="search">
-		<Searchbar />
-	</div>
-	<div class="items flex w-full flex-row lg:justify-around md:flex-wrap sm:flex-warp">
-		<Langs />
-		<Lib />
-		<UI />
-		<Icons />
-		<Server />
-	</div>
-</div>

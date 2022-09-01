@@ -1,10 +1,10 @@
 <script>
-	import Searchbar from '../compontents/searchbar.svelte';
-	import Google from '../compontents/Skl Google.svelte';
-	import School from '../compontents/School.svelte';
-	import Develop from '../compontents/Develop.svelte';
-	import Social from '../compontents/Social.svelte';
-	import Core from '../compontents/Core.svelte';
+	import Searchbar from '../compontents/Layout/searchbar.svelte';
+	import Google from '../compontents/Home/Skl Google.svelte';
+	import Develop from '../compontents/Home/Develop.svelte';
+	import Social from '../compontents/Fun/Social.svelte';
+	import Core from '../compontents/Home/Core.svelte';
+	import School from '../compontents/Home/School.svelte';
 </script>
 
 <div class="bag">
@@ -45,6 +45,9 @@
 		padding-right: 5rem;
 	}
 	@media (max-width: 750px) {
+		.head {
+			padding-top: 8rem;
+		}
 		.items {
 			flex-wrap: wrap;
 			align-items: center;

@@ -1,5 +1,5 @@
 <script>
-	import Simpleicons from '../SVG/simpleIcons.svg';
+	import Simpleicons from '../../SVG/simpleIcons.svg';
 </script>
 
 <div class="p-5 flex main flex-wrap flex-col">
