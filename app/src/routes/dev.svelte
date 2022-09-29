@@ -7,6 +7,23 @@
 	import Server from '../compontents/Dev/server.svelte';
 </script>
 
+<div class="bag">
+	<div class="head">
+		<h1 class="text-nosferatu-100 p-1 text-4xl ">Dev Links</h1>
+		<h1 class="text-blade-100 p-1 text-l ">The Arctesian</h1>
+	</div>
+	<div class="search">
+		<Searchbar />
+	</div>
+	<div class="items flex w-full flex-row lg:justify-around md:flex-wrap sm:flex-warp">
+		<Langs />
+		<Lib />
+		<UI />
+		<Icons />
+		<Server />
+	</div>
+</div>
+
 <style>
 	.head {
 		padding-top: 1rem;
@@ -27,6 +44,7 @@
 		.head {
 			padding-top: 8rem;
 			text-align: center;
+			padding-left: 0rem;
 		}
 		.items {
 			flex-wrap: wrap;
@@ -35,20 +53,3 @@
 		}
 	}
 </style>
-
-<div class="bag">
-	<div class="head">
-		<h1 class="text-nosferatu-100 p-1 text-4xl ">Dev Links</h1>
-		<h1 class="text-blade-100 p-1 text-l ">The Arctesian</h1>
-	</div>
-	<div class="search">
-		<Searchbar />
-	</div>
-	<div class="items flex w-full flex-row lg:justify-around md:flex-wrap sm:flex-warp">
-		<Langs />
-		<Lib />
-		<UI />
-		<Icons />
-		<Server />
-	</div>
-</div>

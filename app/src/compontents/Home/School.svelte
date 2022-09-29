@@ -1,4 +1,4 @@
-<div class="p-5 flex flex-wrap main flex-col">
+<div class="p-5 my-4 flex flex-wrap main flex-col">
 	<h1 class="text-center text-2xl text-nosferatu-100 my-2">School</h1>
 	<div class=" flex m-1">
 		<img alt="github logo" src="https://img.icons8.com/ios/344/schoology.png" />

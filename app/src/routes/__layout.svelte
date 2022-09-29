@@ -6,53 +6,24 @@
 	import { Wave } from 'svelte-loading-spinners';
 </script>
 
-<style>
-	.nav {
-		position: absolute;
-		margin-top: 1rem;
-		padding: 1rem;
-		right: 0;
-	}
-	.count {
-		position: absolute;
-		text-align: center;
-		top: 4rem;
-		left: 25%;
-		right: 25%;
-	}
-	.wav {
-		position: absolute;
-		text-align: center;
-		left: 40%;
-		right: 40%;
-	}
-	@media (max-width: 750px) {
-		.count {
-			top: 4rem;
-		}
-		.nav {
-			padding: 0;
-			left: 0;
-			text-align: center;
-		}
-	}
-</style>
-
 <div class="nav">
 	<a
 		href="/"
-		class="text-nosferatu-100 hover:text-nosferatu-50 transition-all duration-100 text-2xl ">
+		class="text-nosferatu-100 hover:text-nosferatu-50 transition-all duration-100 text-2xl "
+	>
 		| Home |
 	</a>
 
 	<a
 		href="/dev"
-		class="text-nosferatu-100 hover:text-nosferatu-50 transition-all duration-100 text-2xl ">
+		class="text-nosferatu-100 hover:text-nosferatu-50 transition-all duration-100 text-2xl "
+	>
 		Dev |
 	</a>
 	<a
 		href="/school"
-		class="text-nosferatu-100 hover:text-nosferatu-50 transition-all duration-100 text-2xl ">
+		class="text-nosferatu-100 hover:text-nosferatu-50 transition-all duration-100 text-2xl "
+	>
 		School |
 	</a>
 </div>
@@ -73,3 +44,38 @@
 	</div>
 </Countdown>
 <slot />
+
+<style>
+	.nav {
+		position: absolute;
+		margin-top: 1rem;
+		padding: 1rem;
+		right: 0;
+	}
+	.count {
+		position: absolute;
+		text-align: center;
+		top: 4rem;
+		left: 25%;
+		right: 25%;
+	}
+	.wav {
+		position: absolute;
+		text-align: center;
+		left: 40%;
+		right: 40%;
+	}
+	:global(body) {
+		background-color: #272727;
+	}
+	@media (max-width: 750px) {
+		.count {
+			top: 4rem;
+		}
+		.nav {
+			padding: 0;
+			left: 0;
+			text-align: center;
+		}
+	}
+</style>

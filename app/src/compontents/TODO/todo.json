@@ -1,0 +1,12 @@
+[
+    {
+        "event": "Math HW",
+        "date": "29/09/22",
+        "completed": true
+    },
+    {
+        "event": "Psych IA",
+        "date": "30/09/22",
+        "completed": false
+    }
+]
