@@ -1,5 +1,5 @@
 export type event = {
-    event : string;
-    date : string;
-    completed: boolean;
+    event : String;
+    date : String;
+    completed: Boolean;
 }

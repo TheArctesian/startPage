@@ -1,16 +1,19 @@
 <script lang="ts">
 	import type { event } from '../../lib/types/todo';
 	import data from './todo.json';
-	for (let e of data) {
-		console.log(e);
-	}
+	let todoList: event[] = data;
 	let newEventTime: String;
 	let newEventName: String;
-	function add() {}
+	function add() {
+		alert(newEventName);
+		todoList = [...todoList, { event: newEventName, date: newEventTime, completed: false }];
+		newEventName = '';
+		newEventTime = '';
+	}
 	let list: event[] = [];
 </script>
 
-<div class="p-5 main flex flex-wrap flex-col">
+<div class="p-5 my-4 main flex flex-wrap flex-col">
 	<div class="s flex m-1">
 		<h1 class="text-2xl text-center text-nosferatu-100 my-2">Todo</h1>
 		<form class="bg-nosferatu-800 flex p-2 my-5 object-contain justify-around rounded-lg ">
@@ -19,20 +22,22 @@
 				class="rounded mx-2 border-dracula-400 bg-aro-900 text-vonCount-50  flex-grow border-2 px-3 py-2"
 				name="q"
 				placeholder="Add an Event"
+				bind:value={newEventName}
 			/>
 			<input
 				class="rounded mx-1 border-dracula-400 bg-aro-900 text-vonCount-50 flex-grow border-2 px-3 py-2"
 				name="q"
 				placeholder="Add an Event"
+				bind:value={newEventTime}
 			/>
 			<input
 				class="bg-nosferatu-700 mx-2 px-3 py-2 rounded text-vonCount-50 "
 				type="submit"
-				on:submit={add}
+				on:click={add}
 				value="Add"
 			/>
 		</form>
-		{#each data as event}
+		{#each todoList as event}
 			<div class=" flex m-1">
 				{#if event.completed}
 					<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" />

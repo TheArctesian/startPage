@@ -66,7 +66,7 @@
 		right: 40%;
 	}
 	:global(body) {
-		background-color: #272727;
+		background-color: #282a36;
 	}
 	@media (max-width: 750px) {
 		.count {

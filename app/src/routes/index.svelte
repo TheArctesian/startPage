@@ -13,23 +13,24 @@
 		<h1 class="text-nosferatu-100 p-1 text-4xl ">Start Page</h1>
 		<h1 class="text-blade-100 p-1 text-l ">The Arctesian</h1>
 	</div>
-
-	<div
-		class="flex items w-full m-auto flex-wrap flex-row p-5 lg:justify-around md:flex-wrap
+	<div class="flex md:flex-row">
+		<div
+			class="flex items w-half  flex-wrap flex-row p-5 lg:justify-around md:flex-wrap
 		sm:flex-warp"
-	>
-		<Todo />
-	</div>
-	<div
-		class="flex items w-full m-auto flex-wrap flex-row p-5 lg:justify-around md:flex-wrap
+		>
+			<Todo />
+		</div>
+		<div
+			class="flex items w-half m-auto flex-wrap flex-row p-5 lg:justify-around md:flex-wrap
 		sm:flex-warp"
-	>
-		<Core />
-		<Develop />
-		<!-- <WebDev /> -->
-		<Google />
-		<Social />
-		<School />
+		>
+			<Core />
+			<Develop />
+			<!-- <WebDev /> -->
+			<Google />
+			<Social />
+			<School />
+		</div>
 	</div>
 	<div class="search">
 		<Searchbar />
