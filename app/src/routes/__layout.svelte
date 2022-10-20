@@ -27,10 +27,10 @@
 		School |
 	</a>
 </div>
-<Countdown from="2022-10-15" dateFormat="YYYY-MM-DD" zone="Asia/Hong_Kong" let:remaining>
+<Countdown from="2022-12-16" dateFormat="YYYY-MM-DD" zone="Asia/Hong_Kong" let:remaining>
 	<div class="count text-nosferatu-100 text-center bg-nosfeatu-300 transition-all duration-100 ">
 		{#if remaining.done === false}
-			<span style="color: #ff79c6;">Time till mid term</span>
+			<span style="color: #ff79c6;">Time till Christmas</span>
 			<hr />
 			<span>{remaining.days} 天</span>
 			<span>{remaining.hours} 小時</span>
