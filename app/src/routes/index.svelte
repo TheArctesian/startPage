@@ -16,7 +16,6 @@
 <div class="search">
 		<Searchbar />
 	</div>
-	<div class="flex md:flex-row">
 
 		<!-- <div
 			class="flex items w-half  flex-wrap flex-row p-5 lg:justify-around md:flex-wrap
@@ -37,7 +36,6 @@
 		</div>
 	</div>
 	
-</div>
 
 <style>
 	.head {
