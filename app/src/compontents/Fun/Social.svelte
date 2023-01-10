@@ -12,6 +12,16 @@
 		<img alt="github logo" src="https://img.icons8.com/ios/344/youtube-play--v1.png" />
 		<a href="/focus" target="_blank">Youtube</a>
 	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/goodreads.svg" />
+		<a href="https://goodreads.com/" target="_blank">GoodeReads</a>
+	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/letterboxd.svg" />
+		<a href="https://letterboxd.com/" target="_blank">Letterbox</a>
+	</div>
+
+
 </div>
 
 <style>

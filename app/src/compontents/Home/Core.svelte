@@ -1,5 +1,5 @@
 <style>
-	img {
+	img{
 		width: 2.5rem;
 		background-color: #f1fa8c;
 		border-radius: 1rem;
@@ -33,11 +33,19 @@
 	<div class=" flex m-1">
 		<img
 			alt="github logo"
-			src="https://img.icons8.com/external-tal-revivo-bold-tal-revivo/344/external-nextcloud-a-suite-of-client-server-software-for-creating-and-using-file-hosting-services-logo-bold-tal-revivo.png" />
-		<a href="https://danielokita.com" target="_blank">NextCloud</a>
+			src="https://simpleicons.org/icons/duolingo.svg" />
+		<a href="https://danielokita.com" target="_blank">Duolingo</a>
 	</div>
 	<div class=" flex m-1">
 		<img alt="github logo" src="https://img.icons8.com/ios-glyphs/344/circled-dot.png" />
 		<a href="https://github.com/TheArctesian/DotFiles" target="_blank">Dot files</a>
+	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/mastodon.svg" />
+		<a href="https://mastodon.world/@thearctesian" target="_blank">Mastodon</a>
+	</div>
+    <div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/pexels.svg" />
+		<a href="https://pixelfed.social/i/web" target="_blank">Pixelfed</a>
 	</div>
 </div>

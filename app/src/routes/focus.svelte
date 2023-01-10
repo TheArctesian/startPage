@@ -11,7 +11,7 @@
     width: 70vw;
     font-size: 3rem;
     padding: 12px;
-    -webkit-animation: breathing 5s ease-out infinite normal;
+    -webkit-animation: breathing 18s ease-out infinite normal;
     animation: breathing 5s ease-out infinite normal;
     background: #ff79c6;
     color: #fff;
@@ -45,27 +45,26 @@
 
 @keyframes breathing {
   0% {
-    -webkit-transform: scale(0.9);
-    -ms-transform: scale(0.9);
-    transform: scale(0.9);
-  }
-
-  25% {
     -webkit-transform: scale(1);
     -ms-transform: scale(1);
     transform: scale(1);
   }
 
   60% {
-    -webkit-transform: scale(0.9);
-    -ms-transform: scale(0.9);
-    transform: scale(0.9);
+    -webkit-transform: scale(1.3);
+    -ms-transform: scale(1.3);
+    transform: scale(1.3);
   }
 
+ 75% {
+    -webkit-transform: scale(1.3);
+    -ms-transform: scale(1.3);
+    transform: scale(1.3);
+  }
   100% {
-    -webkit-transform: scale(0.9);
-    -ms-transform: scale(0.9);
-    transform: scale(0.9);
+    -webkit-transform: scale(1);
+    -ms-transform: scale(1);
+    transform: scale(1);
   }
 }
 
