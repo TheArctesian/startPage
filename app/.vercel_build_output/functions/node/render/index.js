@@ -6624,7 +6624,7 @@ var init_dev_svelte = __esm({
 		</a></div>
 	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/windows/344/domain-name.png"}" class="${"svelte-x6n74l"}">
 		<a href="${"https://registrar.epik.com/domain/portfolio"}" target="${"_blank"}" class="${"svelte-x6n74l"}">Epik</a></div>
-	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/windows/344/domain-name.png"}" class="${"svelte-x6n74l"}">
+	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://simpleicons.org/icons/vercel.svg"}" class="${"svelte-x6n74l"}">
 		<a href="${"https://vercel.com/dashboard"}" target="${"_blank"}" class="${"svelte-x6n74l"}">Vercel</a></div>
 </div>`;
     });
@@ -6661,8 +6661,8 @@ var init__4 = __esm({
   ".svelte-kit/output/server/nodes/2.js"() {
     init_dev_svelte();
     index4 = 2;
-    entry4 = "pages/dev.svelte-88fb5b9f.js";
-    js4 = ["pages/dev.svelte-88fb5b9f.js", "chunks/index-fee3d784.js", "chunks/searchbar-c2f33881.js"];
+    entry4 = "pages/dev.svelte-8d5d9c74.js";
+    js4 = ["pages/dev.svelte-8d5d9c74.js", "chunks/index-fee3d784.js", "chunks/searchbar-c2f33881.js"];
     css10 = ["assets/pages/dev.svelte-508e8ebc.css", "assets/searchbar-b9dc33c5.css"];
   }
 });
@@ -9357,7 +9357,7 @@ var manifest = {
   assets: /* @__PURE__ */ new Set(["favicon.png"]),
   mimeTypes: { ".png": "image/png" },
   _: {
-    entry: { "file": "start-3309b683.js", "js": ["start-3309b683.js", "chunks/index-fee3d784.js"], "css": [] },
+    entry: { "file": "start-6e37e094.js", "js": ["start-6e37e094.js", "chunks/index-fee3d784.js"], "css": [] },
     nodes: [
       () => Promise.resolve().then(() => (init__(), __exports)),
       () => Promise.resolve().then(() => (init__2(), __exports2)),
