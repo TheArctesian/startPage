@@ -13,6 +13,10 @@
 		<img alt="github logo" src="https://img.icons8.com/ios/344/developer--v1.png" />
 		<a href="/dev">Dev Links</a>
 	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/kofi.svg" />
+		<a href="https://ko-fi.com/danielokita">Kofi</a>
+	</div>
 </div>
 
 <style>
