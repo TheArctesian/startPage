@@ -4,7 +4,7 @@
 	import Develop from '../compontents/Home/Develop.svelte';
 	import Social from '../compontents/Fun/Social.svelte';
 	import Core from '../compontents/Home/Core.svelte';
-	import School from '../compontents/Home/School.svelte';
+	import School from '../compontents/Server/selfhosted.svelte';
 	import Todo from '../compontents/TODO/todo.svelte';
 </script>
 

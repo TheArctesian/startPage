@@ -20,18 +20,19 @@
 	>
 		Dev |
 	</a>
-	<a
+	<!-- <a
 		href="/school"
 		class="text-nosferatu-100 hover:text-nosferatu-50 transition-all duration-100 text-2xl "
 	>
 		School |
-	</a>
+	</a> -->
 </div>
-<Countdown from="2023-05-19 15:30:00" dateFormat="YYYY-MM-DD H:m:s" zone="Asia/Hong_Kong" let:remaining>
+<Countdown from="2023-08-15 15:30:00" dateFormat="YYYY-MM-DD H:m:s" zone="Asia/Hong_Kong" let:remaining>
 	<div class="count text-nosferatu-100 text-center bg-nosfeatu-300 transition-all duration-100 ">
 		{#if remaining.done === false}
-			<span style="color: #ff79c6;">Time Till IB is done</span>
+			<span style="color: #ff79c6;">Time till uni start</span>
 			<hr />
+			<span>{remaining.months} 月</span>
 			<span>{remaining.days} 天</span>
 			<span>{remaining.hours} 小時</span>
 			<span>{remaining.minutes} 分鐘</span>
