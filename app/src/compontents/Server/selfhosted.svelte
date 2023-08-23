@@ -6,13 +6,16 @@
 	</div>
 	<div class=" flex m-1">
 		<img alt="github logo" src="https://simpleicons.org/icons/portainer.svg" />
-		<a href="https://cishk.powerschool.com" target="_blank">Portainer</a>
+		<a href="https://portainer.danielokita.com" target="_blank">Portainer</a>
 	</div>
 	<div class=" flex m-1">
 		<img alt="github logo" src="https://simpleicons.org/icons/nginx.svg" />
-		<a href="https://mycis.cis.edu.hk" target="_blank">NPM</a>
+		<a href="https://nginx.danielokita.com" target="_blank">Nginx PM</a>
 	</div>
-
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/vercel.svg" />
+		<a href="https://photoprism.danielokita.com" target="_blank">Photoprism</a>
+	</div>
 </div>
 
 <style>
@@ -44,4 +47,3 @@
 		}
 	}
 </style>
-

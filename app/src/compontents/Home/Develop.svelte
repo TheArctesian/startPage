@@ -6,8 +6,8 @@
 		<a href="https://github.com/TheArctesian" target="_blank">Github</a>
 	</div>
 	<div class=" flex m-1">
-		<img alt="github logo" src="https://img.icons8.com/ios/344/stackoverflow.png" />
-		<a href="https://stackoverflow.com/" target="_blank">Stack Overflow</a>
+		<img alt="github logo" src="https://simpleicons.org/icons/poe.svg" />
+		<a href="https://poe.com/" target="_blank">Poe</a>
 	</div>
 	<div class=" flex m-1">
 		<img alt="github logo" src="https://img.icons8.com/ios/344/developer--v1.png" />
