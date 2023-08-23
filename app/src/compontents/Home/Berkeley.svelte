@@ -10,7 +10,7 @@
 	</div>
 	<div class=" flex m-1">
 		<img alt="github logo" src="https://img.icons8.com/?size=512&id=9357&format=png" />
-		<a href="https://bcourses.berkeley.edu/" target="_blank">Google Calender</a>
+		<a href="https://bcourses.berkeley.edu/" target="_blank">Bcourses</a>
 	</div>
 </div>
 

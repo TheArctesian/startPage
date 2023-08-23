@@ -1,6 +1,6 @@
 <script>
 	import Searchbar from '../compontents/Layout/searchbar.svelte';
-	import Google from '../compontents/Home/Skl Google.svelte';
+	import Google from '../compontents/Home/Berkeley.svelte';
 	import Develop from '../compontents/Home/Develop.svelte';
 	import Social from '../compontents/Fun/Social.svelte';
 	import Core from '../compontents/Home/Core.svelte';
