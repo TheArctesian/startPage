@@ -1,6 +1,6 @@
 <script>
 	import Searchbar from '../compontents/Layout/searchbar.svelte';
-	import Google from '../compontents/Home/Skl Google.svelte';
+	import Google from '../compontents/Home/Berkeley.svelte';
 	import School from '../compontents/Home/School.svelte';
 	import English from '../compontents/School/Languages.svelte';
 	import Stem from '../compontents/School/Stem.svelte';

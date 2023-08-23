@@ -6260,12 +6260,12 @@ ${slots.default ? slots.default({ remaining }) : ``}`;
 	</a>
 	</div>
 ${validate_component(Count, "Countdown").$$render($$result, {
-        from: "2023-08-15 15:30:00",
+        from: "2023-12-16 00:00:00",
         dateFormat: "YYYY-MM-DD H:m:s",
-        zone: "Asia/Hong_Kong"
+        zone: "America/Los_Angeles"
       }, {}, {
         default: ({ remaining }) => {
-          return `<div class="${"count text-nosferatu-100 text-center bg-nosfeatu-300 transition-all duration-100  svelte-1wj2hhd"}">${remaining.done === false ? `<span style="${"color: #ff79c6;"}">Time till uni start</span>
+          return `<div class="${"count text-nosferatu-100 text-center bg-nosfeatu-300 transition-all duration-100  svelte-1wj2hhd"}">${remaining.done === false ? `<span style="${"color: #ff79c6;"}">End of first semester</span>
 			<hr>
 			<span>${escape(remaining.months)} \u6708</span>
 			<span>${escape(remaining.days)} \u5929</span>
@@ -6298,8 +6298,8 @@ var init__ = __esm({
   ".svelte-kit/output/server/nodes/0.js"() {
     init_layout_svelte();
     index = 0;
-    entry = "pages/__layout.svelte-08478898.js";
-    js = ["pages/__layout.svelte-08478898.js", "chunks/index-fee3d784.js"];
+    entry = "pages/__layout.svelte-763b034c.js";
+    js = ["pages/__layout.svelte-763b034c.js", "chunks/index-fee3d784.js"];
     css2 = ["assets/pages/__layout.svelte-4adf1bba.css"];
   }
 });
@@ -6375,24 +6375,24 @@ var init_searchbar_54b8e29d = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/Skl Google-bfa518c1.js
-var css5, Sklu20Google;
-var init_Skl_Google_bfa518c1 = __esm({
-  ".svelte-kit/output/server/chunks/Skl Google-bfa518c1.js"() {
+// .svelte-kit/output/server/chunks/Berkeley-cfd7c0d7.js
+var css5, Berkeley;
+var init_Berkeley_cfd7c0d7 = __esm({
+  ".svelte-kit/output/server/chunks/Berkeley-cfd7c0d7.js"() {
     init_index_fa0ff56f();
     css5 = {
       code: "img.svelte-wpumvk{width:2.5rem;background-color:#bd93f9;border-radius:1rem;padding:0.2rem}a.svelte-wpumvk{color:#bd93f9;margin-top:auto;margin-bottom:auto;padding-left:1rem;transition:all ease-in-out 300ms}a.svelte-wpumvk:hover{color:#e9dafe}.main.svelte-wpumvk{border-color:#bd93f9;border-width:0.1rem;border-radius:1rem}@media(max-width: 1030px){.main.svelte-wpumvk{border:none}}",
       map: null
     };
-    Sklu20Google = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+    Berkeley = create_ssr_component(($$result, $$props, $$bindings, slots) => {
       $$result.css.add(css5);
-      return `<div class="${"p-5 my-4 flex flex-wrap main flex-col svelte-wpumvk"}"><h1 class="${"text-center text-2xl text-nosferatu-100 my-2"}">School Google</h1>
+      return `<div class="${"p-5 my-4 flex flex-wrap main flex-col svelte-wpumvk"}"><h1 class="${"text-center text-2xl text-nosferatu-100 my-2"}">Berkeley</h1>
 	<div class="${"flex m-1"}"><img alt="${"gmail logo"}" src="${"https://img.icons8.com/ios/344/gmail-new.png"}" class="${"svelte-wpumvk"}">
 		<a href="${"https://mail.google.com/mail/u/0/#inbox"}" target="${"_blank"}" class="${"svelte-wpumvk"}">Gmail</a></div>
-	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/windows/344/google-drive.png"}" class="${"svelte-wpumvk"}">
-		<a href="${"https://drive.google.com/drive/my-drive"}" target="${"_blank"}" class="${"svelte-wpumvk"}">Google Drive</a></div>
-	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/windows/344/google-calendar.png"}" class="${"svelte-wpumvk"}">
-		<a href="${"https://calendar.google.com/calendar"}" target="${"_blank"}" class="${"svelte-wpumvk"}">Google Calender</a></div>
+	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://pic.onlinewebfonts.com/thumbnails/icons_415715.svg"}" class="${"svelte-wpumvk"}">
+		<a href="${"https://calcentral.berkeley.edu/"}" target="${"_blank"}" class="${"svelte-wpumvk"}">Cal Central</a></div>
+	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/?size=512&id=9357&format=png"}" class="${"svelte-wpumvk"}">
+		<a href="${"https://bcourses.berkeley.edu/"}" target="${"_blank"}" class="${"svelte-wpumvk"}">Bcourses</a></div>
 </div>`;
     });
   }
@@ -6408,7 +6408,7 @@ var init_index_svelte = __esm({
   ".svelte-kit/output/server/entries/pages/index.svelte.js"() {
     init_index_fa0ff56f();
     init_searchbar_54b8e29d();
-    init_Skl_Google_bfa518c1();
+    init_Berkeley_cfd7c0d7();
     css$4 = {
       code: "img.svelte-tq6odt{width:2.5rem;background-color:#ff5555;border-radius:1rem;padding:0.2rem}a.svelte-tq6odt{color:#ff5555;margin-top:auto;margin-bottom:auto;padding-left:1rem;transition:all ease-in-out 300ms}a.svelte-tq6odt:hover{color:#ffa0a0}.main.svelte-tq6odt{border-color:#ff5555;border-width:0.1rem;border-radius:1rem}@media(max-width: 1030px){.main.svelte-tq6odt{border:none}}",
       map: null
@@ -6419,8 +6419,8 @@ var init_index_svelte = __esm({
 
 	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/ios/344/github--v1.png"}" class="${"svelte-tq6odt"}">
 		<a href="${"https://github.com/TheArctesian"}" target="${"_blank"}" class="${"svelte-tq6odt"}">Github</a></div>
-	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/ios/344/stackoverflow.png"}" class="${"svelte-tq6odt"}">
-		<a href="${"https://stackoverflow.com/"}" target="${"_blank"}" class="${"svelte-tq6odt"}">Stack Overflow</a></div>
+	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://simpleicons.org/icons/poe.svg"}" class="${"svelte-tq6odt"}">
+		<a href="${"https://poe.com/"}" target="${"_blank"}" class="${"svelte-tq6odt"}">Poe</a></div>
 	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://img.icons8.com/ios/344/developer--v1.png"}" class="${"svelte-tq6odt"}">
 		<a href="${"/dev"}" class="${"svelte-tq6odt"}">Dev Links</a></div>
 	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://simpleicons.org/icons/kofi.svg"}" class="${"svelte-tq6odt"}">
@@ -6474,10 +6474,11 @@ var init_index_svelte = __esm({
 	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://simpleicons.org/icons/nextcloud.svg"}" class="${"svelte-x6n74l"}">
 		<a href="${"http://nextcloud.danielokita.com"}" target="${"_blank"}" class="${"svelte-x6n74l"}">Nextcloud</a></div>
 	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://simpleicons.org/icons/portainer.svg"}" class="${"svelte-x6n74l"}">
-		<a href="${"https://cishk.powerschool.com"}" target="${"_blank"}" class="${"svelte-x6n74l"}">Portainer</a></div>
+		<a href="${"https://portainer.danielokita.com"}" target="${"_blank"}" class="${"svelte-x6n74l"}">Portainer</a></div>
 	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://simpleicons.org/icons/nginx.svg"}" class="${"svelte-x6n74l"}">
-		<a href="${"https://mycis.cis.edu.hk"}" target="${"_blank"}" class="${"svelte-x6n74l"}">NPM</a></div>
-
+		<a href="${"https://nginx.danielokita.com"}" target="${"_blank"}" class="${"svelte-x6n74l"}">Nginx PM</a></div>
+	<div class="${"flex m-1"}"><img alt="${"github logo"}" src="${"https://simpleicons.org/icons/vercel.svg"}" class="${"svelte-x6n74l"}">
+		<a href="${"https://photoprism.danielokita.com"}" target="${"_blank"}" class="${"svelte-x6n74l"}">Photoprism</a></div>
 </div>`;
     });
     css6 = {
@@ -6494,7 +6495,7 @@ var init_index_svelte = __esm({
 		<div class="${"flex items w-half m-auto flex-wrap flex-row p-5 lg:justify-around md:flex-wrap sm:flex-warp svelte-meovbm"}">${validate_component(Core, "Core").$$render($$result, {}, {}, {})}
 			${validate_component(Develop, "Develop").$$render($$result, {}, {}, {})}
 			
-			${validate_component(Sklu20Google, "Google").$$render($$result, {}, {}, {})}
+			${validate_component(Berkeley, "Google").$$render($$result, {}, {}, {})}
 			${validate_component(Social, "Social").$$render($$result, {}, {}, {})}
 			${validate_component(Selfhosted, "School").$$render($$result, {}, {}, {})}</div>
 	</div>`;
@@ -6516,9 +6517,9 @@ var init__3 = __esm({
   ".svelte-kit/output/server/nodes/4.js"() {
     init_index_svelte();
     index3 = 4;
-    entry3 = "pages/index.svelte-5e720e7f.js";
-    js3 = ["pages/index.svelte-5e720e7f.js", "chunks/index-fee3d784.js", "chunks/searchbar-c2f33881.js", "chunks/Skl Google-27403415.js"];
-    css7 = ["assets/pages/index.svelte-f15f5013.css", "assets/searchbar-b9dc33c5.css", "assets/Skl Google-36bb3b90.css"];
+    entry3 = "pages/index.svelte-0687a07c.js";
+    js3 = ["pages/index.svelte-0687a07c.js", "chunks/index-fee3d784.js", "chunks/searchbar-c2f33881.js", "chunks/Berkeley-227d748c.js"];
+    css7 = ["assets/pages/index.svelte-f15f5013.css", "assets/searchbar-b9dc33c5.css", "assets/Berkeley-0adb0ca0.css"];
   }
 });
 
@@ -6711,7 +6712,7 @@ var init_school_svelte = __esm({
   ".svelte-kit/output/server/entries/pages/school.svelte.js"() {
     init_index_fa0ff56f();
     init_searchbar_54b8e29d();
-    init_Skl_Google_bfa518c1();
+    init_Berkeley_cfd7c0d7();
     css$43 = {
       code: "img.svelte-x6n74l{width:2.5rem;background-color:#6272a4;border-radius:1rem;padding:0.2rem}a.svelte-x6n74l{color:#6272a4;margin-top:auto;margin-bottom:auto;padding-left:1rem;transition:all ease-in-out 300ms}a.svelte-x6n74l:hover{color:#d7dcec}.main.svelte-x6n74l{border-color:#6272a4;border-width:0.1rem;border-radius:1rem}@media(max-width: 1030px){.main.svelte-x6n74l{border:none}}",
       map: null
@@ -6787,7 +6788,7 @@ var init_school_svelte = __esm({
 		<h1 class="${"text-blade-100 p-1 text-l "}">The Arctesian</h1></div>
 	<div class="${"search svelte-meovbm"}">${validate_component(Searchbar, "Searchbar").$$render($$result, {}, {}, {})}</div>
 	<div class="${"items flex w-full flex-row lg:justify-around md:flex-wrap sm:flex-warp svelte-meovbm"}">${validate_component(Stem, "Stem").$$render($$result, {}, {}, {})}
-		${validate_component(Sklu20Google, "Google").$$render($$result, {}, {}, {})}
+		${validate_component(Berkeley, "Google").$$render($$result, {}, {}, {})}
 		${validate_component(Languages, "English").$$render($$result, {}, {}, {})}
 		${validate_component(Inso, "Humanities").$$render($$result, {}, {}, {})}
 		${validate_component(School, "School").$$render($$result, {}, {}, {})}</div>
@@ -6810,9 +6811,9 @@ var init__6 = __esm({
   ".svelte-kit/output/server/nodes/5.js"() {
     init_school_svelte();
     index6 = 5;
-    entry6 = "pages/school.svelte-f41c2e7a.js";
-    js6 = ["pages/school.svelte-f41c2e7a.js", "chunks/index-fee3d784.js", "chunks/searchbar-c2f33881.js", "chunks/Skl Google-27403415.js"];
-    css13 = ["assets/pages/school.svelte-b0676195.css", "assets/searchbar-b9dc33c5.css", "assets/Skl Google-36bb3b90.css"];
+    entry6 = "pages/school.svelte-8ad70c6f.js";
+    js6 = ["pages/school.svelte-8ad70c6f.js", "chunks/index-fee3d784.js", "chunks/searchbar-c2f33881.js", "chunks/Berkeley-227d748c.js"];
+    css13 = ["assets/pages/school.svelte-b0676195.css", "assets/searchbar-b9dc33c5.css", "assets/Berkeley-0adb0ca0.css"];
   }
 });
 
@@ -9314,7 +9315,7 @@ var manifest = {
   assets: /* @__PURE__ */ new Set(["favicon.png"]),
   mimeTypes: { ".png": "image/png" },
   _: {
-    entry: { "file": "start-61d2206e.js", "js": ["start-61d2206e.js", "chunks/index-fee3d784.js"], "css": [] },
+    entry: { "file": "start-6249b559.js", "js": ["start-6249b559.js", "chunks/index-fee3d784.js"], "css": [] },
     nodes: [
       () => Promise.resolve().then(() => (init__(), __exports)),
       () => Promise.resolve().then(() => (init__2(), __exports2)),

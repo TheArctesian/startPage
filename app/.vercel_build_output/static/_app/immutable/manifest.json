@@ -1,6 +1,6 @@
 {
   ".svelte-kit/runtime/client/start.js": {
-    "file": "start-61d2206e.js",
+    "file": "start-6249b559.js",
     "src": ".svelte-kit/runtime/client/start.js",
     "isEntry": true,
     "imports": [
@@ -16,7 +16,7 @@
     ]
   },
   "src/routes/__layout.svelte": {
-    "file": "pages/__layout.svelte-08478898.js",
+    "file": "pages/__layout.svelte-763b034c.js",
     "src": "src/routes/__layout.svelte",
     "isEntry": true,
     "isDynamicEntry": true,
@@ -65,28 +65,28 @@
     ]
   },
   "src/routes/index.svelte": {
-    "file": "pages/index.svelte-5e720e7f.js",
+    "file": "pages/index.svelte-0687a07c.js",
     "src": "src/routes/index.svelte",
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
       "_index-fee3d784.js",
       "_searchbar-c2f33881.js",
-      "_Skl Google-27403415.js"
+      "_Berkeley-227d748c.js"
     ],
     "css": [
       "assets/pages/index.svelte-f15f5013.css"
     ]
   },
   "src/routes/school.svelte": {
-    "file": "pages/school.svelte-f41c2e7a.js",
+    "file": "pages/school.svelte-8ad70c6f.js",
     "src": "src/routes/school.svelte",
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
       "_index-fee3d784.js",
       "_searchbar-c2f33881.js",
-      "_Skl Google-27403415.js"
+      "_Berkeley-227d748c.js"
     ],
     "css": [
       "assets/pages/school.svelte-b0676195.css"
@@ -104,13 +104,13 @@
       "assets/searchbar-b9dc33c5.css"
     ]
   },
-  "_Skl Google-27403415.js": {
-    "file": "chunks/Skl Google-27403415.js",
+  "_Berkeley-227d748c.js": {
+    "file": "chunks/Berkeley-227d748c.js",
     "imports": [
       "_index-fee3d784.js"
     ],
     "css": [
-      "assets/Skl Google-36bb3b90.css"
+      "assets/Berkeley-0adb0ca0.css"
     ]
   }
 }
