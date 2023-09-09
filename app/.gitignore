@@ -40,3 +40,5 @@ __pycache__
 .turbo
 .eslintcache
 turbo-cache-key.json
+/.vercel_build_output
+.vercel_build_output
