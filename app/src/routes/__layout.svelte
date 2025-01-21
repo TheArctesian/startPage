@@ -27,7 +27,7 @@
 		School |
 	</a> -->
 </div>
-<Countdown from="2024-12-20 23:00:00" dateFormat="YYYY-MM-DD H:m:s" zone="America/Los_Angeles" let:remaining>
+<Countdown from="2025-02-22 23:00:00" dateFormat="YYYY-MM-DD H:m:s" zone="America/Los_Angeles" let:remaining>
 	<div class="count text-nosferatu-100 text-center bg-nosfeatu-300 transition-all duration-100 ">
 		{#if remaining.done === false}
 			<span style="color: #ff79c6;">Start of Winter Break</span>
