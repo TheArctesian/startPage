@@ -28,24 +28,24 @@
 	}
 </style>
 
-<div class="p-5 main flex flex-wrap flex-col">
+<div class="p-5 my-4 flex flex-wrap main flex-col">
 	<h1 class="text-2xl text-center text-nosferatu-100 my-2">Core</h1>
 	<div class=" flex m-1">
 		<img
 			alt="github logo"
-			src="https://simpleicons.org/icons/duolingo.svg" />
-		<a href="https://danielokita.com" target="_blank">Duolingo</a>
+			src="https://pic.onlinewebfonts.com/thumbnails/icons_643933.svg" />
+		<a href="https://outlook.office.com/mail/inbox/" target="_blank">Outlook</a>
 	</div>
 	<div class=" flex m-1">
 		<img alt="github logo" src="https://img.icons8.com/ios-glyphs/344/circled-dot.png" />
 		<a href="https://github.com/TheArctesian/DotFiles" target="_blank">Dot files</a>
 	</div>
 	<div class=" flex m-1">
-		<img alt="github logo" src="https://simpleicons.org/icons/mastodon.svg" />
-		<a href="https://mastodon.world/@thearctesian" target="_blank">Mastodon</a>
+		<img alt="github logo" src="https://simpleicons.org/icons/asana.svg" />
+		<a href="https://app.asana.com/0/home/1207468280892035" target="_blank">Asana</a>
 	</div>
-    <div class=" flex m-1">
-		<img alt="github logo" src="https://simpleicons.org/icons/pexels.svg" />
-		<a href="https://pixelfed.social/i/web" target="_blank">Pixelfed</a>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/googledrive.svg" />
+		<a href="https://drive.google.com/drive/u/0/home" target="_blank">Drive</a>
 	</div>
 </div>

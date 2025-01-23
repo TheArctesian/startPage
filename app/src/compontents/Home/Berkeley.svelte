@@ -16,6 +16,11 @@
 		<img alt="github logo" src="https://simpleicons.org/icons/googlecalendar.svg" />
 		<a href="https://calendar.google.com/calendar/u/0/r" target="_blank">Calender</a>
 	</div>
+
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/griddotai.svg" />
+		<a href="https://www.gradescope.com/" target="_blank">Gradescope</a>
+	</div>
 </div>
 
 <style>
