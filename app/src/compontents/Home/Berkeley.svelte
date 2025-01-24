@@ -13,8 +13,8 @@
 		<a href="https://bcourses.berkeley.edu/" target="_blank">Bcourses</a>
 	</div>
 	<div class=" flex m-1">
-		<img alt="github logo" src="https://simpleicons.org/icons/googlecalendar.svg" />
-		<a href="https://calendar.google.com/calendar/u/0/r" target="_blank">Calender</a>
+		<img alt="github logo" src="https://simpleicons.org/icons/square.svg" />
+		<a href="https://edstem.org/us/dashboard" target="_blank">Ed Stem</a>
 	</div>
 
 	<div class=" flex m-1">

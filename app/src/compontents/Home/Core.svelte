@@ -48,4 +48,8 @@
 		<img alt="github logo" src="https://simpleicons.org/icons/googledrive.svg" />
 		<a href="https://drive.google.com/drive/u/0/home" target="_blank">Drive</a>
 	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/googlecalendar.svg" />
+		<a href="https://calendar.google.com/calendar/u/0/r" target="_blank">Calender</a>
+	</div>
 </div>
