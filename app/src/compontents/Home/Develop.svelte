@@ -17,6 +17,10 @@
 		<img alt="github logo" src="https://simpleicons.org/icons/kofi.svg" />
 		<a href="https://ko-fi.com/danielokita">Kofi</a>
 	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://simpleicons.org/icons/vercel.svg" />
+		<a href="https://math.berkeley.edu/~apaulin/1B%20(Spring%202025).html">Math 1B</a>
+	</div>
 </div>
 
 <style>

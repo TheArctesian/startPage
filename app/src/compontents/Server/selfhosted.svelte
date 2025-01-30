@@ -16,6 +16,10 @@
 		<img alt="github logo" src="https://simpleicons.org/icons/vercel.svg" />
 		<a href="https://photoprism.danielokita.com" target="_blank">Photoprism</a>
 	</div>
+	<div class=" flex m-1">
+		<img alt="github logo" src="https://img.icons8.com/ios-glyphs/344/circled-dot.png" />
+		<a href="http://www.eecs70.org/" target="_blank">CS70</a>
+	</div>
 </div>
 
 <style>
