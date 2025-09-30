@@ -1,9 +1,0 @@
-[Unit]
-Description=Runs the start page name on vite host
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/startpage
-User=arctesian
-[Install]
-WantedBy=multi-user.target

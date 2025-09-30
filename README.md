@@ -1,18 +1,38 @@
-# startPage 
+# sv
 
-## Overview 
-My personal start page
+Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
-https://codepilotsf.medium.com/how-to-deploy-a-sveltekit-node-app-1c11171fe852
-## Info
+## Creating a project
 
+If you're seeing this, you've probably already done this step. Congrats!
+
+```sh
+# create a new project in the current directory
+npx sv create
+
+# create a new project in my-app
+npx sv create my-app
 ```
-email (business)  : me@danielokita.com
-twitter           : @theArctesian
-discord           : 0xArctesian#8968
-telegram          : @TheArctesian
-signal            : @Arctesian
-```
-## <span style="color: red"> PSA!! </span>
 
-This project is licensed under [GPL-3](https://www.gnu.org/licenses/quick-guide-gplv3.html). If you have a problem with it cry about it. In short, any fork of this project must maintain the license and adhere to the 4 essential freedoms of free software as listed by the [FSF](https://www.gnu.org/philosophy/free-sw.en.html).
+## Developing
+
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+
+```sh
+npm run dev
+
+# or start the server and open the app in a new browser tab
+npm run dev -- --open
+```
+
+## Building
+
+To create a production version of your app:
+
+```sh
+npm run build
+```
+
+You can preview the production build with `npm run preview`.
+
+> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

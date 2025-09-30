@@ -1,0 +1,367 @@
+/**
+ * Nord Theme CSS Variables
+ * 
+ * A comprehensive color system based on the Nord color palette.
+ * Following UNIX philosophy: centralized, composable, and predictable.
+ * 
+ * Color Categories:
+ * - Polar Night (nord0-nord3): Dark backgrounds and UI elements
+ * - Snow Storm (nord4-nord6): Light text and foreground elements  
+ * - Frost (nord7-nord10): Blue accent colors for highlights and actions
+ * - Aurora (nord11-nord15): Status and semantic colors
+ */
+
+:root {
+  /* === POLAR NIGHT === */
+  /* Primary background colors - darkest to lightest */
+  --nord0: #2e3440;   /* Primary background */
+  --nord1: #3b4252;   /* Secondary background */
+  --nord2: #434c5e;   /* Elevated background */
+  --nord3: #4c566a;   /* Higher elevation, borders */
+
+  /* === SNOW STORM === */
+  /* Text and foreground colors - darkest to lightest */
+  --nord4: #d8dee9;   /* Secondary text */
+  --nord5: #e5e9f0;   /* Primary text */
+  --nord6: #eceff4;   /* Bright text, pure white alternative */
+
+  /* === FROST === */
+  /* Blue accent colors for interactive elements */
+  --nord7: #8fbcbb;   /* Muted cyan - subtle highlights */
+  --nord8: #88c0d0;   /* Bright cyan - primary actions */
+  --nord9: #81a1c1;   /* Blue - secondary actions */
+  --nord10: #5e81ac;  /* Dark blue - pressed states */
+
+  /* === AURORA === */
+  /* Semantic and status colors */
+  --nord11: #bf616a;  /* Red - errors, destructive actions */
+  --nord12: #d08770;  /* Orange - warnings, pending states */
+  --nord13: #ebcb8b;  /* Yellow - caution, information */
+  --nord14: #a3be8c;  /* Green - success, positive states */
+  --nord15: #b48ead;  /* Purple - special highlights, creativity */
+
+  /* === SEMANTIC COLOR MAPPINGS === */
+  /* Status Colors */
+  --color-error: var(--nord11);
+  --color-warning: var(--nord12);
+  --color-info: var(--nord13);
+  --color-success: var(--nord14);
+  --color-purple: var(--nord15);
+
+  /* Action Colors */
+  --color-primary: var(--nord8);
+  --color-primary-hover: var(--nord9);
+  --color-primary-active: var(--nord10);
+  --color-secondary: var(--nord7);
+  --color-destructive: var(--nord11);
+  --color-destructive-hover: #c14651;
+
+  /* Background System */
+  --bg-primary: var(--nord0);
+  --bg-secondary: var(--nord1);
+  --bg-elevated: var(--nord2);
+  --bg-highest: var(--nord3);
+
+  /* Text System */
+  --text-primary: var(--nord5);
+  --text-secondary: var(--nord4);
+  --text-bright: var(--nord6);
+  --text-muted: var(--nord3);
+
+  /* Border System */
+  --border-subtle: var(--nord3);
+  --border-default: #4c566a80;  /* nord3 with opacity */
+  --border-strong: var(--nord4);
+
+  /* Interactive States */
+  --hover-bg: var(--nord2);
+  --active-bg: var(--nord3);
+  --focus-ring: var(--nord8);
+  --selection-bg: var(--nord8);
+  --selection-text: var(--nord0);
+
+  /* === COMPONENT-SPECIFIC VARIABLES === */
+  /* Timer Colors */
+  --timer-active: var(--nord14);
+  --timer-paused: var(--nord13);
+  --timer-stopped: var(--nord4);
+  --timer-bg: var(--nord1);
+
+  /* Task Intensity Colors */
+  --intensity-1: var(--nord14);  /* Easy - Green */
+  --intensity-2: var(--nord7);   /* Light - Cyan */
+  --intensity-3: var(--nord8);   /* Medium - Blue */
+  --intensity-4: var(--nord12);  /* Hard - Orange */
+  --intensity-5: var(--nord11);  /* Extreme - Red */
+
+  /* Task Status Colors */
+  --status-todo: var(--nord4);
+  --status-inprogress: var(--nord8);
+  --status-review: var(--nord13);
+  --status-done: var(--nord14);
+
+  /* Project Colors (for categories) */
+  --project-work: var(--nord8);
+  --project-personal: var(--nord15);
+  --project-learning: var(--nord13);
+  --project-health: var(--nord14);
+
+  /* === LAYOUT VARIABLES === */
+  /* Spacing System (following 8px grid) */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+
+  /* Border Radius System */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.375rem;  /* 6px */
+  --radius-lg: 0.5rem;    /* 8px */
+  --radius-xl: 0.75rem;   /* 12px */
+  --radius-full: 9999px;
+
+  /* Shadow System */
+  --shadow-sm: 0 1px 2px 0 rgba(46, 52, 64, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(46, 52, 64, 0.1), 0 2px 4px -1px rgba(46, 52, 64, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(46, 52, 64, 0.1), 0 4px 6px -2px rgba(46, 52, 64, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(46, 52, 64, 0.1), 0 10px 10px -5px rgba(46, 52, 64, 0.04);
+
+  /* Typography System */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Animation Variables */
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  --transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Z-Index System */
+  --z-dropdown: 10;
+  --z-sidebar: 20;
+  --z-modal: 30;
+  --z-tooltip: 40;
+  --z-notification: 50;
+}
+
+/* === DARK MODE SUPPORT === */
+/* Additional variables for future dark mode toggle */
+[data-theme="light"] {
+  /* Invert the color system for light mode */
+  --bg-primary: var(--nord6);
+  --bg-secondary: var(--nord5);
+  --bg-elevated: var(--nord4);
+  --bg-highest: var(--nord3);
+
+  --text-primary: var(--nord1);
+  --text-secondary: var(--nord2);
+  --text-bright: var(--nord0);
+  --text-muted: var(--nord3);
+
+  --border-subtle: var(--nord4);
+  --border-default: #d8dee980;
+  --border-strong: var(--nord3);
+
+  --hover-bg: var(--nord5);
+  --active-bg: var(--nord4);
+}
+
+/* === UTILITY CLASSES === */
+/* Background utilities */
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-elevated { background-color: var(--bg-elevated); }
+.bg-highest { background-color: var(--bg-highest); }
+
+/* Text utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-bright { color: var(--text-bright); }
+.text-muted { color: var(--text-muted); }
+
+/* Status utilities */
+.text-error { color: var(--color-error); }
+.text-warning { color: var(--color-warning); }
+.text-info { color: var(--color-info); }
+.text-success { color: var(--color-success); }
+.text-purple { color: var(--color-purple); }
+
+/* Intensity utilities */
+.intensity-1 { color: var(--intensity-1); }
+.intensity-2 { color: var(--intensity-2); }
+.intensity-3 { color: var(--intensity-3); }
+.intensity-4 { color: var(--intensity-4); }
+.intensity-5 { color: var(--intensity-5); }
+
+.bg-intensity-1 { background-color: var(--intensity-1); }
+.bg-intensity-2 { background-color: var(--intensity-2); }
+.bg-intensity-3 { background-color: var(--intensity-3); }
+.bg-intensity-4 { background-color: var(--intensity-4); }
+.bg-intensity-5 { background-color: var(--intensity-5); }
+
+/* Border utilities */
+.border-subtle { border-color: var(--border-subtle); }
+.border-default { border-color: var(--border-default); }
+.border-strong { border-color: var(--border-strong); }
+
+/* Interactive utilities */
+.hover-lift {
+  transition: transform var(--transition-normal);
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+}
+
+.focus-ring {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Animation utilities */
+.transition-fast { transition: all var(--transition-fast); }
+.transition-normal { transition: all var(--transition-normal); }
+.transition-slow { transition: all var(--transition-slow); }
+.transition-bounce { transition: all var(--transition-bounce); }
+
+/* === COMPONENT BASE STYLES === */
+/* Button base styling */
+.btn-base {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  outline: none;
+}
+
+.btn-base:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--nord0);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  background-color: var(--color-primary-active);
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--nord0);
+}
+
+.btn-destructive {
+  background-color: var(--color-destructive);
+  color: var(--nord6);
+}
+
+.btn-destructive:hover {
+  background-color: var(--color-destructive-hover);
+}
+
+/* Card base styling */
+.card-base {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.card-base:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Input base styling */
+.input-base {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-normal);
+  outline: none;
+}
+
+.input-base:focus {
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 3px rgba(136, 192, 208, 0.1);
+}
+
+.input-base::placeholder {
+  color: var(--text-muted);
+}
+
+/* === ACCESSIBILITY ENHANCEMENTS === */
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border-default: var(--border-strong);
+    --text-secondary: var(--text-primary);
+  }
+  
+  .btn-base,
+  .card-base,
+  .input-base {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* === PRINT STYLES === */
+@media print {
+  :root {
+    --bg-primary: white;
+    --bg-secondary: white;
+    --bg-elevated: white;
+    --text-primary: black;
+    --text-secondary: #333;
+    --border-default: #ccc;
+  }
+  
+  .card-base {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
