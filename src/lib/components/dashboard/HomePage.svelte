@@ -6,6 +6,7 @@
 	import ProjectsTable from '$lib/components/projects/ProjectsTable.svelte';
 	import ProjectEditModal from '$lib/components/projects/ProjectEditModal.svelte';
 	import TaskCard from '$lib/components/tasks/TaskCard.svelte';
+	import { toasts } from '$lib/stores/toasts';
 	import type { ProjectWithDetails, ProjectStatus, TaskWithDetails } from '$lib/types/database';
 
 	export let onProjectSelect: (project: ProjectWithDetails) => void = () => {};
@@ -77,7 +78,7 @@
 			await loadProjects(true);
 		} catch (error) {
 			console.error('Error updating project status:', error);
-			// TODO: Show error toast
+			toasts.error('Project Update Failed', 'Unable to update project status. Please try again.');
 		}
 	}
 

@@ -489,6 +489,64 @@ export async function createQuickLink(linkData: NewQuickLink) {
   }
 }
 
+export async function updateQuickLink(linkId: number, updates: Partial<QuickLink>) {
+  isLoading.set(true);
+  clearError();
+  
+  try {
+    const response = await fetch(`/api/quick-links/${linkId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update quick link');
+    }
+    
+    const updatedLink = await response.json();
+    
+    // Update in store
+    quickLinks.update(list => 
+      list.map(link => link.id === linkId ? updatedLink : link)
+    );
+    
+    return updatedLink;
+  } catch (err) {
+    handleError(err, 'Failed to update quick link');
+    throw err;
+  } finally {
+    isLoading.set(false);
+  }
+}
+
+export async function deleteQuickLink(linkId: number) {
+  isLoading.set(true);
+  clearError();
+  
+  try {
+    const response = await fetch(`/api/quick-links/${linkId}`, {
+      method: 'DELETE'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete quick link');
+    }
+    
+    // Remove from store
+    quickLinks.update(list => list.filter(link => link.id !== linkId));
+    
+    return true;
+  } catch (err) {
+    handleError(err, 'Failed to delete quick link');
+    throw err;
+  } finally {
+    isLoading.set(false);
+  }
+}
+
 // UTILITY ACTIONS
 export function setSelectedTask(task: Task | null) {
   selectedTask.set(task);

@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import ProjectSidebar from '$lib/components/projects/ProjectSidebar.svelte';
 	import Timer from '$lib/components/timer/Timer.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 	import { 
 		sidebarState, 
 		sidebarActions, 
@@ -116,6 +117,9 @@
 			></div>
 		{/if}
 	</div>
+
+	<!-- Global Toast Notifications -->
+	<Toast />
 </div>
 
 <style>

@@ -70,7 +70,7 @@
   }
 
   function handleContextMenu(event: CustomEvent<{ project: ProjectNode; event: MouseEvent }>) {
-    // TODO: Implement context menu for project actions
+    // Context menu functionality not implemented
     console.log('Context menu for project:', event.detail.project.name);
   }
 

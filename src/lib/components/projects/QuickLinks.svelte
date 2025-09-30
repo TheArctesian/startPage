@@ -7,6 +7,8 @@
 		linkClick: { link: QuickLink };
 		linkEdit: { link: QuickLink };
 		linkDelete: { link: QuickLink };
+		linkUpdated: { link: QuickLink };
+		linkDeleted: { linkId: number };
 	}>();
 
 	// Component state
@@ -81,9 +83,29 @@
 	}
 
 	// Handle link click
-	function handleLinkClick(link: QuickLink) {
+	function handleLinkClick(link: QuickLink, event: MouseEvent) {
+		// Don't open link if clicking edit button
+		if ((event.target as HTMLElement)?.closest('.edit-btn')) {
+			return;
+		}
 		window.open(link.url, '_blank', 'noopener,noreferrer');
 		dispatch('linkClick', { link });
+	}
+
+	// Handle edit link
+	function handleEditClick(link: QuickLink, event: MouseEvent) {
+		event.stopPropagation();
+		dispatch('linkEdit', { link });
+	}
+
+	// Handle link updated
+	function handleLinkUpdated(event: CustomEvent<{ link: QuickLink }>) {
+		dispatch('linkUpdated', event.detail);
+	}
+
+	// Handle link deleted
+	function handleLinkDeleted(event: CustomEvent<{ linkId: number }>) {
+		dispatch('linkDeleted', event.detail);
 	}
 
 	// Handle keyboard shortcuts in add form
@@ -144,28 +166,39 @@
 					<!-- Links Grid -->
 					<div class="links-grid">
 						{#each projectLinks as link (link.id)}
-							<button
-								class="link-card"
-								onclick={() => handleLinkClick(link)}
-								title="Open {link.title} - {getDomainFromUrl(link.url)}"
-								aria-label="Open {link.title}"
-							>
-								<div class="link-icon">
-									{#if link.icon}
-										<span class="custom-icon">{link.icon}</span>
-									{:else}
-										{@const category = categories.find((c) => c.id === (link.category || 'other'))}
-										<span class="default-icon" style="color: {category?.color}">
-											{category?.icon}
-										</span>
-									{/if}
-								</div>
+							<div class="link-card-wrapper">
+								<button
+									class="link-card"
+									onclick={(e) => handleLinkClick(link, e)}
+									title="Open {link.title} - {getDomainFromUrl(link.url)}"
+									aria-label="Open {link.title}"
+								>
+									<div class="link-icon">
+										{#if link.icon}
+											<span class="custom-icon">{link.icon}</span>
+										{:else}
+											{@const category = categories.find((c) => c.id === (link.category || 'other'))}
+											<span class="default-icon" style="color: {category?.color}">
+												{category?.icon}
+											</span>
+										{/if}
+									</div>
 
-								<div class="link-details">
-									<div class="link-title">{link.title}</div>
-									<div class="link-domain">{getDomainFromUrl(link.url)}</div>
-								</div>
-							</button>
+									<div class="link-details">
+										<div class="link-title">{link.title}</div>
+										<div class="link-domain">{getDomainFromUrl(link.url)}</div>
+									</div>
+								</button>
+
+								<button
+									class="edit-btn"
+									onclick={(e) => handleEditClick(link, e)}
+									title="Edit {link.title}"
+									aria-label="Edit {link.title}"
+								>
+									✎
+								</button>
+							</div>
 						{/each}
 
 						<!-- Add New Link Button -->
@@ -362,8 +395,8 @@
 	.quicklinks-container {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
-		overflow: hidden;
+		min-height: 100%;
+		overflow: visible;
 	}
 
 	/* Grid View Styles */
@@ -378,6 +411,12 @@
 		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 		gap: 1rem;
 		align-items: start;
+	}
+
+	.link-card-wrapper {
+		position: relative;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.link-card {
@@ -475,6 +514,41 @@
 		font-weight: 500;
 	}
 
+	.edit-btn {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		width: 1.75rem;
+		height: 1.75rem;
+		border: none;
+		border-radius: 0.25rem;
+		background: rgba(0, 0, 0, 0.6);
+		color: white;
+		cursor: pointer;
+		font-size: 0.75rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transition: all 0.2s ease;
+		z-index: 2;
+	}
+
+	.link-card-wrapper:hover .edit-btn {
+		opacity: 1;
+	}
+
+	.edit-btn:hover {
+		background: var(--nord8);
+		transform: scale(1.1);
+	}
+
+	.edit-btn:focus {
+		opacity: 1;
+		outline: 2px solid var(--nord8);
+		outline-offset: 2px;
+	}
+
 	/* Empty and No Project States */
 	.empty-state {
 		display: flex;
@@ -530,7 +604,7 @@
 	.add-form-container {
 		flex: 1;
 		overflow-y: auto;
-		padding: 1.5rem;
+		min-height: 0;
 	}
 
 	.form-header {
@@ -539,6 +613,7 @@
 		justify-content: space-between;
 		margin-bottom: 1rem;
 		border-bottom: 1px solid var(--nord3);
+		padding: 1.5rem 1.5rem 1rem;
 	}
 
 	.form-title {
@@ -569,7 +644,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-		max-width: 500px;
+		padding: 0 1.5rem 1.5rem;
 	}
 
 	.form-group {

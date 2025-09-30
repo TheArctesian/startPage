@@ -4,7 +4,9 @@
 	import TaskCompletionModal from '$lib/components/tasks/TaskCompletionModal.svelte';
 	import AnalyticsDashboard from '$lib/components/analytics/AnalyticsDashboard.svelte';
 	import ReportsView from '$lib/components/analytics/ReportsView.svelte';
+	import ConfirmationModal from '$lib/components/ui/ConfirmationModal.svelte';
 	import { setSelectedTask } from '$lib/stores';
+	import { toasts } from '$lib/stores/toasts';
 	import { responsiveActions } from '$lib/stores/sidebar';
 	import {
 		initializeDefaultShortcuts,
@@ -21,7 +23,9 @@
 	let showCompletionModal = false;
 	let showAnalytics = false;
 	let showReports = false;
+	let showDeleteConfirmation = false;
 	let taskToComplete: TaskWithDetails | null = null;
+	let taskToDelete: TaskWithDetails | null = null;
 
 	// Handle task selection from board
 	function handleTaskSelect(event: CustomEvent<{ task: TaskWithDetails }>) {
@@ -42,8 +46,9 @@
 
 	// Handle task deletion
 	function handleTaskDelete(event: CustomEvent<{ task: TaskWithDetails }>) {
-		// TODO: Show confirmation modal
-		console.log('Delete task:', event.detail.task);
+		taskToDelete = event.detail.task;
+		showDeleteConfirmation = true;
+		setKeyboardContext('modal');
 	}
 
 	// Keyboard shortcut handlers
@@ -59,6 +64,10 @@
 		} else if (showCompletionModal) {
 			showCompletionModal = false;
 			taskToComplete = null;
+			setKeyboardContext(null);
+		} else if (showDeleteConfirmation) {
+			showDeleteConfirmation = false;
+			taskToDelete = null;
 			setKeyboardContext(null);
 		}
 	}
@@ -101,7 +110,7 @@
 			}
 		} catch (error) {
 			console.error('Error completing task:', error);
-			// TODO: Show error toast
+			toasts.error('Task Completion Failed', 'Unable to complete the task. Please try again.');
 		}
 	}
 
@@ -109,6 +118,43 @@
 	function handleCompletionCancel() {
 		showCompletionModal = false;
 		taskToComplete = null;
+		setKeyboardContext(null);
+	}
+
+	// Handle delete confirmation
+	async function handleDeleteConfirm() {
+		if (!taskToDelete) return;
+
+		try {
+			const response = await fetch(`/api/tasks/${taskToDelete.id}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to delete task');
+			}
+
+			toasts.success('Task Deleted', `"${taskToDelete.title}" has been deleted successfully.`);
+			
+			// Dispatch event to refresh data
+			if (browser) {
+				const refreshEvent = new CustomEvent('task-deleted', { detail: { taskId: taskToDelete.id } });
+				document.dispatchEvent(refreshEvent);
+			}
+		} catch (error) {
+			console.error('Error deleting task:', error);
+			toasts.error('Delete Failed', 'Unable to delete the task. Please try again.');
+		} finally {
+			showDeleteConfirmation = false;
+			taskToDelete = null;
+			setKeyboardContext(null);
+		}
+	}
+
+	// Handle delete confirmation cancel
+	function handleDeleteCancel() {
+		showDeleteConfirmation = false;
+		taskToDelete = null;
 		setKeyboardContext(null);
 	}
 
@@ -220,6 +266,19 @@
 		task={taskToComplete}
 		on:complete={handleTaskCompleted}
 		on:cancel={handleCompletionCancel}
+	/>
+
+	<!-- Delete Confirmation Modal -->
+	<ConfirmationModal
+		bind:isOpen={showDeleteConfirmation}
+		title="Delete Task"
+		message={taskToDelete ? `Are you sure you want to delete "${taskToDelete.title}"? This action cannot be undone.` : 'Are you sure you want to delete this task?'}
+		confirmText="Delete"
+		cancelText="Cancel"
+		confirmVariant="danger"
+		icon="🗑"
+		on:confirm={handleDeleteConfirm}
+		on:cancel={handleDeleteCancel}
 	/>
 
 	<!-- Analytics Dashboard -->

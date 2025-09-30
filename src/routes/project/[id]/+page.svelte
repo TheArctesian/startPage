@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Timer from '$lib/components/timer/Timer.svelte';
 	import QuickLinks from '$lib/components/projects/QuickLinks.svelte';
+	import QuickLinkEditModal from '$lib/components/projects/QuickLinkEditModal.svelte';
 	import ProjectEditModal from '$lib/components/projects/ProjectEditModal.svelte';
 	import ProjectTree from '$lib/components/projects/ProjectTree.svelte';
 	import KanbanBoard from '$lib/components/tasks/KanbanBoard.svelte';
@@ -8,11 +9,14 @@
 	import TaskCompletionModal from '$lib/components/tasks/TaskCompletionModal.svelte';
 	import AnalyticsDashboard from '$lib/components/analytics/AnalyticsDashboard.svelte';
 	import ReportsView from '$lib/components/analytics/ReportsView.svelte';
+	import { toasts } from '$lib/stores/toasts';
 	import {
 		setActiveProject,
 		setSelectedTask,
 		activeProjectQuickLinks,
 		deleteTask,
+		updateQuickLink,
+		deleteQuickLink,
 		isTimerRunning,
 		selectedTask
 	} from '$lib/stores';
@@ -24,7 +28,7 @@
 	} from '$lib/stores/keyboard';
 	import { navigateToProject } from '$lib/utils/navigation';
 	import { responsiveActions } from '$lib/stores/sidebar';
-	import type { TaskWithDetails, ProjectWithDetails, ProjectStatus } from '$lib/types/database';
+	import type { TaskWithDetails, ProjectWithDetails, ProjectStatus, QuickLink } from '$lib/types/database';
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
@@ -42,7 +46,9 @@
 	let showReports = false;
 	let showProjectEdit = false;
 	let showQuickLinkModal = false;
+	let showQuickLinkEdit = false;
 	let taskToComplete: TaskWithDetails | null = null;
+	let linkToEdit: QuickLink | null = null;
 	let subProjects: ProjectWithDetails[] = [];
 
 	// Handle task selection from board
@@ -147,7 +153,7 @@
 			}
 		} catch (error) {
 			console.error('Error completing task:', error);
-			// TODO: Show error toast
+			toasts.error('Task Completion Failed', 'Unable to complete the task. Please try again.');
 		}
 	}
 
@@ -178,6 +184,32 @@
 
 	function handleShowQuickLinkModal() {
 		showQuickLinkModal = true;
+	}
+
+	// Handle quick link edit
+	function handleQuickLinkEdit(event: CustomEvent<{ link: QuickLink }>) {
+		linkToEdit = event.detail.link;
+		showQuickLinkEdit = true;
+	}
+
+	// Handle quick link updated
+	function handleQuickLinkUpdated(event: CustomEvent<{ link: QuickLink }>) {
+		showQuickLinkEdit = false;
+		linkToEdit = null;
+		// The store is automatically updated by the updateQuickLink action
+	}
+
+	// Handle quick link deleted
+	function handleQuickLinkDeleted(event: CustomEvent<{ linkId: number }>) {
+		showQuickLinkEdit = false;
+		linkToEdit = null;
+		// The store is automatically updated by the deleteQuickLink action
+	}
+
+	// Close quick link edit modal
+	function handleCloseQuickLinkEdit() {
+		showQuickLinkEdit = false;
+		linkToEdit = null;
 	}
 
 	// Function to extract domain from URL for favicon service
@@ -250,7 +282,7 @@
 			}
 		} catch (error) {
 			console.error('Error updating project status:', error);
-			// TODO: Show error toast
+			toasts.error('Project Update Failed', 'Unable to update project status. Please try again.');
 		}
 	}
 
@@ -484,6 +516,15 @@
 		}}
 	/>
 
+	<!-- QuickLink Edit Modal -->
+	<QuickLinkEditModal
+		bind:isOpen={showQuickLinkEdit}
+		link={linkToEdit}
+		on:close={handleCloseQuickLinkEdit}
+		on:updated={handleQuickLinkUpdated}
+		on:deleted={handleQuickLinkDeleted}
+	/>
+
 	<!-- QuickLinks Modal -->
 	{#if showQuickLinkModal}
 		<div
@@ -507,7 +548,11 @@
 					</button>
 				</div>
 				<div class="quicklinks-wrapper">
-					<QuickLinks />
+					<QuickLinks
+						on:linkEdit={handleQuickLinkEdit}
+						on:linkUpdated={handleQuickLinkUpdated}
+						on:linkDeleted={handleQuickLinkDeleted}
+					/>
 				</div>
 			</div>
 		</div>
@@ -825,7 +870,8 @@
 
 	.quicklinks-wrapper {
 		flex: 1;
-		overflow: hidden;
+		overflow: auto;
+		min-height: 0;
 	}
 
 	.sub-projects-section {
