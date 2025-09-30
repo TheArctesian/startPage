@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { fly, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { quintOut, backOut } from 'svelte/easing';
   import TaskCard from './TaskCard.svelte';
   import TaskForm from './TaskForm.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   import { todoTasks, inProgressTasks, doneTasks, updateTask } from '$lib/stores';
   import type { TaskWithDetails, TaskStatus } from '$lib/types/database';
 
@@ -30,24 +31,41 @@
     }
   }
 
+  // Mobile detection and swipe state
+  let isMobile = false;
+  let currentColumnIndex = 0;
+  let touchStartX = 0;
+  let touchEndX = 0;
+  let isSwiping = false;
+  let swipeOffset = 0;
+
+  onMount(() => {
+    isMobile = window.innerWidth < 768;
+    const handleResize = () => {
+      isMobile = window.innerWidth < 768;
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  });
+
   // Column definitions
   const columns = [
     {
       id: 'todo' as TaskStatus,
       title: 'To Do',
-      icon: '○',
+      icon: 'circle-empty',
       addButtonText: 'Add Task'
     },
     {
       id: 'in_progress' as TaskStatus,
       title: 'In Progress',
-      icon: '◐',
+      icon: 'circle-progress',
       addButtonText: 'Start Task'
     },
     {
       id: 'done' as TaskStatus,
       title: 'Done',
-      icon: '●',
+      icon: 'circle-check',
       addButtonText: null // No add button for done column
     }
   ] as const;
@@ -199,6 +217,60 @@
       timeFormatted: formatTime(totalTime)
     };
   }
+
+  // Mobile swipe handlers
+  function handleTouchStart(e: TouchEvent) {
+    if (!isMobile || typeof window === 'undefined') return;
+    touchStartX = e.touches[0].clientX;
+    isSwiping = true;
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (!isMobile || !isSwiping || typeof window === 'undefined') return;
+    const currentX = e.touches[0].clientX;
+    swipeOffset = currentX - touchStartX;
+    
+    // Add resistance at edges
+    if ((currentColumnIndex === 0 && swipeOffset > 0) || 
+        (currentColumnIndex === columns.length - 1 && swipeOffset < 0)) {
+      swipeOffset *= 0.3;
+    }
+  }
+
+  function handleTouchEnd(e: TouchEvent) {
+    if (!isMobile || !isSwiping || typeof window === 'undefined') return;
+    
+    touchEndX = e.changedTouches[0].clientX;
+    const swipeDistance = touchEndX - touchStartX;
+    const threshold = 50; // minimum swipe distance
+    
+    if (Math.abs(swipeDistance) > threshold) {
+      if (swipeDistance > 0 && currentColumnIndex > 0) {
+        currentColumnIndex--;
+      } else if (swipeDistance < 0 && currentColumnIndex < columns.length - 1) {
+        currentColumnIndex++;
+      }
+    }
+    
+    swipeOffset = 0;
+    isSwiping = false;
+  }
+
+  function navigateColumn(direction: number) {
+    const newIndex = currentColumnIndex + direction;
+    if (newIndex >= 0 && newIndex < columns.length) {
+      currentColumnIndex = newIndex;
+    }
+  }
+
+  // Handle task movement from mobile TaskCard
+  function handleTaskMove(event: CustomEvent<{ task: TaskWithDetails; newStatus: TaskStatus }>) {
+    const { task, newStatus } = event.detail;
+    updateTask(task.id, { 
+      status: newStatus,
+      boardColumn: newStatus
+    });
+  }
 </script>
 
 <div class="kanban-board">
@@ -214,29 +286,83 @@
     </button>
   </div>
 
-  <!-- Kanban Columns -->
-  <div class="kanban-columns">
-    {#each columns as column}
-      {#key [allTodoTasks, allInProgressTasks, allDoneTasks]}
-        {@const columnTasks = getTasksForColumn(column.id)}
-        {@const stats = getColumnStats(columnTasks)}
-        {#if typeof console !== 'undefined'}
-          {@html console.log(`🔄 Column ${column.title} - columnTasks:`, columnTasks.length, columnTasks) || ''}
-        {/if}
-      
-      <div 
-        class="kanban-column column-{column.id}"
-        class:drag-over={draggedOverColumn === column.id}
-        ondragover={(e) => handleColumnDragOver(e, column.id)}
-        ondrop={(e) => handleColumnDrop(e, column.id)}
+  <!-- Mobile Column Indicators -->
+  {#if isMobile}
+    <div class="mobile-indicators">
+      <div class="mobile-indicators-left">
+        {#each columns as column, index}
+          {@const columnTasks = getTasksForColumn(column.id)}
+          <button 
+            class="indicator-dot" 
+            class:active={currentColumnIndex === index}
+            onclick={() => currentColumnIndex = index}
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                currentColumnIndex = index;
+              }
+            }}
+            aria-label="{column.title} ({columnTasks.length} tasks)"
+            title="{column.title} ({columnTasks.length} tasks)"
+          >
+            <Icon name={column.icon} size={16} color={currentColumnIndex === index ? 'white' : 'var(--nord4)'} />
+            {#if columnTasks.length > 0}
+              <span class="indicator-count indicator-count-{column.id}">
+                {columnTasks.length}
+              </span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+      <button 
+        class="mobile-add-task-btn"
+        onclick={() => openNewTaskForm()}
+        title="Add new task"
+        aria-label="Add new task"
       >
-        <!-- Column Header -->
-        <div class="column-header">
-          <div class="column-title-row">
-            <div class="column-title-left">
-              <span class="column-icon">{column.icon}</span>
-              <h3 class="column-name">{column.title}</h3>
-            </div>
+        +
+      </button>
+    </div>
+  {/if}
+
+  <!-- Kanban Wrapper -->
+  <div class="kanban-wrapper" class:mobile={isMobile}>
+    <div 
+      class="kanban-columns"
+      class:mobile-columns={isMobile}
+      style={isMobile ? `transform: translateX(calc(-${currentColumnIndex * 33.333}% + ${swipeOffset}px))` : ''}
+      ontouchstart={isMobile && typeof window !== 'undefined' ? handleTouchStart : undefined}
+      ontouchmove={isMobile && typeof window !== 'undefined' ? handleTouchMove : undefined}
+      ontouchend={isMobile && typeof window !== 'undefined' ? handleTouchEnd : undefined}
+    >
+      {#each columns as column, index}
+        {#key [allTodoTasks, allInProgressTasks, allDoneTasks]}
+          {@const columnTasks = getTasksForColumn(column.id)}
+          {@const stats = getColumnStats(columnTasks)}
+          {#if typeof console !== 'undefined'}
+            {@html console.log(`🔄 Column ${column.title} - columnTasks:`, columnTasks.length, columnTasks) || ''}
+          {/if}
+        
+        <!-- Show all columns on desktop, and all columns on mobile for swipe -->
+        {#if !isMobile || true}
+          <div 
+            class="kanban-column column-{column.id}"
+            class:drag-over={draggedOverColumn === column.id}
+            class:active-mobile={isMobile && index === currentColumnIndex}
+            role="region"
+            aria-label="{column.title} tasks"
+            ondragover={(e) => handleColumnDragOver(e, column.id)}
+            ondrop={(e) => handleColumnDrop(e, column.id)}
+          >
+            <!-- Column Header -->
+            <div class="column-header">
+              <div class="column-title-row">
+                <div class="column-title-left">
+                  <span class="column-icon">
+                    <Icon name={column.icon} size={20} color="var(--nord6)" />
+                  </span>
+                  <h3 class="column-name">{column.title}</h3>
+                </div>
             <div class="column-stats-inline">
               <span class="task-count">{stats.count}</span>
               {#if stats.time > 0}
@@ -249,11 +375,12 @@
         </div>
 
         <!-- Tasks List -->
-        <div class="tasks-list">
+        <div class="tasks-list" role="list">
           {#each columnTasks as task, index (task.id)}
             <div
               class="task-item kanban-task-card"
               class:moving={draggedTask?.id === task.id}
+              role="listitem"
               animate:flip={{ duration: 400, easing: quintOut }}
               in:fly={{ x: -30, duration: 300, easing: backOut }}
               out:fly={{ x: 30, duration: 200, easing: quintOut }}
@@ -270,6 +397,7 @@
                 on:edit={() => openEditTaskForm(task)}
                 on:complete={() => handleTaskComplete(task)}
                 on:delete={() => handleTaskDelete(task)}
+                on:move={handleTaskMove}
                 on:dragstart={(e) => handleDragStart(task, e.detail.event)}
                 on:dragend={handleDragEnd}
               />
@@ -283,7 +411,9 @@
               in:scale={{ duration: 300, easing: backOut, start: 0.8 }}
               out:scale={{ duration: 200, easing: quintOut, start: 0.8 }}
             >
-              <div class="empty-icon">{column.icon}</div>
+              <div class="empty-icon">
+                <Icon name={column.icon} size={48} color="var(--nord3)" />
+              </div>
               <p class="empty-text">No tasks in {column.title.toLowerCase()}</p>
               {#if column.addButtonText}
                 <button 
@@ -306,11 +436,52 @@
               + Add Task
             </button>
           {/if}
-        </div>
-      </div>
-      {/key}
-    {/each}
+          </div>
+          </div>
+          {/if}
+        {/key}
+      {/each}
+    </div>
   </div>
+
+  <!-- Mobile Bottom Navigation -->
+  {#if isMobile}
+    <div class="mobile-bottom-nav">
+      <button 
+        class="nav-arrow nav-prev" 
+        disabled={currentColumnIndex === 0}
+        onclick={() => navigateColumn(-1)}
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            navigateColumn(-1);
+          }
+        }}
+        title="Previous column"
+        aria-label="Previous column"
+      >
+        <Icon name="arrow-left" size={20} color={currentColumnIndex === 0 ? 'var(--nord3)' : 'var(--nord6)'} />
+      </button>
+      <span class="current-column-name">
+        {columns[currentColumnIndex].title}
+      </span>
+      <button 
+        class="nav-arrow nav-next" 
+        disabled={currentColumnIndex === columns.length - 1}
+        onclick={() => navigateColumn(1)}
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            navigateColumn(1);
+          }
+        }}
+        title="Next column"
+        aria-label="Next column"
+      >
+        <Icon name="arrow-right" size={20} color={currentColumnIndex === columns.length - 1 ? 'var(--nord3)' : 'var(--nord6)'} />
+      </button>
+    </div>
+  {/if}
 </div>
 
 <!-- Task Form Modal -->
@@ -327,9 +498,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    width: 100%;
-    gap: 1.5rem;
-    padding: 1rem;
+    gap: 0.5rem;
     background: var(--nord0);
     box-sizing: border-box;
   }
@@ -339,11 +508,12 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.25rem 1.5rem;
+    margin: 1rem;
+    margin-bottom: 0;
     background: var(--nord1);
     border: 1px solid var(--nord3);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-lg);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    width: 100%;
     box-sizing: border-box;
   }
 
@@ -358,7 +528,7 @@
   .btn {
     padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-lg);
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
@@ -405,13 +575,14 @@
     width: 100%;
     min-height: 0;
     height: 600px; /* Fixed height for proper layout */
+    padding: 1rem;
     box-sizing: border-box;
   }
 
   .kanban-column {
     background: var(--nord1);
     border: 1px solid var(--nord3);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
     transition: all 0.2s ease;
@@ -503,7 +674,7 @@
     color: var(--nord8);
     background: rgba(129, 161, 193, 0.1);
     padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-md);
     font-weight: 600;
     font-size: 0.8125rem;
   }
@@ -547,7 +718,7 @@
   .add-task-btn {
     padding: 0.75rem;
     border: 2px dashed var(--nord3);
-    border-radius: 0.375rem;
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--nord4);
     font-size: 0.875rem;
@@ -562,17 +733,226 @@
     background: rgba(129, 161, 193, 0.05);
   }
 
-  /* Responsive design */
-  @media (max-width: 1024px) {
+  .kanban-wrapper {
+    background: var(--nord1);
+    border: 1px solid var(--nord3);
+    border-radius: var(--radius-lg);
+    margin: 1rem;
+    flex: 1;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  /* Mobile Styles */
+  .kanban-wrapper.mobile {
+    overflow: hidden;
+    position: relative;
+    flex: 1;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .kanban-columns.mobile-columns {
+    display: flex;
+    transition: transform 0.3s ease-out;
+    width: 300%; /* 3 columns × 100% */
+    height: 100%;
+    grid-template-columns: none;
+    grid-template-rows: none;
+  }
+
+  .mobile-columns .kanban-column {
+    width: 33.333%; /* Each column takes 1/3 of total width */
+    grid-row: auto !important;
+    grid-column: auto !important;
+    flex-shrink: 0;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .mobile-indicators {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin: 1rem;
+    margin-bottom: 0;
+    background: var(--nord1);
+    border: 1px solid var(--nord3);
+    border-radius: var(--radius-lg);
+  }
+
+  .mobile-indicators-left {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .indicator-dot {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 2px solid var(--nord3);
+    background: var(--nord2);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .indicator-dot.active {
+    background: var(--nord8);
+    border-color: var(--nord8);
+    transform: scale(1.1);
+  }
+
+  .indicator-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    min-width: 1.25rem;
+    text-align: center;
+  }
+
+  /* Color coding for task count badges */
+  .indicator-count-todo {
+    background: var(--nord12); /* Orange */
+  }
+
+  .indicator-count-in_progress {
+    background: var(--nord14); /* Green */
+  }
+
+  .indicator-count-done {
+    background: var(--nord3); /* Gray */
+    color: var(--nord6); /* Better contrast for gray background */
+  }
+
+  .mobile-add-task-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--nord8);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-add-task-btn:hover {
+    background: var(--nord9);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-bottom-nav {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--nord1);
+    border-top: 1px solid var(--nord3);
+  }
+
+  .nav-arrow {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--nord2);
+    border: 1px solid var(--nord3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-arrow:not(:disabled):hover {
+    background: var(--nord3);
+    transform: scale(1.05);
+  }
+
+  .nav-arrow:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .current-column-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--nord6);
+  }
+
+  /* Responsive Breakpoints */
+  @media (max-width: 767px) {
+    .mobile-indicators {
+      display: flex;
+    }
+
+    .mobile-bottom-nav {
+      display: flex;
+    }
+
+    /* Hide desktop grid positioning */
+    .column-todo { grid-row: auto !important; grid-column: auto !important; }
+    .column-in_progress { grid-row: auto !important; grid-column: auto !important; }
+    .column-done { grid-row: auto !important; grid-column: auto !important; }
+
+    /* Hide desktop add button on mobile - using inline button instead */
+    .board-header .btn-primary {
+      display: none;
+    }
+
+    .kanban-board {
+      gap: 0.75rem;
+      margin: 1rem;
+      overflow-x: hidden;
+    }
+
+    .board-header {
+      padding: 1rem;
+      margin-bottom: 0;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
     .kanban-columns {
-      grid-template-columns: 1fr;
-      gap: 1rem;
+      padding: 0;
     }
 
     .kanban-column {
-      min-height: 300px;
+      padding: 1rem;
+      margin: 0;
     }
 
+    .tasks-list {
+      padding: 0.5rem;
+    }
+
+    .board-title {
+      text-align: center;
+    }
+  }
+
+  /* Tablet - Keep Desktop Grid */
+  @media (min-width: 768px) and (max-width: 1024px) {
     .board-header {
       flex-direction: column;
       align-items: stretch;
@@ -584,29 +964,6 @@
     }
   }
 
-  @media (max-width: 640px) {
-    .kanban-board {
-      gap: 0.5rem;
-    }
-
-    .column-header {
-      padding: 0.75rem;
-    }
-
-    .tasks-list {
-      padding: 0.75rem;
-    }
-
-    .task-count {
-      font-size: 0.625rem;
-      padding: 0.125rem 0.375rem;
-    }
-  }
-
-  /* Drag and drop visual feedback */
-  .task-item:has(.task-card[draggable="true"]:hover) {
-    transform: rotate(1deg);
-  }
 
   /* High contrast mode */
   @media (prefers-contrast: high) {

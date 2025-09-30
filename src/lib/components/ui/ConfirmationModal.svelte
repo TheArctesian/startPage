@@ -60,10 +60,16 @@
 	<div
 		class="confirmation-modal"
 		onclick={handleBackdropClick}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') {
+				dispatch('cancel');
+			}
+		}}
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="confirmation-title"
 		aria-describedby="confirmation-message"
+		tabindex="-1"
 	>
 		<div class="modal-content">
 			<div class="modal-header">

@@ -192,6 +192,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="task-form-title"
+    tabindex="-1"
   >
     <div class="modal-content">
       <!-- Header -->

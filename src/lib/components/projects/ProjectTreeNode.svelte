@@ -70,6 +70,7 @@
   role="treeitem"
   tabindex="0"
   aria-expanded={hasChildren ? node.isExpanded : undefined}
+  aria-selected={isActive}
   aria-label="Project: {node.breadcrumb}"
   onclick={handleClick}
   oncontextmenu={handleRightClick}

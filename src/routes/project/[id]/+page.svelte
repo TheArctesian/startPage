@@ -3,6 +3,7 @@
 	import QuickLinks from '$lib/components/projects/QuickLinks.svelte';
 	import QuickLinkEditModal from '$lib/components/projects/QuickLinkEditModal.svelte';
 	import ProjectEditModal from '$lib/components/projects/ProjectEditModal.svelte';
+	import ProjectCreateModal from '$lib/components/projects/ProjectCreateModal.svelte';
 	import ProjectTree from '$lib/components/projects/ProjectTree.svelte';
 	import KanbanBoard from '$lib/components/tasks/KanbanBoard.svelte';
 	import ShortcutsHelp from '$lib/components/keyboard/ShortcutsHelp.svelte';
@@ -28,7 +29,12 @@
 	} from '$lib/stores/keyboard';
 	import { navigateToProject } from '$lib/utils/navigation';
 	import { responsiveActions } from '$lib/stores/sidebar';
-	import type { TaskWithDetails, ProjectWithDetails, ProjectStatus, QuickLink } from '$lib/types/database';
+	import type {
+		TaskWithDetails,
+		ProjectWithDetails,
+		ProjectStatus,
+		QuickLink
+	} from '$lib/types/database';
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
@@ -47,6 +53,7 @@
 	let showProjectEdit = false;
 	let showQuickLinkModal = false;
 	let showQuickLinkEdit = false;
+	let showSubProjectModal = false;
 	let taskToComplete: TaskWithDetails | null = null;
 	let linkToEdit: QuickLink | null = null;
 	let subProjects: ProjectWithDetails[] = [];
@@ -100,7 +107,6 @@
 			setKeyboardContext('modal');
 		}
 	}
-
 
 	function handleEscape() {
 		if (showShortcutsHelp) {
@@ -206,6 +212,27 @@
 		// The store is automatically updated by the deleteQuickLink action
 	}
 
+	// Handle show sub-project modal
+	function handleShowSubProjectModal() {
+		showSubProjectModal = true;
+	}
+
+	// Handle sub-project created
+	function handleSubProjectCreated(event: CustomEvent<{ project: ProjectWithDetails }>) {
+		showSubProjectModal = false;
+		// Refresh sub-projects list
+		loadSubProjects();
+		toasts.success(
+			'Sub-project Created',
+			`"${event.detail.project.name}" has been added as a sub-project.`
+		);
+	}
+
+	// Handle sub-project modal close
+	function handleSubProjectModalClose() {
+		showSubProjectModal = false;
+	}
+
 	// Close quick link edit modal
 	function handleCloseQuickLinkEdit() {
 		showQuickLinkEdit = false;
@@ -223,7 +250,6 @@
 			return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%23ddd"/><text x="50" y="50" font-family="Arial" font-size="50" text-anchor="middle" dominant-baseline="middle" fill="%23555">?</text></svg>';
 		}
 	}
-
 
 	// Load sub-projects for the current project
 	async function loadSubProjects() {
@@ -245,8 +271,15 @@
 		}
 	}
 
+	// Load sub-projects on mount and when project changes
+	onMount(() => {
+		if (data.project) {
+			loadSubProjects();
+		}
+	});
+
 	// Reactive statement to reload sub-projects when project changes
-	$: if (data.project) {
+	$: if (browser && data.project) {
 		loadSubProjects();
 	} else {
 		subProjects = [];
@@ -370,8 +403,8 @@
 	<!-- Main Content -->
 	<main class="main-content">
 		<div class="page-content">
-				<!-- Project Tree -->
-				{#if data.project}
+			<!-- Project Tree -->
+			{#if data.project}
 				<div class="project-header">
 					<div class="project-title-row">
 						<h1 class="project-title">
@@ -442,39 +475,50 @@
 						</div>
 					</div>
 
-					{#if subProjects.length > 0}
-						<div class="sub-projects-section">
-							<h2 class="sub-projects-title">Sub-projects</h2>
-							<div class="sub-projects-grid">
-								{#each subProjects as subProject (subProject.id)}
-									<button
-										class="sub-project-card"
-										onclick={() => navigateToProject(subProject)}
-										title="Navigate to {subProject.name}"
+					<!-- Sub-projects Section -->
+					<div class="sub-projects-section">
+						<h2 class="sub-projects-title">Sub-projects</h2>
+
+						<div class="sub-projects-grid">
+							{#each subProjects as subProject (subProject.id)}
+								<button
+									class="sub-project-card"
+									onclick={() => navigateToProject(subProject)}
+									title="Navigate to {subProject.name}"
+								>
+									<div
+										class="sub-project-indicator"
+										style="background-color: {subProject.color || 'var(--nord8)'}"
 									>
-										<div
-											class="sub-project-indicator"
-											style="background-color: {subProject.color || 'var(--nord8)'}"
-										>
-											{#if subProject.icon}
-												<span class="sub-project-icon">{subProject.icon}</span>
-											{:else}
-												<div class="sub-project-dot"></div>
-											{/if}
-										</div>
-										<div class="sub-project-content">
-											<div class="sub-project-name">{subProject.name}</div>
-											{#if subProject.totalTasks && subProject.totalTasks > 0}
-												<div class="sub-project-stats">
-													{subProject.completedTasks || 0}/{subProject.totalTasks} tasks
-												</div>
-											{/if}
-										</div>
-									</button>
-								{/each}
-							</div>
+										{#if subProject.icon}
+											<span class="sub-project-icon">{subProject.icon}</span>
+										{:else}
+											<div class="sub-project-dot"></div>
+										{/if}
+									</div>
+									<div class="sub-project-content">
+										<div class="sub-project-name">{subProject.name}</div>
+										{#if subProject.totalTasks && subProject.totalTasks > 0}
+											<div class="sub-project-stats">
+												{subProject.completedTasks || 0}/{subProject.totalTasks} tasks
+											</div>
+										{/if}
+									</div>
+								</button>
+							{/each}
+
+							<!-- Add Sub-project Button -->
+							<button class="add-subproject-btn" onclick={handleShowSubProjectModal}>
+								<div class="add-subproject-indicator">
+									<span class="add-subproject-icon">+</span>
+								</div>
+								<div class="add-subproject-content">
+									<div class="add-subproject-name">Add Sub-project</div>
+									<div class="add-subproject-description">Create a new sub-project</div>
+								</div>
+							</button>
 						</div>
-					{/if}
+					</div>
 				</div>
 			{/if}
 
@@ -485,8 +529,8 @@
 				on:taskComplete={handleTaskComplete}
 				on:taskDelete={handleTaskDelete}
 			/>
-			</div>
-		</main>
+		</div>
+	</main>
 
 	<!-- Keyboard Shortcuts Help Modal -->
 	<ShortcutsHelp bind:isOpen={showShortcutsHelp} on:close={() => (showShortcutsHelp = false)} />
@@ -504,6 +548,14 @@
 
 	<!-- Reports View -->
 	<ReportsView bind:isOpen={showReports} />
+
+	<!-- Sub-Project Create Modal -->
+	<ProjectCreateModal
+		bind:isOpen={showSubProjectModal}
+		defaultParentId={data.project?.id || null}
+		on:created={handleSubProjectCreated}
+		on:close={handleSubProjectModalClose}
+	/>
 
 	<!-- Project Edit Modal -->
 	<ProjectEditModal
@@ -530,6 +582,11 @@
 		<div
 			class="modal-backdrop"
 			onclick={(e) => e.target === e.currentTarget && (showQuickLinkModal = false)}
+			onkeydown={(e) => {
+				if (e.key === 'Escape') {
+					showQuickLinkModal = false;
+				}
+			}}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="quicklinks-modal-title"
@@ -610,7 +667,6 @@
 		flex-shrink: 0;
 	}
 
-
 	.main-content {
 		background: var(--nord0);
 		overflow-y: auto;
@@ -618,8 +674,6 @@
 		width: 100%;
 		height: 100%;
 	}
-
-
 
 	/* Mobile Styles */
 	@media (max-width: 1024px) {
@@ -630,9 +684,6 @@
 			text-align: center;
 		}
 	}
-
-
-
 
 	/* Project Header Styles */
 	.project-header {
@@ -707,7 +758,6 @@
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.8);
 	}
-
 
 	.project-description {
 		margin-bottom: 1.5rem;
@@ -954,6 +1004,105 @@
 		color: var(--nord4);
 	}
 
+	/* Add Sub-project Button Styles */
+	.add-subproject-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem;
+		background: transparent;
+		border: 1px dashed var(--nord3);
+		border-radius: 0.375rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		height: auto;
+		min-height: 4rem;
+		text-align: left;
+	}
+
+	.add-subproject-btn:hover {
+		border-color: var(--nord8);
+		background: rgba(129, 161, 193, 0.05);
+		border-style: solid;
+	}
+
+	.add-subproject-indicator {
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.375rem;
+		background: var(--nord3);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s ease;
+		flex-shrink: 0;
+	}
+
+	.add-subproject-btn:hover .add-subproject-indicator {
+		background: var(--nord8);
+	}
+
+	.add-subproject-icon {
+		font-size: 1.25rem;
+		color: var(--nord6);
+		font-weight: 300;
+	}
+
+	.add-subproject-btn:hover .add-subproject-icon {
+		color: white;
+	}
+
+	.add-subproject-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.25rem;
+		flex: 1;
+	}
+
+	.add-subproject-name {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--nord4);
+		transition: color 0.2s ease;
+	}
+
+	.add-subproject-btn:hover .add-subproject-name {
+		color: var(--nord8);
+	}
+
+	.add-subproject-description {
+		font-size: 0.75rem;
+		color: var(--nord4);
+		opacity: 0.8;
+	}
+
+	.sub-projects-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 3rem 1rem;
+		text-align: center;
+		color: var(--nord4);
+		border: 1px dashed var(--nord3);
+		border-radius: 0.5rem;
+		margin-top: 1rem;
+		grid-column: 1 / -1;
+	}
+
+	.empty-text {
+		font-size: 1rem;
+		font-weight: 500;
+		color: var(--nord6);
+		margin-bottom: 0.5rem;
+	}
+
+	.empty-subtext {
+		font-size: 0.875rem;
+		color: var(--nord4);
+		margin-bottom: 1.5rem;
+	}
 
 	/* Mobile responsive */
 	@media (max-width: 640px) {
@@ -988,4 +1137,3 @@
 		}
 	}
 </style>
-

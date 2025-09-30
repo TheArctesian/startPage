@@ -151,6 +151,7 @@
   class:collapsed={isCollapsed}
   role="tree"
   aria-label="Project hierarchy"
+  tabindex="0"
   onkeydown={handleKeydown}
 >
   {#if !isCollapsed}

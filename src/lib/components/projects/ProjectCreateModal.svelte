@@ -1,0 +1,596 @@
+<script lang="ts">
+	import { createEventDispatcher, onMount } from 'svelte';
+	import { createProject, loadProjects, projects } from '$lib/stores';
+	import { toasts } from '$lib/stores/toasts';
+	import type { NewProject, ProjectWithDetails } from '$lib/types/database';
+
+	export let isOpen = false;
+	export let defaultParentId: number | null = null;
+
+	const dispatch = createEventDispatcher<{
+		close: void;
+		created: { project: ProjectWithDetails };
+	}>();
+
+	// Form state
+	let projectName = '';
+	let projectDescription = '';
+	let projectIcon = '';
+	let projectColor = '--nord8';
+	let projectParentId: number | null = null;
+	let isCreating = false;
+	let errorMessage = '';
+
+	// Color options for projects
+	const colorOptions = [
+		{ name: 'Blue', value: '--nord8', bg: 'var(--nord8)' },
+		{ name: 'Cyan', value: '--nord7', bg: 'var(--nord7)' },
+		{ name: 'Teal', value: '--nord9', bg: 'var(--nord9)' },
+		{ name: 'Purple', value: '--nord10', bg: 'var(--nord10)' },
+		{ name: 'Green', value: '--nord14', bg: 'var(--nord14)' },
+		{ name: 'Orange', value: '--nord12', bg: 'var(--nord12)' },
+		{ name: 'Red', value: '--nord11', bg: 'var(--nord11)' },
+		{ name: 'Yellow', value: '--nord13', bg: 'var(--nord13)' }
+	];
+
+	// Icon suggestions
+	const iconSuggestions = [
+		'■', '□', '▲', '△', '▶', '▷', '◆', '◇',
+		'○', '●', '◎', '◍', '★', '☆', '◈', '◉'
+	];
+
+	// Get available parent projects
+	$: availableParents = $projects.filter(p => p.id !== defaultParentId);
+
+	// Reset form when modal opens
+	$: if (isOpen) {
+		projectName = '';
+		projectDescription = '';
+		projectIcon = '';
+		projectColor = '--nord8';
+		projectParentId = defaultParentId;
+		errorMessage = '';
+	}
+
+	// Handle backdrop click
+	function handleBackdropClick(event: MouseEvent) {
+		if (event.target === event.currentTarget) {
+			handleClose();
+		}
+	}
+
+	// Handle close
+	function handleClose() {
+		isOpen = false;
+		dispatch('close');
+	}
+
+	// Handle create project form submission
+	async function handleCreateProject() {
+		if (!projectName.trim() || isCreating) return;
+
+		isCreating = true;
+		errorMessage = '';
+
+		try {
+			// Clean the data to ensure only valid project properties are sent
+			let cleanParentId: number | null = null;
+			if (projectParentId && typeof projectParentId === 'number') {
+				cleanParentId = projectParentId;
+			} else if (
+				projectParentId &&
+				typeof projectParentId === 'string' &&
+				projectParentId !== ''
+			) {
+				const parsed = parseInt(projectParentId);
+				if (!isNaN(parsed)) {
+					cleanParentId = parsed;
+				}
+			}
+
+			const projectData: NewProject = {
+				name: projectName.trim(),
+				description: projectDescription.trim() || undefined,
+				icon: projectIcon || undefined,
+				color: projectColor,
+				isActive: true,
+				parentId: cleanParentId
+			};
+
+			console.log('🚀 Creating project with data:', projectData);
+
+			const project = await createProject(projectData);
+
+			// Show success toast
+			toasts.success('Project Created', `"${project.name}" has been created successfully.`);
+
+			// Reload projects to ensure proper hierarchy
+			await loadProjects(true);
+
+			dispatch('created', { project });
+			handleClose();
+		} catch (error) {
+			console.error('Failed to create project:', error);
+			errorMessage = error instanceof Error ? error.message : 'Failed to create project';
+			toasts.error('Project Creation Failed', errorMessage);
+		} finally {
+			isCreating = false;
+		}
+	}
+
+	// Handle keyboard shortcuts
+	function handleKeydown(event: KeyboardEvent) {
+		if (!isOpen) return;
+
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			handleClose();
+		} else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			handleCreateProject();
+		}
+	}
+
+	// Set icon from suggestion
+	function setIcon(icon: string) {
+		projectIcon = icon;
+	}
+
+	// Focus management
+	let nameInput: HTMLInputElement;
+	$: if (isOpen && nameInput) {
+		setTimeout(() => nameInput?.focus(), 100);
+	}
+</script>
+
+<svelte:window on:keydown={handleKeydown} />
+
+{#if isOpen}
+	<div
+		class="modal-backdrop"
+		onclick={handleBackdropClick}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') {
+				dispatch('close');
+			}
+		}}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="modal-title"
+		tabindex="-1"
+	>
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2 id="modal-title" class="modal-title">
+					{defaultParentId ? 'Create Sub-project' : 'Create New Project'}
+				</h2>
+				<button
+					class="modal-close"
+					onclick={handleClose}
+					aria-label="Close modal"
+					title="Close"
+				>
+					✕
+				</button>
+			</div>
+
+			<div class="modal-body">
+				<form class="project-form" onsubmit={(e) => { e.preventDefault(); handleCreateProject(); }}>
+					<!-- Project Name -->
+					<div class="form-group">
+						<label for="project-name" class="form-label">Project Name</label>
+						<input
+							bind:this={nameInput}
+							bind:value={projectName}
+							id="project-name"
+							type="text"
+							class="form-input"
+							placeholder="Enter project name"
+							required
+							autocomplete="off"
+						/>
+					</div>
+
+					<!-- Project Description -->
+					<div class="form-group">
+						<label for="project-description" class="form-label">Description (Optional)</label>
+						<textarea
+							bind:value={projectDescription}
+							id="project-description"
+							class="form-textarea"
+							placeholder="Brief project description"
+							rows="3"
+						></textarea>
+					</div>
+
+					<!-- Parent Project -->
+					{#if availableParents.length > 0}
+						<div class="form-group">
+							<label for="project-parent" class="form-label">Parent Project</label>
+							<select
+								bind:value={projectParentId}
+								id="project-parent"
+								class="form-select"
+							>
+								<option value="">No parent (root project)</option>
+								{#each availableParents as parent (parent.id)}
+									<option value={parent.id}>{parent.name}</option>
+								{/each}
+							</select>
+						</div>
+					{/if}
+
+					<!-- Color Selection -->
+					<div class="form-group">
+						<label id="color-label" class="form-label">Color</label>
+						<div class="color-grid" role="radiogroup" aria-labelledby="color-label">
+							{#each colorOptions as color (color.value)}
+								<button
+									type="button"
+									class="color-option"
+									class:selected={projectColor === color.value}
+									style="background-color: {color.bg}"
+									onclick={() => (projectColor = color.value)}
+									title={color.name}
+									role="radio"
+									aria-checked={projectColor === color.value}
+									aria-label="Select {color.name} color"
+								></button>
+							{/each}
+						</div>
+					</div>
+
+					<!-- Icon Selection -->
+					<div class="form-group">
+						<label for="project-icon" class="form-label">Icon (Optional)</label>
+						<input
+							bind:value={projectIcon}
+							id="project-icon"
+							type="text"
+							class="form-input"
+							placeholder="Choose or type an icon"
+							maxlength="4"
+						/>
+						<div class="icon-suggestions">
+							{#each iconSuggestions as icon (icon)}
+								<button
+									type="button"
+									class="icon-suggestion"
+									class:selected={projectIcon === icon}
+									onclick={() => setIcon(icon)}
+									title="Use {icon} icon"
+								>
+									{icon}
+								</button>
+							{/each}
+						</div>
+					</div>
+
+					<!-- Error Message -->
+					{#if errorMessage}
+						<div class="error-message">
+							{errorMessage}
+						</div>
+					{/if}
+				</form>
+			</div>
+
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-secondary"
+					onclick={handleClose}
+					disabled={isCreating}
+				>
+					Cancel
+				</button>
+				<button
+					type="button"
+					class="btn btn-primary"
+					onclick={handleCreateProject}
+					disabled={!projectName.trim() || isCreating}
+				>
+					{#if isCreating}
+						Creating...
+					{:else}
+						Create Project
+					{/if}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<style>
+	.modal-backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(2px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		padding: 1rem;
+	}
+
+	.modal-content {
+		background: var(--nord0);
+		border: 1px solid var(--nord3);
+		border-radius: 0.75rem;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+					0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		max-width: 32rem;
+		width: 100%;
+		max-height: 90vh;
+		overflow-y: auto;
+		animation: modal-appear 0.2s ease-out;
+	}
+
+	@keyframes modal-appear {
+		from {
+			opacity: 0;
+			transform: scale(0.95) translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1) translateY(0);
+		}
+	}
+
+	.modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1.5rem 1.5rem 0;
+		border-bottom: 1px solid var(--nord3);
+		margin-bottom: 1.5rem;
+		padding-bottom: 1rem;
+	}
+
+	.modal-title {
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: var(--nord6);
+		margin: 0;
+	}
+
+	.modal-close {
+		background: transparent;
+		border: none;
+		color: var(--nord4);
+		cursor: pointer;
+		font-size: 1.125rem;
+		padding: 0.25rem;
+		border-radius: 0.25rem;
+		transition: all 0.2s ease;
+	}
+
+	.modal-close:hover {
+		background: var(--nord3);
+		color: var(--nord6);
+	}
+
+	.modal-body {
+		padding: 0 1.5rem;
+	}
+
+	.project-form {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.form-label {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--nord6);
+	}
+
+	.form-input,
+	.form-textarea,
+	.form-select {
+		padding: 0.75rem;
+		border: 1px solid var(--nord3);
+		border-radius: 0.375rem;
+		background: var(--nord1);
+		color: var(--nord6);
+		font-size: 0.875rem;
+		transition: all 0.2s ease;
+	}
+
+	.form-input:focus,
+	.form-textarea:focus,
+	.form-select:focus {
+		outline: none;
+		border-color: var(--nord8);
+		box-shadow: 0 0 0 3px rgba(129, 161, 193, 0.1);
+	}
+
+	.form-textarea {
+		resize: vertical;
+		min-height: 4rem;
+	}
+
+	.color-grid {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.5rem;
+	}
+
+	.color-option {
+		width: 2.5rem;
+		height: 2.5rem;
+		border: 2px solid transparent;
+		border-radius: 0.5rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+	}
+
+	.color-option:hover {
+		transform: scale(1.1);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	}
+
+	.color-option.selected {
+		border-color: var(--nord6);
+		box-shadow: 0 0 0 2px var(--nord0), 0 0 0 4px var(--nord8);
+	}
+
+	.icon-suggestions {
+		display: grid;
+		grid-template-columns: repeat(8, 1fr);
+		gap: 0.25rem;
+		margin-top: 0.5rem;
+	}
+
+	.icon-suggestion {
+		width: 2rem;
+		height: 2rem;
+		border: 1px solid var(--nord3);
+		border-radius: 0.25rem;
+		background: var(--nord1);
+		color: var(--nord6);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.875rem;
+		transition: all 0.2s ease;
+	}
+
+	.icon-suggestion:hover {
+		background: var(--nord2);
+		border-color: var(--nord8);
+	}
+
+	.icon-suggestion.selected {
+		background: var(--nord8);
+		color: white;
+		border-color: var(--nord8);
+	}
+
+	.modal-footer {
+		display: flex;
+		gap: 0.75rem;
+		justify-content: flex-end;
+		padding: 1.5rem;
+		border-top: 1px solid var(--nord3);
+		margin-top: 1.5rem;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		border-radius: 0.375rem;
+		border: 1px solid;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		min-width: 5rem;
+	}
+
+	.btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.btn-secondary {
+		background: transparent;
+		border-color: var(--nord3);
+		color: var(--nord4);
+	}
+
+	.btn-secondary:hover:not(:disabled) {
+		background: var(--nord2);
+		border-color: var(--nord4);
+		color: var(--nord6);
+	}
+
+	.btn-primary {
+		background: var(--nord8);
+		border-color: var(--nord8);
+		color: white;
+	}
+
+	.btn-primary:hover:not(:disabled) {
+		background: #7394b0;
+		border-color: #7394b0;
+	}
+
+	.error-message {
+		color: var(--nord11);
+		font-size: 0.8125rem;
+		padding: 0.75rem;
+		background: rgba(191, 97, 106, 0.1);
+		border: 1px solid rgba(191, 97, 106, 0.2);
+		border-radius: 0.375rem;
+	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 640px) {
+		.modal-backdrop {
+			padding: 0.5rem;
+		}
+
+		.modal-header,
+		.modal-body,
+		.modal-footer {
+			padding-left: 1rem;
+			padding-right: 1rem;
+		}
+
+		.color-grid {
+			grid-template-columns: repeat(4, 1fr);
+		}
+
+		.icon-suggestions {
+			grid-template-columns: repeat(6, 1fr);
+		}
+
+		.modal-footer {
+			gap: 0.5rem;
+		}
+
+		.btn {
+			flex: 1;
+			min-width: auto;
+		}
+	}
+
+	/* Accessibility improvements */
+	@media (prefers-reduced-motion: reduce) {
+		.modal-content {
+			animation: none;
+		}
+
+		.color-option:hover {
+			transform: none;
+		}
+	}
+
+	@media (prefers-contrast: high) {
+		.modal-content {
+			border-width: 2px;
+		}
+
+		.form-input,
+		.form-textarea,
+		.form-select {
+			border-width: 2px;
+		}
+	}
+</style>

@@ -169,6 +169,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="analytics-title"
+    tabindex="-1"
   >
     <div class="analytics-content">
       <!-- Header -->

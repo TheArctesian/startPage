@@ -327,6 +327,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="reports-title"
+    tabindex="-1"
   >
     <div class="reports-content">
       <!-- Header -->

@@ -44,6 +44,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="shortcuts-title"
+    tabindex="-1"
   >
     <div class="shortcuts-content">
       <!-- Header -->

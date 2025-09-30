@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import TimerControls from '$lib/components/timer/TimerControls.svelte';
   import IntensityDisplay from '$lib/components/ui/IntensityDisplay.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   import type { TaskWithDetails } from '$lib/types/database';
 
   export let task: TaskWithDetails;
@@ -12,11 +13,25 @@
   export let showProject: boolean = false;
   export let draggable: boolean = false;
 
+  // Mobile detection and state
+  let isMobile = false;
+  let isExpanded = false;
+
+  onMount(() => {
+    isMobile = window.innerWidth < 768;
+    const handleResize = () => {
+      isMobile = window.innerWidth < 768;
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  });
+
   const dispatch = createEventDispatcher<{
     select: { task: TaskWithDetails };
     edit: { task: TaskWithDetails };
     complete: { task: TaskWithDetails };
     delete: { task: TaskWithDetails };
+    move: { task: TaskWithDetails; newStatus: 'todo' | 'in_progress' | 'done' };
     dragstart: { task: TaskWithDetails; event: DragEvent };
     dragend: { task: TaskWithDetails; event: DragEvent };
   }>();
@@ -87,6 +102,13 @@
   $: dueInfo = task.dueDate ? formatDueDate(task.dueDate) : null;
   $: isOverdue = dueInfo?.class === 'overdue';
   $: isCompleted = task.status === 'done';
+
+  // Move task function for mobile
+  function moveTask(newStatus: 'todo' | 'in_progress' | 'done') {
+    // Dispatch a custom event that the parent can handle
+    dispatch('move', { task, newStatus });
+    isExpanded = false;
+  }
 </script>
 
 <div 
@@ -100,7 +122,7 @@
   ondragstart={handleDragStart}
   ondragend={handleDragEnd}
   {draggable}
-  tabindex={selectable ? 0 : -1}
+  {...(selectable && { tabindex: 0 })}
   role={selectable ? 'button' : 'article'}
   aria-label="Task: {task.title}"
 >
@@ -222,7 +244,7 @@
             title="Edit task"
             aria-label="Edit task"
           >
-            ✏️
+            <Icon name="edit" size={14} color="var(--nord4)" />
           </button>
           
           <button 
@@ -231,7 +253,7 @@
             title="Complete task"
             aria-label="Complete task"
           >
-            ✓
+            <Icon name="check" size={14} color="var(--nord14)" />
           </button>
         {/if}
         
@@ -241,9 +263,95 @@
           title="Delete task"
           aria-label="Delete task"
         >
-          🗑️
+          <Icon name="trash" size={14} color="var(--nord11)" />
         </button>
+        
+        <!-- Mobile Actions Menu -->
+        {#if isMobile}
+          <button 
+            class="action-btn mobile-menu-btn"
+            onclick={(e) => { e.stopPropagation(); isExpanded = !isExpanded; }}
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                isExpanded = !isExpanded;
+              }
+            }}
+            title="More actions"
+            aria-label="More actions"
+            aria-expanded={isExpanded}
+          >
+            <Icon name="more-vertical" size={14} color="var(--nord4)" />
+          </button>
+        {/if}
       </div>
+      
+      <!-- Mobile Movement Actions -->
+      {#if isMobile && isExpanded && !isCompleted}
+        <div class="mobile-move-actions">
+          {#if task.status === 'todo'}
+            <button 
+              class="move-btn start-btn"
+              onclick={(e) => { e.stopPropagation(); moveTask('in_progress'); }}
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  moveTask('in_progress');
+                }
+              }}
+            >
+              <Icon name="play" size={12} color="var(--nord8)" />
+              Start
+            </button>
+          {:else if task.status === 'in_progress'}
+            <button 
+              class="move-btn complete-btn"
+              onclick={(e) => { e.stopPropagation(); moveTask('done'); }}
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  moveTask('done');
+                }
+              }}
+            >
+              <Icon name="check" size={12} color="var(--nord14)" />
+              Complete
+            </button>
+            <button 
+              class="move-btn back-btn"
+              onclick={(e) => { e.stopPropagation(); moveTask('todo'); }}
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  moveTask('todo');
+                }
+              }}
+            >
+              <Icon name="arrow-left" size={12} color="var(--nord4)" />
+              Back
+            </button>
+          {:else if task.status === 'done'}
+            <button 
+              class="move-btn reopen-btn"
+              onclick={(e) => { e.stopPropagation(); moveTask('in_progress'); }}
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  moveTask('in_progress');
+                }
+              }}
+            >
+              <Icon name="rotate-ccw" size={12} color="var(--nord8)" />
+              Reopen
+            </button>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -549,6 +657,105 @@
 
     .action-buttons {
       justify-content: flex-end;
+    }
+  }
+
+  /* Mobile Actions */
+  .mobile-menu-btn {
+    display: none;
+  }
+
+  .mobile-move-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 0 0.5rem;
+    border-top: 1px solid var(--nord2);
+    animation: slideDown 0.2s ease-out;
+  }
+
+  .move-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--nord3);
+    background: var(--nord1);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-height: 2rem;
+  }
+
+  .move-btn:hover {
+    background: var(--nord2);
+    transform: translateY(-1px);
+  }
+
+  .start-btn:hover {
+    background: var(--nord8);
+    color: white;
+    border-color: var(--nord8);
+  }
+
+  .complete-btn:hover {
+    background: var(--nord14);
+    color: white;
+    border-color: var(--nord14);
+  }
+
+  .back-btn:hover,
+  .reopen-btn:hover {
+    background: var(--nord3);
+    border-color: var(--nord4);
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Mobile Responsive Styles */
+  @media (max-width: 767px) {
+    .mobile-menu-btn {
+      display: flex;
+    }
+
+    .action-btn {
+      min-width: 44px;
+      min-height: 44px;
+      width: auto;
+      height: auto;
+      padding: 0.75rem;
+    }
+
+    .task-card {
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .action-buttons {
+      gap: 0.75rem;
+    }
+
+    /* Visual feedback for touch */
+    .task-card:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    .move-btn {
+      flex: 1;
+      justify-content: center;
+      min-height: 44px;
+      font-size: 0.875rem;
     }
   }
 

@@ -85,6 +85,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="completion-title"
+    tabindex="-1"
   >
     <div class="completion-content">
       <!-- Header -->
