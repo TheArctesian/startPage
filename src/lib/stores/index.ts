@@ -28,6 +28,9 @@ export const timerState = writable<TimerState>({
 
 // UI state
 export const isLoading = writable<boolean>(false);
+export const loadingTasks = writable<boolean>(false);
+export const loadingQuickLinks = writable<boolean>(false);
+export const loadingSubProjects = writable<boolean>(false);
 export const error = writable<string | null>(null);
 
 // Tree-specific stores

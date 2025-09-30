@@ -9,6 +9,9 @@ import {
   selectedTask, 
   timerState,
   isLoading,
+  loadingTasks,
+  loadingQuickLinks,
+  loadingSubProjects,
   error,
   projectTreeData 
 } from './index';
@@ -160,7 +163,7 @@ export async function setActiveProject(project: Project) {
 
 // TASK ACTIONS
 export async function loadTasks(projectId?: number) {
-  isLoading.set(true);
+  loadingTasks.set(true);
   clearError();
   
   try {
@@ -180,7 +183,7 @@ export async function loadTasks(projectId?: number) {
   } catch (err) {
     handleError(err, 'Failed to load tasks');
   } finally {
-    isLoading.set(false);
+    loadingTasks.set(false);
   }
 }
 
@@ -443,6 +446,7 @@ export async function loadActiveTimer() {
 
 // QUICK LINKS ACTIONS
 export async function loadQuickLinks(projectId: number) {
+  loadingQuickLinks.set(true);
   clearError();
   
   try {
@@ -456,6 +460,8 @@ export async function loadQuickLinks(projectId: number) {
     quickLinks.set(data);
   } catch (err) {
     handleError(err, 'Failed to load quick links');
+  } finally {
+    loadingQuickLinks.set(false);
   }
 }
 
