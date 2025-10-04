@@ -10,6 +10,8 @@
 	import TaskCompletionModal from '$lib/components/tasks/TaskCompletionModal.svelte';
 	import AnalyticsDashboard from '$lib/components/analytics/AnalyticsDashboard.svelte';
 	import ReportsView from '$lib/components/analytics/ReportsView.svelte';
+	import LoadingSpinner from '$lib/components/base/LoadingSpinner.svelte';
+	import SkeletonLoader from '$lib/components/base/SkeletonLoader.svelte';
 	import { toasts } from '$lib/stores/toasts';
 	import {
 		setActiveProject,
@@ -19,7 +21,9 @@
 		updateQuickLink,
 		deleteQuickLink,
 		isTimerRunning,
-		selectedTask
+		selectedTask,
+		loadingQuickLinks,
+		loadingSubProjects
 	} from '$lib/stores';
 	import {
 		initializeDefaultShortcuts,
@@ -263,6 +267,7 @@
 			return;
 		}
 
+		loadingSubProjects.set(true);
 		try {
 			const response = await fetch(`/api/projects?parentId=${data.project.id}`);
 			if (response.ok) {
@@ -273,6 +278,8 @@
 		} catch (error) {
 			console.error('Failed to load sub-projects:', error);
 			subProjects = [];
+		} finally {
+			loadingSubProjects.set(false);
 		}
 	}
 
@@ -449,7 +456,15 @@
 						<h3 class="quick-links-title">Quick Links</h3>
 						<div class="quick-links-inline">
 							<!-- Inline Quick Links Display -->
-							{#if $activeProjectQuickLinks.length > 0}
+							{#if $loadingQuickLinks}
+								<div class="inline-links">
+									{#each Array(3) as _, i (i)}
+										<div class="skeleton-link">
+											<SkeletonLoader variant="button" />
+										</div>
+									{/each}
+								</div>
+							{:else if $activeProjectQuickLinks.length > 0}
 								<div class="inline-links">
 									{#each $activeProjectQuickLinks as link (link.id)}
 										<button
@@ -491,35 +506,43 @@
 						<h2 class="sub-projects-title">Sub-projects</h2>
 
 						<div class="sub-projects-grid">
-							{#each subProjects as subProject (subProject.id)}
-								<button
-									class="sub-project-card"
-									onclick={() => navigateToProject(subProject)}
-									title="Navigate to {subProject.name}"
-								>
-									<div
-										class="sub-project-indicator"
-										style="background-color: {subProject.color || 'var(--nord8)'}"
+							{#if $loadingSubProjects}
+								{#each Array(3) as _, i (i)}
+									<div class="skeleton-project-card">
+										<SkeletonLoader variant="card" />
+									</div>
+								{/each}
+							{:else}
+								{#each subProjects as subProject (subProject.id)}
+									<button
+										class="sub-project-card"
+										onclick={() => navigateToProject(subProject)}
+										title="Navigate to {subProject.name}"
 									>
-										{#if subProject.icon}
-											<span class="sub-project-icon">{subProject.icon}</span>
-										{:else}
-											<div class="sub-project-dot"></div>
-										{/if}
-									</div>
-									<div class="sub-project-content">
-										<div class="sub-project-name">{subProject.name}</div>
-										{#if subProject.totalTasks && subProject.totalTasks > 0}
-											<div class="sub-project-stats">
-												{subProject.completedTasks || 0}/{subProject.totalTasks} tasks
-											</div>
-										{/if}
-									</div>
-								</button>
-							{/each}
+										<div
+											class="sub-project-indicator"
+											style="background-color: {subProject.color || 'var(--nord8)'}"
+										>
+											{#if subProject.icon}
+												<span class="sub-project-icon">{subProject.icon}</span>
+											{:else}
+												<div class="sub-project-dot"></div>
+											{/if}
+										</div>
+										<div class="sub-project-content">
+											<div class="sub-project-name">{subProject.name}</div>
+											{#if subProject.totalTasks && subProject.totalTasks > 0}
+												<div class="sub-project-stats">
+													{subProject.completedTasks || 0}/{subProject.totalTasks} tasks
+												</div>
+											{/if}
+										</div>
+									</button>
+								{/each}
+							{/if}
 
-							<!-- Add Sub-project Button -->
-							{#if canEdit}
+							<!-- Add Sub-project Button - shown only when not loading -->
+							{#if !$loadingSubProjects && canEdit}
 								<button class="add-subproject-btn" onclick={handleShowSubProjectModal}>
 									<div class="add-subproject-indicator">
 										<span class="add-subproject-icon">+</span>
@@ -705,11 +728,12 @@
 	/* Project Header Styles */
 	.project-header {
 		background: var(--nord1);
-		border-radius: 0.5rem;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--nord3);
 		padding: 1.5rem;
 		margin: 1rem;
-		margin-bottom: 0;
+		margin-bottom: 1rem;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
 
 	.project-title-row {
@@ -802,6 +826,16 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
+	}
+
+	.skeleton-link {
+		display: inline-block;
+		min-width: 100px;
+	}
+
+	.skeleton-project-card {
+		min-height: 80px;
+		border-radius: 0.375rem;
 	}
 
 	.inline-link {

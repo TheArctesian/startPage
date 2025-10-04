@@ -18,9 +18,9 @@
   min-width: 8rem;
   text-align: center;
   transition: all var(--anim-normal) var(--ease-out),
-              color var(--anim-fast) var(--ease-out),
-              border-color var(--anim-fast) var(--ease-out),
-              box-shadow var(--anim-fast) var(--ease-out);
+    color var(--anim-fast) var(--ease-out),
+    border-color var(--anim-fast) var(--ease-out),
+    box-shadow var(--anim-fast) var(--ease-out);
 }
 
 .timer-display.active {
@@ -319,8 +319,6 @@
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-lg);
-  padding: var(--space-lg);
   height: 100%;
   overflow-x: auto;
 }
@@ -339,7 +337,6 @@
   display: flex;
   justify-content: between;
   align-items: center;
-  margin-bottom: var(--space-md);
   padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -663,8 +660,8 @@
 /* Task Card Animations */
 .task-card {
   transition: transform var(--anim-fast) var(--ease-out),
-              box-shadow var(--anim-fast) var(--ease-out),
-              border-color var(--anim-fast) var(--ease-out);
+    box-shadow var(--anim-fast) var(--ease-out),
+    border-color var(--anim-fast) var(--ease-out);
 }
 
 .task-card:hover {
@@ -702,7 +699,7 @@
 
 .project-tree-node {
   transition: background-color var(--anim-fast) var(--ease-out),
-              transform var(--anim-fast) var(--ease-out);
+    transform var(--anim-fast) var(--ease-out);
 }
 
 .project-tree-node:hover {
@@ -725,10 +722,10 @@
 /* Button Animations */
 .btn-base {
   transition: background-color var(--anim-fast) var(--ease-out),
-              border-color var(--anim-fast) var(--ease-out),
-              color var(--anim-fast) var(--ease-out),
-              transform var(--anim-fast) var(--ease-out),
-              box-shadow var(--anim-fast) var(--ease-out);
+    border-color var(--anim-fast) var(--ease-out),
+    color var(--anim-fast) var(--ease-out),
+    transform var(--anim-fast) var(--ease-out),
+    box-shadow var(--anim-fast) var(--ease-out);
 }
 
 .btn-base:hover {
@@ -749,7 +746,7 @@
 /* Form Input Animations */
 .form-input {
   transition: border-color var(--anim-fast) var(--ease-out),
-              box-shadow var(--anim-fast) var(--ease-out);
+    box-shadow var(--anim-fast) var(--ease-out);
 }
 
 .form-input:focus {
@@ -779,7 +776,7 @@
 
 .kanban-task-card {
   transition: transform var(--anim-fast) var(--ease-out),
-              opacity var(--anim-fast) var(--ease-out);
+    opacity var(--anim-fast) var(--ease-out);
 }
 
 .kanban-task-card.moving {
@@ -792,12 +789,10 @@
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
   animation: shimmer 1.5s ease-in-out infinite;
-  background: linear-gradient(
-    90deg,
-    var(--bg-secondary) 25%,
-    var(--border-default) 50%,
-    var(--bg-secondary) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--bg-secondary) 25%,
+      var(--border-default) 50%,
+      var(--bg-secondary) 75%);
   background-size: 200% 100%;
 }
 
@@ -806,8 +801,13 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Notification Animations */
@@ -817,7 +817,7 @@
 
 .notification.success {
   animation: notification-slide-in var(--anim-normal) var(--ease-spring),
-             bounce-in var(--anim-slow) var(--ease-bounce) 0.5s;
+    bounce-in var(--anim-slow) var(--ease-bounce) 0.5s;
 }
 
 /* Timer State Transitions */
@@ -830,42 +830,55 @@
   animation: fade-in-up var(--anim-page) var(--ease-out);
 }
 
-.stagger-children > * {
+.stagger-children>* {
   animation: fade-in-up var(--anim-normal) var(--ease-out);
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 150ms;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 200ms;
+}
 
 /* === RESPONSIVE COMPONENT ADJUSTMENTS === */
 @media (max-width: 768px) {
   .kanban-board {
     grid-template-columns: 1fr;
-    padding: var(--space-md);
+    padding: 0.5rem;
   }
-  
+
   .task-badges {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .timer-display {
     font-size: var(--font-size-xl);
   }
-  
+
   .form-content {
-    margin: var(--space-sm);
     max-width: none;
   }
-  
+
   /* Reduce animations on mobile for performance */
   .task-card:hover {
     transform: none;
   }
-  
+
   .btn-base:hover {
     transform: none;
   }
