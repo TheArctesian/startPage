@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { tasks, projects, timeSessions } from '$lib/server/db/schema';
 import { eq, sum, isNotNull } from 'drizzle-orm';
+import { requireAuth } from '$lib/server/auth-guard';
 import type { RequestHandler } from './$types';
 import type { TaskWithDetails } from '$lib/types/database';
 
@@ -49,7 +50,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
   }
 };
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async (event) => {
+  requireAuth(event);
+  const { params, request } = event;
+  
   try {
     const taskId = parseInt(params.id);
     
@@ -113,7 +117,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
   }
 };
 
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async (event) => {
+  requireAuth(event);
+  const { params } = event;
+  
   try {
     const taskId = parseInt(params.id);
 

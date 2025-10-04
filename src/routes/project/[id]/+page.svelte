@@ -45,6 +45,11 @@
 	// Project data is available but we don't automatically set it as active
 	// The user navigated specifically to this project route
 
+	// Permission-related variables from server data
+	$: canEdit = data.canEdit;
+	$: isAuthenticated = data.isAuthenticated;
+	$: userPermission = data.userPermission;
+
 	let showShortcutsHelp = false;
 	let showNewTaskModal = false;
 	let showCompletionModal = false;
@@ -420,14 +425,16 @@
 							</div>
 							{data.breadcrumb || data.project.name}
 						</h1>
-						<button
-							class="project-edit-btn"
-							onclick={handleShowProjectEdit}
-							title="Edit project"
-							aria-label="Edit project"
-						>
-							✎
-						</button>
+						{#if canEdit}
+							<button
+								class="project-edit-btn"
+								onclick={handleShowProjectEdit}
+								title="Edit project"
+								aria-label="Edit project"
+							>
+								✎
+							</button>
+						{/if}
 					</div>
 
 					<!-- Project Description -->
@@ -460,16 +467,20 @@
 											<span class="inline-link-title">{link.title}</span>
 										</button>
 									{/each}
-									<button class="inline-add-link" onclick={handleShowQuickLinkModal}>
-										+ Add Link
-									</button>
+									{#if canEdit}
+										<button class="inline-add-link" onclick={handleShowQuickLinkModal}>
+											+ Add Link
+										</button>
+									{/if}
 								</div>
 							{:else}
 								<div class="inline-empty">
 									<span class="inline-empty-text">No quick links yet</span>
-									<button class="inline-add-link" onclick={handleShowQuickLinkModal}>
-										+ Add Link
-									</button>
+									{#if canEdit}
+										<button class="inline-add-link" onclick={handleShowQuickLinkModal}>
+											+ Add Link
+										</button>
+									{/if}
 								</div>
 							{/if}
 						</div>
@@ -508,15 +519,17 @@
 							{/each}
 
 							<!-- Add Sub-project Button -->
-							<button class="add-subproject-btn" onclick={handleShowSubProjectModal}>
-								<div class="add-subproject-indicator">
-									<span class="add-subproject-icon">+</span>
-								</div>
-								<div class="add-subproject-content">
-									<div class="add-subproject-name">Add Sub-project</div>
-									<div class="add-subproject-description">Create a new sub-project</div>
-								</div>
-							</button>
+							{#if canEdit}
+								<button class="add-subproject-btn" onclick={handleShowSubProjectModal}>
+									<div class="add-subproject-indicator">
+										<span class="add-subproject-icon">+</span>
+									</div>
+									<div class="add-subproject-content">
+										<div class="add-subproject-name">Add Sub-project</div>
+										<div class="add-subproject-description">Create a new sub-project</div>
+									</div>
+								</button>
+							{/if}
 						</div>
 					</div>
 				</div>
@@ -524,6 +537,8 @@
 
 			<!-- Kanban Board -->
 			<KanbanBoard
+				{canEdit}
+				{isAuthenticated}
 				on:taskSelect={handleTaskSelect}
 				on:taskEdit={handleTaskEdit}
 				on:taskComplete={handleTaskComplete}
@@ -606,6 +621,8 @@
 				</div>
 				<div class="quicklinks-wrapper">
 					<QuickLinks
+						{canEdit}
+						{isAuthenticated}
 						on:linkEdit={handleQuickLinkEdit}
 						on:linkUpdated={handleQuickLinkUpdated}
 						on:linkDeleted={handleQuickLinkDeleted}

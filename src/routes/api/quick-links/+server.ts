@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { quickLinks, projects } from '$lib/server/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { requireAuth } from '$lib/server/auth-guard';
 import type { RequestHandler } from './$types';
 import type { NewQuickLink } from '$lib/types/database';
 
@@ -35,7 +36,10 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+  requireAuth(event);
+  const { request } = event;
+  
   try {
     const data: NewQuickLink = await request.json();
 

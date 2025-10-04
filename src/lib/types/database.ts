@@ -5,7 +5,11 @@ import type {
   timeSessions, 
   quickLinks, 
   tags, 
-  taskTags 
+  taskTags,
+  users,
+  authSessions,
+  userActivities,
+  projectUsers
 } from '$lib/server/db/schema';
 
 // Base Types from Schema
@@ -27,12 +31,30 @@ export type NewTag = InferInsertModel<typeof tags>;
 export type TaskTag = InferSelectModel<typeof taskTags>;
 export type NewTaskTag = InferInsertModel<typeof taskTags>;
 
+// Auth-related types
+export type User = InferSelectModel<typeof users>;
+export type NewUser = InferInsertModel<typeof users>;
+
+export type AuthSession = InferSelectModel<typeof authSessions>;
+export type NewAuthSession = InferInsertModel<typeof authSessions>;
+
+export type UserActivity = InferSelectModel<typeof userActivities>;
+export type NewUserActivity = InferInsertModel<typeof userActivities>;
+
+export type ProjectUser = InferSelectModel<typeof projectUsers>;
+export type NewProjectUser = InferInsertModel<typeof projectUsers>;
+
 // Enum Types
 export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'archived';
 export type ProjectStatus = 'active' | 'done' | 'archived';
 export type Priority = 'low' | 'medium' | 'high';
 export type LinkCategory = 'docs' | 'tools' | 'resources' | 'other';
 export type IntensityLevel = 1 | 2 | 3 | 4 | 5;
+
+// Auth-related enums
+export type UserRole = 'admin' | 'member';
+export type UserStatus = 'pending' | 'approved' | 'suspended';
+export type PermissionLevel = 'view_only' | 'editor' | 'project_admin';
 
 // Extended Types with Relations
 export interface TaskWithDetails extends Task {
@@ -45,12 +67,27 @@ export interface ProjectWithDetails extends Project {
   tasks?: Task[];
   quickLinks?: QuickLink[];
   timeSessions?: TimeSession[];
+  createdByUser?: User;
+  userAccess?: ProjectUserWithDetails[];
   
   // Computed stats
   totalTasks?: number;
   completedTasks?: number;
   inProgressTasks?: number;
   totalMinutes?: number;
+}
+
+// Auth-related extended types
+export interface UserWithDetails extends User {
+  projectAccess?: ProjectUserWithDetails[];
+  authSessions?: AuthSession[];
+  userActivities?: UserActivity[];
+}
+
+export interface ProjectUserWithDetails extends ProjectUser {
+  user?: User;
+  project?: Project;
+  grantedByUser?: User;
 }
 
 // Hierarchical project types

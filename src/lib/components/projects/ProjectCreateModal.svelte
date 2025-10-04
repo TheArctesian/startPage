@@ -18,6 +18,7 @@
 	let projectIcon = '';
 	let projectColor = '--nord8';
 	let projectParentId: number | null = null;
+	let isPrivate = false;
 	let isCreating = false;
 	let errorMessage = '';
 
@@ -49,6 +50,7 @@
 		projectIcon = '';
 		projectColor = '--nord8';
 		projectParentId = defaultParentId;
+		isPrivate = false;
 		errorMessage = '';
 	}
 
@@ -94,6 +96,7 @@
 				icon: projectIcon || undefined,
 				color: projectColor,
 				isActive: true,
+				isPublic: !isPrivate,
 				parentId: cleanParentId
 			};
 
@@ -219,6 +222,51 @@
 							</select>
 						</div>
 					{/if}
+
+					<!-- Privacy Setting -->
+					<div class="form-group">
+						<div class="privacy-section">
+							<div class="privacy-control">
+								<label class="privacy-label" for="project-privacy">
+									<input
+										bind:checked={isPrivate}
+										id="project-privacy"
+										type="checkbox"
+										class="privacy-checkbox"
+									/>
+									<span class="checkmark"></span>
+									Private Project
+								</label>
+								<div class="privacy-info" title="Private projects are only visible to you and users you invite">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<circle cx="12" cy="12" r="10"/>
+										<path d="M9,9h6v2H9V9z M12,17h0.01"/>
+									</svg>
+								</div>
+							</div>
+							<div class="privacy-description">
+								{#if isPrivate}
+									<span class="privacy-text private">
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
+											<circle cx="12" cy="16" r="1"/>
+											<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+										</svg>
+										Only you and invited users can see this project
+									</span>
+								{:else}
+									<span class="privacy-text public">
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<circle cx="12" cy="12" r="10"/>
+											<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+											<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+										</svg>
+										All users can see this project
+									</span>
+								{/if}
+							</div>
+						</div>
+					</div>
 
 					<!-- Color Selection -->
 					<div class="form-group">
@@ -569,6 +617,102 @@
 			flex: 1;
 			min-width: auto;
 		}
+	}
+
+	/* Privacy section styles */
+	.privacy-section {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.privacy-control {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.privacy-label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		cursor: pointer;
+		user-select: none;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--nord6);
+	}
+
+	.privacy-checkbox {
+		appearance: none;
+		width: 1.25rem;
+		height: 1.25rem;
+		border: 2px solid var(--nord3);
+		border-radius: 0.25rem;
+		background: var(--nord0);
+		cursor: pointer;
+		position: relative;
+		transition: all 0.2s ease;
+	}
+
+	.privacy-checkbox:checked {
+		background: var(--nord8);
+		border-color: var(--nord8);
+	}
+
+	.privacy-checkbox:checked::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 0.5rem;
+		height: 0.5rem;
+		background: white;
+		border-radius: 0.125rem;
+	}
+
+	.privacy-checkbox:focus {
+		outline: 2px solid var(--nord8);
+		outline-offset: 2px;
+	}
+
+	.privacy-info {
+		color: var(--nord4);
+		cursor: help;
+		opacity: 0.7;
+		transition: opacity 0.2s ease;
+	}
+
+	.privacy-info:hover {
+		opacity: 1;
+	}
+
+	.privacy-description {
+		margin-left: 1.75rem;
+	}
+
+	.privacy-text {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.8125rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.375rem;
+		border: 1px solid;
+		transition: all 0.2s ease;
+	}
+
+	.privacy-text.private {
+		color: var(--nord12);
+		background: rgba(235, 203, 139, 0.1);
+		border-color: rgba(235, 203, 139, 0.2);
+	}
+
+	.privacy-text.public {
+		color: var(--nord14);
+		background: rgba(163, 190, 140, 0.1);
+		border-color: rgba(163, 190, 140, 0.2);
 	}
 
 	/* Accessibility improvements */

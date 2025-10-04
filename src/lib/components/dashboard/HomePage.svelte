@@ -10,6 +10,10 @@
 	import type { ProjectWithDetails, ProjectStatus, TaskWithDetails } from '$lib/types/database';
 
 	export let onProjectSelect: (project: ProjectWithDetails) => void = () => {};
+	export let user: any = null;
+	export let isAuthenticated: boolean = false;
+	export let canEdit: boolean = false;
+	export let isAnonymous: boolean = false;
 
 	let isLoadingProjects = false;
 	let isLoadingTasks = false;
@@ -147,6 +151,8 @@
 			<ProjectsTable
 				projects={$projectStats}
 				isLoading={isLoadingProjects}
+				{canEdit}
+				{isAuthenticated}
 				on:statusChange={handleStatusChange}
 				on:projectEdit={handleProjectEdit}
 			/>
@@ -205,6 +211,8 @@
 								showTimer={false}
 								showProject={false}
 								draggable={false}
+								{canEdit}
+								{isAuthenticated}
 							/>
 
 							<div class="task-meta">

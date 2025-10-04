@@ -15,7 +15,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	
-	let { children } = $props();
+	let { children, data } = $props();
 
 	// Handle mobile sidebar toggle
 	function toggleMobileSidebar() {
@@ -65,10 +65,25 @@
 		</div>
 	{/if}
 
+	<!-- Guest Banner -->
+	{#if data.isAnonymous}
+		<div class="guest-banner">
+			<div class="guest-banner-content">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+					<circle cx="12" cy="12" r="3"/>
+				</svg>
+				<span>Viewing in read-only mode</span>
+				<a href="/login" class="guest-signin-link">Sign in to edit</a>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Main App Layout -->
 	<div 
 		class="app-layout"
 		class:sidebar-collapsed={$isCollapsed}
+		class:has-guest-banner={data.isAnonymous}
 	>
 		<!-- Persistent Sidebar -->
 		<aside 
@@ -76,7 +91,7 @@
 			class:collapsed={$isCollapsed}
 			class:mobile-open={$isMobileOpen}
 		>
-			<ProjectSidebar on:collapse={handleSidebarCollapse} />
+			<ProjectSidebar user={data.user} isAuthenticated={!!data.user && !data.isAnonymous} on:collapse={handleSidebarCollapse} />
 		</aside>
 
 		<!-- Main Content Area -->
@@ -93,6 +108,47 @@
 					<span class="hamburger-line"></span>
 					<span class="hamburger-line"></span>
 				</button>
+				
+				<!-- Auth Status -->
+				<div class="auth-status">
+					{#if data.user}
+						<div class="user-info">
+							<span class="username">{data.user.username}</span>
+							{#if data.user.role === 'admin'}
+								<span class="role-badge admin">Admin</span>
+							{/if}
+						</div>
+						<a href="/logout" class="auth-link authenticated">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+								<polyline points="16,17 21,12 16,7"/>
+								<line x1="21" y1="12" x2="9" y2="12"/>
+							</svg>
+							Logout
+						</a>
+					{:else if data.isAnonymous}
+						<div class="guest-info">
+							<span class="guest-label">Viewing as Guest</span>
+						</div>
+						<a href="/login" class="auth-link">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
+								<circle cx="12" cy="16" r="1"/>
+								<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+							</svg>
+							Sign In
+						</a>
+					{:else}
+						<a href="/login" class="auth-link">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
+								<circle cx="12" cy="16" r="1"/>
+								<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+							</svg>
+							Sign In
+						</a>
+					{/if}
+				</div>
 			</div>
 
 			<!-- Page Content -->
@@ -209,6 +265,8 @@
 		padding: 1rem;
 		background: var(--nord1);
 		border-bottom: 1px solid var(--nord3);
+		justify-content: space-between;
+		align-items: center;
 	}
 
 	.mobile-toggle {
@@ -245,6 +303,122 @@
 		transform: rotate(-45deg) translate(3px, -3px);
 	}
 
+	.auth-status {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.user-info {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.username {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--nord6);
+	}
+
+	.role-badge {
+		font-size: 0.75rem;
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.025em;
+	}
+
+	.role-badge.admin {
+		background: var(--nord11);
+		color: var(--nord0);
+	}
+
+	.guest-info {
+		display: flex;
+		align-items: center;
+	}
+
+	.guest-label {
+		font-size: 0.75rem;
+		color: var(--nord4);
+		font-style: italic;
+	}
+
+	.auth-link {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.375rem;
+		text-decoration: none;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--nord4);
+		border: 1px solid var(--nord3);
+		background: var(--nord0);
+		transition: all 0.2s ease;
+	}
+
+	.auth-link:hover {
+		color: var(--nord6);
+		border-color: var(--nord8);
+		background: var(--nord1);
+	}
+
+	.auth-link.authenticated {
+		color: var(--nord14);
+		border-color: var(--nord14);
+	}
+
+	.auth-link.authenticated:hover {
+		background: rgba(163, 190, 140, 0.1);
+	}
+
+	/* Guest Banner */
+	.guest-banner {
+		background: var(--nord2);
+		border-bottom: 1px solid var(--nord3);
+		padding: 0.5rem 1rem;
+		z-index: 50;
+	}
+
+	.guest-banner-content {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		max-width: 1200px;
+		margin: 0 auto;
+		font-size: 0.875rem;
+		color: var(--nord4);
+	}
+
+	.guest-signin-link {
+		color: var(--nord8);
+		text-decoration: none;
+		font-weight: 500;
+		margin-left: 0.5rem;
+	}
+
+	.guest-signin-link:hover {
+		color: var(--nord9);
+		text-decoration: underline;
+	}
+
+	/* Layout adjustments for guest banner */
+	.app-layout.has-guest-banner {
+		height: calc(100vh - 2.5rem); /* Adjust for banner height */
+	}
+
+	/* Mobile layout adjustments */
+	@media (max-width: 1024px) {
+		.app-layout.has-guest-banner {
+			height: calc(100vh - 2.5rem - 4rem); /* Adjust for banner and mobile header */
+		}
+	}
+
 	.page-wrapper {
 		height: 100%;
 		overflow-y: auto;
@@ -272,7 +446,7 @@
 		}
 
 		.mobile-header {
-			display: block;
+			display: flex;
 		}
 
 		.app-sidebar {

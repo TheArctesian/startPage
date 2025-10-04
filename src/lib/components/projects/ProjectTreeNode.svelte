@@ -109,6 +109,17 @@
     {/if}
   </div>
 
+  <!-- Privacy Indicator -->
+  {#if !node.isPublic}
+    <div class="privacy-indicator" title="Private project">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
+        <circle cx="12" cy="16" r="1"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+  {/if}
+
   {#if !isCollapsed}
     <!-- Project Details -->
     <div class="project-details">
@@ -309,6 +320,21 @@
     height: 100%;
     transition: width 0.3s ease;
     border-radius: 0.09375rem;
+  }
+
+  .privacy-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.25rem;
+    margin-right: 0.5rem;
+    color: var(--nord12);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  .privacy-indicator:hover {
+    opacity: 1;
   }
 
   /* Connecting lines disabled to prevent visual issues

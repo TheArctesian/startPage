@@ -2,10 +2,13 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { projects, tasks, timeSessions, quickLinks } from '$lib/server/db/schema';
 import { eq, and, isNotNull } from 'drizzle-orm';
+import { requireEditAccess, requireProjectAccess } from '$lib/server/auth-guard';
+import { logUserActivity } from '$lib/server/auth';
+import { hasProjectPermission } from '$lib/server/permissions';
 import type { RequestHandler } from './$types';
 import type { ProjectWithDetails } from '$lib/types/database';
 
-export const GET: RequestHandler = async ({ params, url }) => {
+export const GET: RequestHandler = async ({ params, url, locals }) => {
   try {
     const projectId = parseInt(params.id);
     const includeDetails = url.searchParams.get('details') === 'true';
@@ -21,6 +24,12 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
     if (!project) {
       return json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Check access permissions using the new permission system
+    const hasAccess = await hasProjectPermission(locals.user?.id, projectId, 'view_only');
+    if (!hasAccess) {
+      return json({ error: 'Access denied to this project' }, { status: 403 });
     }
 
     if (!includeDetails) {
@@ -68,13 +77,17 @@ export const GET: RequestHandler = async ({ params, url }) => {
   }
 };
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async (event) => {
+  const { params, request, locals, getClientAddress } = event;
   try {
     const projectId = parseInt(params.id);
     
     if (isNaN(projectId)) {
       return json({ error: 'Invalid project ID' }, { status: 400 });
     }
+
+    // Check edit permissions
+    await requireEditAccess(event, projectId);
 
     const updates = await request.json();
 
@@ -151,6 +164,16 @@ export const PUT: RequestHandler = async ({ params, request }) => {
       return json({ error: 'Project not found' }, { status: 404 });
     }
 
+    // Log activity
+    await logUserActivity(
+      locals.user!.id,
+      'update',
+      'project',
+      projectId,
+      getClientAddress(),
+      { projectName: updatedProject.name, changes: Object.keys(updates) }
+    );
+
     return json(updatedProject);
   } catch (error) {
     console.error('Error updating project:', error);
@@ -158,13 +181,17 @@ export const PUT: RequestHandler = async ({ params, request }) => {
   }
 };
 
-export const PATCH: RequestHandler = async ({ params, request }) => {
+export const PATCH: RequestHandler = async (event) => {
+  const { params, request, locals, getClientAddress } = event;
   try {
     const projectId = parseInt(params.id);
     
     if (isNaN(projectId)) {
       return json({ error: 'Invalid project ID' }, { status: 400 });
     }
+
+    // Check edit permissions
+    await requireEditAccess(event, projectId);
 
     const updates = await request.json();
 
@@ -201,6 +228,16 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
       return json({ error: 'Project not found' }, { status: 404 });
     }
 
+    // Log activity
+    await logUserActivity(
+      locals.user!.id,
+      'update',
+      'project',
+      projectId,
+      getClientAddress(),
+      { projectName: updatedProject.name, changes: Object.keys(updates) }
+    );
+
     return json(updatedProject);
   } catch (error) {
     console.error('Error updating project:', error);
@@ -208,7 +245,8 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
   }
 };
 
-export const DELETE: RequestHandler = async ({ params, url }) => {
+export const DELETE: RequestHandler = async (event) => {
+  const { params, url, locals, getClientAddress } = event;
   try {
     const projectId = parseInt(params.id);
     const force = url.searchParams.get('force') === 'true';
@@ -216,6 +254,9 @@ export const DELETE: RequestHandler = async ({ params, url }) => {
     if (isNaN(projectId)) {
       return json({ error: 'Invalid project ID' }, { status: 400 });
     }
+
+    // Check edit permissions
+    await requireEditAccess(event, projectId);
 
     // Check if project has tasks (unless force delete)
     if (!force) {
@@ -242,6 +283,16 @@ export const DELETE: RequestHandler = async ({ params, url }) => {
     if (!deletedProject) {
       return json({ error: 'Project not found' }, { status: 404 });
     }
+
+    // Log activity
+    await logUserActivity(
+      locals.user!.id,
+      'delete',
+      'project',
+      projectId,
+      getClientAddress(),
+      { projectName: deletedProject.name }
+    );
 
     return json({ message: 'Project deleted successfully', project: deletedProject });
   } catch (error) {

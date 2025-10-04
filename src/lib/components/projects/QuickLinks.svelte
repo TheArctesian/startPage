@@ -3,6 +3,10 @@
 	import { activeProject, activeProjectQuickLinks, createQuickLink } from '$lib/stores';
 	import type { QuickLink, NewQuickLink, LinkCategory } from '$lib/types/database';
 
+	// Permission props
+	export let canEdit: boolean = false;
+	export let isAuthenticated: boolean = false;
+
 	const dispatch = createEventDispatcher<{
 		linkClick: { link: QuickLink };
 		linkEdit: { link: QuickLink };
@@ -190,27 +194,31 @@
 									</div>
 								</button>
 
-								<button
-									class="edit-btn"
-									onclick={(e) => handleEditClick(link, e)}
-									title="Edit {link.title}"
-									aria-label="Edit {link.title}"
-								>
-									✎
-								</button>
+								{#if canEdit}
+									<button
+										class="edit-btn"
+										onclick={(e) => handleEditClick(link, e)}
+										title="Edit {link.title}"
+										aria-label="Edit {link.title}"
+									>
+										✎
+									</button>
+								{/if}
 							</div>
 						{/each}
 
 						<!-- Add New Link Button -->
-						<button
-							class="add-link-card"
-							onclick={showAddLinkForm}
-							title="Add new quick link"
-							aria-label="Add new quick link"
-						>
-							<div class="add-icon">+</div>
-							<div class="add-text">Add New Link</div>
-						</button>
+						{#if canEdit}
+							<button
+								class="add-link-card"
+								onclick={showAddLinkForm}
+								title="Add new quick link"
+								aria-label="Add new quick link"
+							>
+								<div class="add-icon">+</div>
+								<div class="add-text">Add New Link</div>
+							</button>
+						{/if}
 					</div>
 				{:else}
 					<!-- Empty State -->
@@ -218,7 +226,9 @@
 						<div class="empty-icon">○</div>
 						<p class="empty-text">No quick links yet</p>
 						<p class="empty-subtext">Add links to your favorite tools and resources</p>
-						<button class="btn btn-primary" onclick={showAddLinkForm}> Add your first link </button>
+						{#if canEdit}
+							<button class="btn btn-primary" onclick={showAddLinkForm}> Add your first link </button>
+						{/if}
 					</div>
 				{/if}
 			{:else}

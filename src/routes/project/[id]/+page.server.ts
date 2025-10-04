@@ -3,8 +3,9 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { projects } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { hasProjectPermission, getUserProjectPermission } from '$lib/server/permissions';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
   const { id } = params;
   
   // Validate ID parameter
@@ -26,12 +27,33 @@ export const load: PageServerLoad = async ({ params }) => {
     }
     
     const project = projectResults[0];
+
+    // Check user permissions for this project
+    const userId = locals.user?.id;
+    const hasViewAccess = await hasProjectPermission(userId, projectId, 'view_only');
     
-    // Return the found project
+    if (!hasViewAccess) {
+      error(403, 'Access denied to this project');
+    }
+
+    // Get user's specific permission level for this project
+    let userPermission: string | null = null;
+    if (userId) {
+      if (locals.user?.role === 'admin') {
+        userPermission = 'admin'; // Global admin has all permissions
+      } else {
+        userPermission = await getUserProjectPermission(userId, projectId);
+      }
+    }
+    
+    // Return the found project with permission info
     return {
       project,
       projectPath: project.path || project.name,
-      breadcrumb: project.path && project.path !== project.name ? project.path : project.name
+      breadcrumb: project.path && project.path !== project.name ? project.path : project.name,
+      userPermission,
+      isAuthenticated: !!locals.user,
+      canEdit: userPermission === 'editor' || userPermission === 'project_admin' || userPermission === 'admin'
     };
     
   } catch (err) {

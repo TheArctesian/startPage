@@ -12,6 +12,10 @@
   export let showTimer: boolean = true;
   export let showProject: boolean = false;
   export let draggable: boolean = false;
+  
+  // Permission props
+  export let canEdit: boolean = false;
+  export let isAuthenticated: boolean = false;
 
   // Mobile detection and state
   let isMobile = false;
@@ -232,11 +236,14 @@
           {task} 
           size="sm" 
           variant="minimal"
+          {canEdit}
+          {isAuthenticated}
         />
       {/if}
 
-      <!-- Action Buttons -->
-      <div class="action-buttons">
+      <!-- Action Buttons (only show if user can edit) -->
+      {#if canEdit}
+        <div class="action-buttons">
         {#if !isCompleted}
           <button 
             class="action-btn edit-btn"
@@ -351,6 +358,7 @@
             </button>
           {/if}
         </div>
+      {/if}
       {/if}
     </div>
   </div>

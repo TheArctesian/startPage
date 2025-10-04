@@ -1,5 +1,7 @@
 <script lang="ts">
 	import HomePage from '$lib/components/dashboard/HomePage.svelte';
+	
+	let { data } = $props();
 	import ShortcutsHelp from '$lib/components/keyboard/ShortcutsHelp.svelte';
 	import TaskCompletionModal from '$lib/components/tasks/TaskCompletionModal.svelte';
 	import AnalyticsDashboard from '$lib/components/analytics/AnalyticsDashboard.svelte';
@@ -205,14 +207,14 @@
 	});
 
 	// Update keyboard context based on active area
-	$: {
+	$effect(() => {
 		if (showCompletionModal) {
 			setKeyboardContext('modal');
 		} else {
 			// Always dashboard context on home page
 			setKeyboardContext('dashboard');
 		}
-	}
+	});
 </script>
 
 <!-- Home Page Content -->
@@ -250,6 +252,10 @@
 	<!-- Page Content -->
 	<div class="page-content">
 		<HomePage
+			user={data.user}
+			isAuthenticated={data.isAuthenticated}
+			canEdit={data.canEdit}
+			isAnonymous={data.isAnonymous}
 			onProjectSelect={() => {
 				// Close mobile sidebar when project is selected
 				responsiveActions.handleNavigation();

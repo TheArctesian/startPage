@@ -17,6 +17,10 @@
 	} from '$lib/types/database';
 	import { buildProjectTree } from '$lib/utils/projectTree';
 	import { navigateToProject, navigateToHome } from '$lib/utils/navigation';
+	import type { User } from '$lib/types/database';
+
+	export let user: User | null = null;
+	export let isAuthenticated: boolean = false;
 
 	const dispatch = createEventDispatcher<{
 		projectSelect: { project: Project };
@@ -24,6 +28,9 @@
 		projectEdit: { project: Project };
 		collapse: { isCollapsed: boolean };
 	}>();
+
+	// Check if user can create projects (authenticated users only)
+	$: canCreateProjects = isAuthenticated && user && user.status === 'approved';
 
 	// Component state
 	let isCollapsed = false;
@@ -149,14 +156,26 @@
 				>
 					Home
 				</button>
-				<button
-					class="create-project-btn transition-colors hover-scale active-press"
-					onclick={showCreateProjectModal}
-					title="Create new project"
-					aria-label="Create new project"
-				>
-					+ New Project
-				</button>
+				{#if user?.role === 'admin'}
+					<button
+						class="admin-btn transition-colors hover-scale active-press"
+						onclick={() => window.location.href = '/admin'}
+						title="Admin Panel"
+						aria-label="Admin Panel"
+					>
+						Admin Panel
+					</button>
+				{/if}
+				{#if canCreateProjects}
+					<button
+						class="create-project-btn transition-colors hover-scale active-press"
+						onclick={showCreateProjectModal}
+						title="Create new project"
+						aria-label="Create new project"
+					>
+						+ New Project
+					</button>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -185,14 +204,26 @@
 			>
 				/
 			</button>
-			<button
-				class="collapsed-create-btn"
-				onclick={showCreateProjectModal}
-				title="Create new project"
-				aria-label="Create new project"
-			>
-				+
-			</button>
+			{#if user?.role === 'admin'}
+				<button
+					class="collapsed-admin-btn"
+					onclick={() => window.location.href = '/admin'}
+					title="Admin Panel"
+					aria-label="Admin Panel"
+				>
+					⚙
+				</button>
+			{/if}
+			{#if canCreateProjects}
+				<button
+					class="collapsed-create-btn"
+					onclick={showCreateProjectModal}
+					title="Create new project"
+					aria-label="Create new project"
+				>
+					+
+				</button>
+			{/if}
 		</div>
 	{/if}
 </aside>
@@ -273,6 +304,7 @@
 	}
 
 	.home-btn,
+	.admin-btn,
 	.create-project-btn {
 		width: 100%;
 		padding: 0.5rem;
@@ -286,6 +318,7 @@
 	}
 
 	.home-btn:hover,
+	.admin-btn:hover,
 	.create-project-btn:hover {
 		background: var(--nord2);
 		border-color: var(--nord4);
@@ -303,6 +336,17 @@
 		border-color: var(--nord9);
 	}
 
+	.admin-btn {
+		background: var(--nord12);
+		color: var(--nord0);
+		border-color: var(--nord12);
+	}
+
+	.admin-btn:hover {
+		background: var(--nord11);
+		border-color: var(--nord11);
+	}
+
 	.projects-tree {
 		flex: 1;
 		overflow: hidden;
@@ -317,6 +361,7 @@
 	}
 
 	.collapsed-home-btn,
+	.collapsed-admin-btn,
 	.collapsed-create-btn {
 		width: 100%;
 		height: 2.5rem;
@@ -330,6 +375,7 @@
 	}
 
 	.collapsed-home-btn:hover,
+	.collapsed-admin-btn:hover,
 	.collapsed-create-btn:hover {
 		border-color: var(--nord8);
 		color: var(--nord8);
@@ -347,6 +393,19 @@
 	.collapsed-home-btn:hover {
 		background: var(--nord9);
 		border-color: var(--nord9);
+	}
+
+	.collapsed-admin-btn {
+		background: var(--nord12);
+		color: var(--nord0);
+		border-color: var(--nord12);
+		border-style: solid;
+		font-size: 1rem;
+	}
+
+	.collapsed-admin-btn:hover {
+		background: var(--nord11);
+		border-color: var(--nord11);
 	}
 
 

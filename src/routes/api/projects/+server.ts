@@ -1,45 +1,75 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { projects, tasks, timeSessions } from '$lib/server/db/schema';
-import { eq, and, isNotNull, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNotNull, isNull, sql, or, inArray } from 'drizzle-orm';
+import { requireAuth } from '$lib/server/auth-guard';
+import { logUserActivity } from '$lib/server/auth';
+import { getUserVisibleProjects, grantProjectPermission } from '$lib/server/permissions';
 import type { RequestHandler } from './$types';
 import type { NewProject, ProjectWithDetails } from '$lib/types/database';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals, getClientAddress }) => {
   try {
     const includeStats = url.searchParams.get('stats') === 'true';
     const activeOnly = url.searchParams.get('active') !== 'false'; // Default to true
-    const treeView = url.searchParams.get('tree') === 'true'; // New tree view option
     const parentIdParam = url.searchParams.get('parentId');
 
-    let query = db.select().from(projects);
+    // Use the new permission system to get visible projects
+    let projectList: any[] = [];
     
-    // Build where conditions
-    const conditions = [];
-    
-    if (activeOnly) {
-      conditions.push(eq(projects.isActive, true));
-    }
+    if (locals.user?.role === 'admin') {
+      // Admin sees all projects
+      let query = db.select().from(projects);
+      const conditions = [];
+      
+      if (activeOnly) {
+        conditions.push(eq(projects.isActive, true));
+      }
 
-    // Filter by parentId if provided
-    if (parentIdParam !== null) {
-      if (parentIdParam === 'null' || parentIdParam === '') {
-        conditions.push(isNull(projects.parentId));
-      } else {
-        const parentId = parseInt(parentIdParam);
-        if (!isNaN(parentId)) {
-          conditions.push(eq(projects.parentId, parentId));
+      // Filter by parentId if provided
+      if (parentIdParam !== null) {
+        if (parentIdParam === 'null' || parentIdParam === '') {
+          conditions.push(isNull(projects.parentId));
+        } else {
+          const parentId = parseInt(parentIdParam);
+          if (!isNaN(parentId)) {
+            conditions.push(eq(projects.parentId, parentId));
+          }
         }
       }
-    }
 
-    // Apply conditions
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+      // Apply conditions
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
 
-    // Order by depth first, then by name for proper tree structure
-    const projectList = await query.orderBy(projects.depth, projects.name);
+      projectList = await query.orderBy(projects.depth, projects.name);
+    } else {
+      // Use permission-based filtering for non-admin users
+      const userVisibleProjects = await getUserVisibleProjects(locals.user?.id ?? null);
+      
+      // Apply additional filters
+      projectList = userVisibleProjects.filter(project => {
+        if (activeOnly && !project.isActive) return false;
+        
+        if (parentIdParam !== null) {
+          if (parentIdParam === 'null' || parentIdParam === '') {
+            return project.parentId === null;
+          } else {
+            const parentId = parseInt(parentIdParam);
+            return !isNaN(parentId) && project.parentId === parentId;
+          }
+        }
+        
+        return true;
+      });
+
+      // Sort by depth and name
+      projectList.sort((a, b) => {
+        if (a.depth !== b.depth) return a.depth - b.depth;
+        return a.name.localeCompare(b.name);
+      });
+    }
 
     if (!includeStats) {
       return json(projectList);
@@ -86,7 +116,10 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+  requireAuth(event);
+  const { request, locals, getClientAddress } = event;
+  
   try {
     const data: NewProject = await request.json();
 
@@ -133,7 +166,9 @@ export const POST: RequestHandler = async ({ request }) => {
       color: data.color || '--nord8',
       icon: data.icon,
       isActive: data.isActive ?? true,
+      isPublic: data.isPublic ?? true, // Default to public
       parentId: data.parentId || null,
+      createdBy: locals.user!.id,
       path: path,
       depth: depth,
       isExpanded: data.isExpanded ?? true
@@ -142,6 +177,24 @@ export const POST: RequestHandler = async ({ request }) => {
     const [newProject] = await db.insert(projects)
       .values(projectData)
       .returning();
+
+    // Grant project admin permission to the creator
+    await grantProjectPermission(
+      locals.user!.id,
+      newProject.id,
+      'project_admin',
+      locals.user!.id
+    );
+
+    // Log activity
+    await logUserActivity(
+      locals.user!.id,
+      'create',
+      'project',
+      newProject.id,
+      getClientAddress(),
+      { projectName: newProject.name }
+    );
 
     return json(newProject, { status: 201 });
   } catch (error) {

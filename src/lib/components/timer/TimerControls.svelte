@@ -10,6 +10,8 @@
   export let task: Task | null = null;
   export let size: 'sm' | 'md' | 'lg' = 'md';
   export let variant: 'primary' | 'secondary' | 'minimal' = 'primary';
+  export let canEdit: boolean = false;
+  export let isAuthenticated: boolean = false;
 
   // Component state
   let isLoading = false;
@@ -72,6 +74,7 @@
   };
 </script>
 
+{#if canEdit}
 <div class="timer-controls">
   {#if isActive}
     <!-- Stop Button -->
@@ -110,6 +113,7 @@
     </button>
   {/if}
 </div>
+{/if}
 
 <style>
   .timer-controls {

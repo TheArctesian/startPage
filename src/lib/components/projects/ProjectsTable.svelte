@@ -6,6 +6,8 @@
 
   export let projects: ProjectWithDetails[] = [];
   export let isLoading = false;
+  export let canEdit: boolean = false;
+  export let isAuthenticated: boolean = false;
 
   const dispatch = createEventDispatcher<{
     statusChange: { project: ProjectWithDetails; newStatus: ProjectStatus };
@@ -104,6 +106,8 @@
         <ProjectRow 
           {project}
           depth={0}
+          {canEdit}
+          {isAuthenticated}
           on:click={() => handleProjectClick(project)}
           on:statusChange={handleStatusChange}
           on:edit={handleProjectEdit}

@@ -9,6 +9,10 @@
   import { todoTasks, inProgressTasks, doneTasks, updateTask } from '$lib/stores';
   import type { TaskWithDetails, TaskStatus } from '$lib/types/database';
 
+  // Permission props passed from parent
+  export let canEdit = false;
+  export let isAuthenticated = false;
+
   const dispatch = createEventDispatcher<{
     taskSelect: { task: TaskWithDetails };
     taskEdit: { task: TaskWithDetails };
@@ -277,13 +281,15 @@
   <!-- Board Header -->
   <div class="board-header">
     <h2 class="board-title">Task Board</h2>
-    <button 
-      class="btn btn-primary"
-      onclick={() => openNewTaskForm()}
-      title="Add new task (Cmd+N)"
-    >
-      + New Task
-    </button>
+    {#if canEdit}
+      <button 
+        class="btn btn-primary"
+        onclick={() => openNewTaskForm()}
+        title="Add new task (Cmd+N)"
+      >
+        + New Task
+      </button>
+    {/if}
   </div>
 
   <!-- Mobile Column Indicators -->
@@ -314,14 +320,16 @@
           </button>
         {/each}
       </div>
-      <button 
-        class="mobile-add-task-btn"
-        onclick={() => openNewTaskForm()}
-        title="Add new task"
-        aria-label="Add new task"
-      >
-        +
-      </button>
+      {#if canEdit}
+        <button 
+          class="mobile-add-task-btn"
+          onclick={() => openNewTaskForm()}
+          title="Add new task"
+          aria-label="Add new task"
+        >
+          +
+        </button>
+      {/if}
     </div>
   {/if}
 
@@ -389,9 +397,11 @@
             >
               <TaskCard
                 {task}
+                {canEdit}
+                {isAuthenticated}
                 variant="kanban"
                 selectable={true}
-                draggable={true}
+                draggable={canEdit}
                 showTimer={column.id !== 'done'}
                 on:select={() => handleTaskSelect(task)}
                 on:edit={() => openEditTaskForm(task)}
@@ -427,7 +437,7 @@
           {/if}
 
           <!-- Add Task Button (for non-empty columns) -->
-          {#if column.addButtonText && columnTasks.length > 0}
+          {#if canEdit && column.addButtonText && columnTasks.length > 0}
             <button 
               class="add-task-btn transition-all hover-scale active-press"
               onclick={() => openNewTaskForm(column.id)}
@@ -919,35 +929,100 @@
     }
 
     .kanban-board {
-      gap: 0.75rem;
-      margin: 1rem;
+      gap: 0.5rem;
+      margin: 0.5rem;
       overflow-x: hidden;
+      height: 100vh;
+      padding-bottom: 4rem; /* Space for bottom nav */
     }
 
     .board-header {
-      padding: 1rem;
-      margin-bottom: 0;
-      flex-direction: column;
+      padding: 0.75rem 1rem;
+      margin: 0;
+      margin-bottom: 0.5rem;
+      flex-direction: row;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
       text-align: center;
     }
 
-    .kanban-columns {
-      padding: 0;
-    }
-
-    .kanban-column {
-      padding: 1rem;
+    .board-title {
+      font-size: 1.25rem;
+      text-align: center;
       margin: 0;
     }
 
-    .tasks-list {
-      padding: 0.5rem;
+    .mobile-indicators {
+      margin: 0;
+      margin-bottom: 0.5rem;
+      padding: 0.75rem 1rem;
     }
 
-    .board-title {
-      text-align: center;
+    .kanban-wrapper {
+      margin: 0;
+      flex: 1;
+      min-height: 0;
+      border-radius: 0.5rem;
+    }
+
+    .kanban-columns {
+      padding: 0;
+      height: 100%;
+    }
+
+    .mobile-columns .kanban-column {
+      margin: 0;
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+    }
+
+    .mobile-columns .kanban-column:first-child {
+      border-left: 1px solid var(--nord3);
+      border-radius: 0.5rem 0 0 0.5rem;
+    }
+
+    .mobile-columns .kanban-column:last-child {
+      border-right: 1px solid var(--nord3);
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    .column-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--nord3);
+    }
+
+    .column-name {
+      font-size: 1rem;
+    }
+
+    .tasks-list {
+      padding: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .mobile-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--nord1);
+      border-top: 1px solid var(--nord3);
+      padding: 0.75rem 1rem;
+      z-index: 100;
+    }
+
+    .indicator-dot {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .mobile-add-task-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      font-size: 1rem;
     }
   }
 

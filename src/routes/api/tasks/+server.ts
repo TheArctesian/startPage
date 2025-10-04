@@ -2,10 +2,12 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { tasks, projects, timeSessions, tags, taskTags } from '$lib/server/db/schema';
 import { eq, and, or, desc, asc, ilike, inArray } from 'drizzle-orm';
+import { requireAuth, requireEditAccess } from '$lib/server/auth-guard';
+import { hasProjectAccess, logUserActivity } from '$lib/server/auth';
 import type { RequestHandler } from './$types';
 import type { NewTask, TaskWithDetails, TaskFilters } from '$lib/types/database';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
   try {
     const projectId = url.searchParams.get('project');
     const status = url.searchParams.get('status');
@@ -82,7 +84,10 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+  requireAuth(event);
+  const { request, locals, getClientAddress } = event;
+  
   try {
     const data: NewTask = await request.json();
 
@@ -98,6 +103,9 @@ export const POST: RequestHandler = async ({ request }) => {
     if (!data.projectId) {
       return json({ error: 'Project ID is required' }, { status: 400 });
     }
+
+    // Check project access
+    requireEditAccess(event, data.projectId);
 
     if (!data.estimatedMinutes || data.estimatedMinutes < 1 || data.estimatedMinutes > 1440) {
       return json({ 
@@ -138,6 +146,16 @@ export const POST: RequestHandler = async ({ request }) => {
     const [newTask] = await db.insert(tasks)
       .values(taskData)
       .returning();
+
+    // Log activity
+    await logUserActivity(
+      locals.user!.id,
+      'create',
+      'task',
+      newTask.id,
+      getClientAddress(),
+      { taskTitle: newTask.title, projectId: data.projectId }
+    );
 
     return json(newTask, { status: 201 });
   } catch (error) {

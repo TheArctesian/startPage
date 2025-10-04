@@ -6,6 +6,8 @@
 
   export let project: ProjectWithDetails & { children?: ProjectWithDetails[] };
   export let depth = 0;
+  export let canEdit: boolean = false;
+  export let isAuthenticated: boolean = false;
 
   const dispatch = createEventDispatcher<{
     click: void;
@@ -116,14 +118,16 @@
   <div class="col-status">
     <div class="status-container">
       <ProjectStatusBadge status={project.status || 'active'} />
-      <button 
-        class="status-edit-btn"
-        onclick={(e) => { e.stopPropagation(); showStatusDropdown = !showStatusDropdown; }}
-        title="Change status"
-        aria-label="Change project status"
-      >
-        ⋮
-      </button>
+      {#if canEdit}
+        <button 
+          class="status-edit-btn"
+          onclick={(e) => { e.stopPropagation(); showStatusDropdown = !showStatusDropdown; }}
+          title="Change status"
+          aria-label="Change project status"
+        >
+          ⋮
+        </button>
+      {/if}
       
       {#if showStatusDropdown}
         <ProjectStatusDropdown
@@ -160,14 +164,16 @@
 
   <!-- Actions Column -->
   <div class="col-actions">
-    <button 
-      class="action-btn"
-      onclick={(e) => { e.stopPropagation(); handleEdit(); }}
-      title="Edit project"
-      aria-label="Edit project"
-    >
-      ✎
-    </button>
+    {#if canEdit}
+      <button 
+        class="action-btn"
+        onclick={(e) => { e.stopPropagation(); handleEdit(); }}
+        title="Edit project"
+        aria-label="Edit project"
+      >
+        ✎
+      </button>
+    {/if}
   </div>
 </div>
 
@@ -177,6 +183,8 @@
     <svelte:self 
       project={child}
       depth={depth + 1}
+      {canEdit}
+      {isAuthenticated}
       on:click
       on:statusChange
       on:edit

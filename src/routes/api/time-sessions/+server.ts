@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { timeSessions, tasks, projects } from '$lib/server/db/schema';
 import { eq, and, desc, gte, lte, isNotNull } from 'drizzle-orm';
+import { requireAuth } from '$lib/server/auth-guard';
 import type { RequestHandler } from './$types';
 import type { NewTimeSession, TimeSessionWithDetails } from '$lib/types/database';
 
@@ -78,7 +79,10 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+  requireAuth(event);
+  const { request } = event;
+  
   try {
     const data: NewTimeSession = await request.json();
 

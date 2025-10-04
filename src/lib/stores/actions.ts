@@ -73,6 +73,7 @@ export async function createProject(projectData: NewProject) {
       color: projectData.color,
       icon: projectData.icon,
       isActive: projectData.isActive,
+      isPublic: projectData.isPublic,
       parentId: projectData.parentId,
       path: projectData.path,
       depth: projectData.depth,
