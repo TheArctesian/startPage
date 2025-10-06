@@ -3,6 +3,9 @@
   import TimerControls from '$lib/components/timer/TimerControls.svelte';
   import IntensityDisplay from '$lib/components/ui/IntensityDisplay.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import { formatDueDate, formatRelativeTime } from '$lib/utils/date';
+  import { formatTime, calculateTimeSpent } from '$lib/utils/time';
+  import { statusConfig, priorityConfig } from '$lib/utils/task';
   import type { TaskWithDetails } from '$lib/types/database';
 
   export let tasks: TaskWithDetails[] = [];
@@ -64,18 +67,7 @@
     }
   });
 
-  // Status colors and config
-  const statusConfig = {
-    todo: { label: 'To Do', icon: 'circle-empty', color: 'var(--nord4)' },
-    in_progress: { label: 'In Progress', icon: 'circle-progress', color: 'var(--nord8)' },
-    done: { label: 'Done', icon: 'circle-check', color: 'var(--nord14)' }
-  };
-
-  const priorityConfig = {
-    low: { label: 'Low', color: 'var(--nord4)' },
-    medium: { label: 'Medium', color: 'var(--nord8)' },
-    high: { label: 'High', color: 'var(--nord12)' }
-  };
+  // Use imported configs
 
   // Helper functions
   function handleSort(column: typeof sortColumn) {
@@ -87,47 +79,11 @@
     }
   }
 
-  function formatDueDate(date: Date | string | null) {
-    if (!date) return '';
-    const dueDate = new Date(date);
-    const now = new Date();
-    const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) {
-      return { text: `${Math.abs(diffDays)}d overdue`, class: 'overdue' };
-    } else if (diffDays === 0) {
-      return { text: 'Today', class: 'due-today' };
-    } else if (diffDays === 1) {
-      return { text: 'Tomorrow', class: 'due-soon' };
-    } else if (diffDays <= 7) {
-      return { text: `${diffDays}d`, class: 'due-soon' };
-    } else {
-      return { text: dueDate.toLocaleDateString(), class: 'due-later' };
-    }
-  }
+  // formatDueDate now imported from utils
 
-  function formatRelativeTime(date: Date | string) {
-    const targetDate = new Date(date);
-    const now = new Date();
-    const diffMs = now.getTime() - targetDate.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  // formatRelativeTime now imported from utils
 
-    if (diffDays > 0) {
-      return `${diffDays}d ago`;
-    } else if (diffHours > 0) {
-      return `${diffHours}h ago`;
-    } else {
-      return 'Just now';
-    }
-  }
-
-  function calculateTimeSpent(task: TaskWithDetails): number {
-    if (!task.timeSessions) return 0;
-    return Math.round(
-      task.timeSessions.reduce((sum, session) => sum + (session.duration || 0), 0) / 60
-    );
-  }
+  // calculateTimeSpent now imported from utils
 
   function handleTaskClick(task: TaskWithDetails, event: MouseEvent) {
     if (event.ctrlKey || event.metaKey) {

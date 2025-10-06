@@ -3,6 +3,7 @@
 	import { fly, scale, fade } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { quintOut, backOut } from 'svelte/easing';
+	import { formatTime } from '$lib/utils/time';
 	import TaskCard from './TaskCard.svelte';
 	import TaskForm from './TaskForm.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
@@ -27,18 +28,12 @@
 	$: allInProgressTasks = $inProgressTasks;
 	$: allDoneTasks = $doneTasks;
 
-	// Debug logging (remove after fixing)
-	$: {
-		console.log('📋 KanbanBoard - Todo tasks:', allTodoTasks.length);
-		console.log('📋 KanbanBoard - In Progress tasks:', allInProgressTasks.length);
-		console.log('📋 KanbanBoard - Done tasks:', allDoneTasks.length);
-		if (allTodoTasks.length > 0) {
-			console.log('📋 Sample todo task:', allTodoTasks[0]);
-		}
-	}
+	// Task count tracking (replaced console.log with reactive statements)
+	$: totalTasks = allTodoTasks.length + allInProgressTasks.length + allDoneTasks.length;
 
-	// Mobile detection and swipe state
+	// Mobile and tablet detection with swipe state
 	let isMobile = false;
+	let isTablet = false;
 	let currentColumnIndex = 0;
 	let touchStartX = 0;
 	let touchEndX = 0;
@@ -46,10 +41,13 @@
 	let swipeOffset = 0;
 
 	onMount(() => {
-		isMobile = window.innerWidth < 768;
-		const handleResize = () => {
-			isMobile = window.innerWidth < 768;
+		const updateBreakpoints = () => {
+			const width = window.innerWidth;
+			isMobile = width < 768;
+			isTablet = width >= 768 && width <= 1024;
 		};
+		updateBreakpoints();
+		const handleResize = () => updateBreakpoints();
 		window.addEventListener('resize', handleResize);
 		return () => window.removeEventListener('resize', handleResize);
 	});
@@ -207,14 +205,7 @@
 	}
 
 	// Format time display for better UX
-	function formatTime(minutes: number): string {
-		if (minutes < 60) {
-			return `${minutes}m`;
-		}
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
-		return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-	}
+	// formatTime now imported from utils
 
 	// Calculate column statistics
 	function getColumnStats(tasks: TaskWithDetails[]) {
@@ -230,13 +221,13 @@
 
 	// Mobile swipe handlers
 	function handleTouchStart(e: TouchEvent) {
-		if (!isMobile || typeof window === 'undefined') return;
+		if (!(isMobile || isTablet) || typeof window === 'undefined') return;
 		touchStartX = e.touches[0].clientX;
 		isSwiping = true;
 	}
 
 	function handleTouchMove(e: TouchEvent) {
-		if (!isMobile || !isSwiping || typeof window === 'undefined') return;
+		if (!(isMobile || isTablet) || !isSwiping || typeof window === 'undefined') return;
 		const currentX = e.touches[0].clientX;
 		swipeOffset = currentX - touchStartX;
 
@@ -250,7 +241,7 @@
 	}
 
 	function handleTouchEnd(e: TouchEvent) {
-		if (!isMobile || !isSwiping || typeof window === 'undefined') return;
+		if (!(isMobile || isTablet) || !isSwiping || typeof window === 'undefined') return;
 
 		touchEndX = e.changedTouches[0].clientX;
 		const swipeDistance = touchEndX - touchStartX;
@@ -303,8 +294,8 @@
 	</div>
 
 	<!-- Mobile Column Indicators -->
-	{#if isMobile}
-		<div class="mobile-indicators">
+	{#if isMobile || isTablet}
+		<div class="mobile-indicators" class:tablet={isTablet}>
 			<div class="mobile-indicators-left">
 				{#each columns as column, index}
 					{@const columnTasks = getTasksForColumn(column.id)}
@@ -348,28 +339,23 @@
 	{/if}
 
 	<!-- Kanban Wrapper -->
-	<div class="kanban-wrapper" class:mobile={isMobile}>
+	<div class="kanban-wrapper" class:mobile={isMobile} class:tablet={isTablet}>
 		<div
 			class="kanban-columns"
 			class:mobile-columns={isMobile}
-			style={isMobile
+			class:tablet-columns={isTablet}
+			style={(isMobile || isTablet)
 				? `transform: translateX(calc(-${currentColumnIndex * 33.333}% + ${swipeOffset}px))`
 				: ''}
-			ontouchstart={isMobile && typeof window !== 'undefined' ? handleTouchStart : undefined}
-			ontouchmove={isMobile && typeof window !== 'undefined' ? handleTouchMove : undefined}
-			ontouchend={isMobile && typeof window !== 'undefined' ? handleTouchEnd : undefined}
+			ontouchstart={(isMobile || isTablet) && typeof window !== 'undefined' ? handleTouchStart : undefined}
+			ontouchmove={(isMobile || isTablet) && typeof window !== 'undefined' ? handleTouchMove : undefined}
+			ontouchend={(isMobile || isTablet) && typeof window !== 'undefined' ? handleTouchEnd : undefined}
 		>
 			{#each columns as column, index}
 				{#key [allTodoTasks, allInProgressTasks, allDoneTasks]}
 					{@const columnTasks = getTasksForColumn(column.id)}
 					{@const stats = getColumnStats(columnTasks)}
-					{#if typeof console !== 'undefined'}
-						{@html console.log(
-							`🔄 Column ${column.title} - columnTasks:`,
-							columnTasks.length,
-							columnTasks
-						) || ''}
-					{/if}
+					<!-- Column task count tracking (debug info removed) -->
 
 					<!-- Show all columns on desktop, and all columns on mobile for swipe -->
 					{#if !isMobile || true}
@@ -377,6 +363,7 @@
 							class="kanban-column column-{column.id}"
 							class:drag-over={draggedOverColumn === column.id}
 							class:active-mobile={isMobile && index === currentColumnIndex}
+					class:active-tablet={isTablet && index === currentColumnIndex}
 							role="region"
 							aria-label="{column.title} tasks"
 							ondragover={(e) => handleColumnDragOver(e, column.id)}
@@ -1043,7 +1030,7 @@
 		}
 	}
 
-	/* Tablet - Keep Desktop Grid */
+	/* Tablet - Enhanced Layout for 768px-1024px */
 	@media (min-width: 768px) and (max-width: 1024px) {
 		.board-header {
 			flex-direction: column;
@@ -1053,6 +1040,59 @@
 
 		.board-title {
 			text-align: center;
+		}
+
+		/* Force display of mobile indicators on tablets */
+		.mobile-indicators {
+			display: flex !important;
+			justify-content: space-between;
+			align-items: center;
+			margin: 0.5rem;
+			padding: 1rem;
+			background: var(--nord1);
+			border-radius: 12px;
+			border: 1px solid var(--nord4);
+		}
+
+		/* Tablet column layout - single column swipe view */
+		.kanban-wrapper.tablet {
+			padding: 0;
+			margin: 0;
+		}
+
+		.tablet-columns {
+			display: flex;
+			width: 300%;
+			transition: transform 0.3s ease;
+		}
+
+		.tablet-columns .kanban-column {
+			width: 33.333%;
+			flex-shrink: 0;
+			height: auto;
+			min-height: auto;
+			max-height: none;
+			margin: 0;
+			padding: 1rem;
+			box-sizing: border-box;
+		}
+
+		/* Remove height restrictions for tablet */
+		.tablet-columns .tasks-list {
+			min-height: auto;
+			max-height: none;
+			height: auto;
+			overflow-y: visible;
+			padding: 0.5rem;
+		}
+
+		/* Better add task button for tablet */
+		.mobile-add-task-btn {
+			width: 2.5rem;
+			height: 2.5rem;
+			font-size: 1.25rem;
+			border-radius: 50%;
+			flex-shrink: 0;
 		}
 	}
 

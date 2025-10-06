@@ -50,7 +50,13 @@ src/
 │   │   └── ui/
 │   ├── styles/       # Centralized styling (Nord theme, component styles)
 │   ├── types/        # TypeScript type definitions
-│   └── utils/        # Utility functions (navigation, projectTree)
+│   └── utils/        # Utility functions organized by domain
+│       ├── date.ts      # Date formatting and due date utilities
+│       ├── time.ts      # Time calculations and formatting
+│       ├── task.ts      # Task status/priority configurations
+│       ├── logger.ts    # Centralized logging system
+│       ├── navigation.ts # Navigation utilities
+│       └── projectTree.ts # Project tree utilities
 ├── routes/           # SvelteKit routes with +page and +server files
 │   ├── api/         # REST API endpoints for all entities
 │   └── project/[id]/ # Dynamic project pages
@@ -80,10 +86,49 @@ Key enums:
 ### Component Conventions
 - Use Svelte 5 runes (`$state`, `$derived`, `$effect`)
 - Tailwind classes for layout, Nord CSS variables for colors
-- Keep components small and focused (UNIX philosophy)
+- **Keep components small and focused (UNIX philosophy)**
+- **Maximum 500 lines per file** - split larger components into smaller ones
 - Store shared state in Svelte stores (`src/lib/stores/`)
 - Prefer server-side data fetching with `+page.server.ts`
 - Use TypeScript for type safety
+- **Always import utilities instead of duplicating code**:
+  - `import { formatTime } from '$lib/utils/time'`
+  - `import { formatDueDate } from '$lib/utils/date'`
+  - `import { statusConfig } from '$lib/utils/task'`
+  - `import { logger } from '$lib/utils/logger'`
+
+### Utility Modules
+**Date Utilities** (`src/lib/utils/date.ts`):
+- `formatDueDate(date)` - Formats due dates with urgency indicators
+- `formatRelativeTime(date)` - Human-readable time differences
+- `formatDateDisplay(date)` - Consistent date display formatting
+
+**Time Utilities** (`src/lib/utils/time.ts`):
+- `formatTime(minutes)` - Convert minutes to "2h 30m" format
+- `calculateTimeSpent(task)` - Calculate total time from sessions
+- `calculateTimeProgress(task)` - Progress percentage vs estimates
+
+**Task Utilities** (`src/lib/utils/task.ts`):
+- `statusConfig` - Status configurations (colors, icons, labels)
+- `priorityConfig` - Priority configurations 
+- `getPriorityColor(priority)` - Priority-specific colors
+
+**Logger Utilities** (`src/lib/utils/logger.ts`):
+- `logger.debug/info/warn/error()` - Centralized logging
+- `storeLogger`, `apiLogger`, `componentLogger` - Context-specific loggers
+- **Never use console.log directly** - always use logger utilities
+
+### Component Composition Patterns
+**TaskCard Example** (split into smaller components):
+- `TaskCardDisplay.svelte` - Visual presentation only
+- `TaskCardActions.svelte` - Action buttons and handlers  
+- `TaskCardDraggable.svelte` - Drag/drop functionality wrapper
+- `TaskCard.svelte` - Main component composing the above
+
+**Modal Patterns**:
+- `BaseModal.svelte` - Generic modal wrapper
+- `FormModal.svelte` - Form-specific modal with submit/cancel
+- Never create modal components > 300 lines - use composition
 
 ### API Structure
 All API endpoints follow RESTful conventions under `/api/`:

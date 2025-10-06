@@ -3,6 +3,8 @@
 	import { projects, projectStats, loadProjects } from '$lib/stores';
 	import { setSelectedTask } from '$lib/stores/actions';
 	import { navigateToProject } from '$lib/utils/navigation';
+	import { formatTime, calculateTimeSpent } from '$lib/utils/time';
+	import { getPriorityColor } from '$lib/utils/task';
 	import ProjectsTable from '$lib/components/projects/ProjectsTable.svelte';
 	import ProjectEditModal from '$lib/components/projects/ProjectEditModal.svelte';
 	import TaskCard from '$lib/components/tasks/TaskCard.svelte';
@@ -104,32 +106,7 @@
 		projectToEdit = null;
 	}
 
-	function formatTime(minutes: number): string {
-		if (minutes < 60) return `${minutes}m`;
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
-		return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-	}
-
-	function calculateTimeSpent(task: TaskWithDetails): number {
-		if (!task.timeSessions) return 0;
-		return Math.round(
-			task.timeSessions.reduce((sum, session) => sum + (session.duration || 0), 0) / 60
-		);
-	}
-
-	function getPriorityColor(priority: string): string {
-		switch (priority) {
-			case 'high':
-				return 'var(--nord11)';
-			case 'medium':
-				return 'var(--nord13)';
-			case 'low':
-				return 'var(--nord4)';
-			default:
-				return 'var(--nord4)';
-		}
-	}
+	// Functions now imported from utils
 </script>
 
 <div class="homepage">

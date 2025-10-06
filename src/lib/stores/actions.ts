@@ -1,5 +1,6 @@
 // Store actions following UNIX philosophy: each function does one thing well
 import { get } from 'svelte/store';
+import { storeLogger } from '$lib/utils/logger';
 import { 
   projects, 
   tasks, 
@@ -31,7 +32,7 @@ import { buildProjectTree } from '$lib/utils/projectTree';
 
 // Error handling helper
 function handleError(err: any, message: string) {
-  console.error(message, err);
+  storeLogger.error(message, err);
   error.set(err.message || message);
   isLoading.set(false);
 }
@@ -84,7 +85,7 @@ export async function createProject(projectData: NewProject) {
       isExpanded: projectData.isExpanded
     };
 
-    console.log('📤 Sending clean project data:', cleanProjectData);
+    storeLogger.debug('Sending clean project data', cleanProjectData);
 
     const response = await fetch('/api/projects', {
       method: 'POST',
@@ -153,14 +154,14 @@ export async function updateProject(id: number, updates: Partial<Project>) {
 }
 
 export async function setActiveProject(project: Project) {
-  console.log(`🎯 Setting active project: ${project.name} (ID: ${project.id})`);
+  storeLogger.info(`Setting active project: ${project.name} (ID: ${project.id})`);
   activeProject.set(project);
   // Load project-specific data and wait for completion
   await Promise.all([
     loadTasks(project.id),
     loadQuickLinks(project.id)
   ]);
-  console.log(`✅ Active project data loaded for: ${project.name}`);
+  storeLogger.info(`Active project data loaded for: ${project.name}`);
 }
 
 // TASK ACTIONS
@@ -180,7 +181,7 @@ export async function loadTasks(projectId?: number) {
     }
     
     const data = await response.json();
-    console.log(`📥 Loaded ${data.length} tasks for project ${projectId}:`, data);
+    storeLogger.debug(`Loaded ${data.length} tasks for project ${projectId}`, data);
     tasks.set(data);
   } catch (err) {
     handleError(err, 'Failed to load tasks');
