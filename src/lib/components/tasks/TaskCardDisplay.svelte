@@ -117,24 +117,24 @@
     display: flex;
     gap: 0.75rem;
     padding: 1rem;
-    background: var(--nord6);
-    border: 1px solid var(--nord4);
+    background: var(--nord6, #eceff4);
+    border: 1px solid var(--nord4, #d8dee9);
     border-radius: 8px;
     transition: all 0.2s ease;
   }
 
   .task-card-display.selected {
-    border-color: var(--nord8);
+    border-color: var(--nord8, #88c0d0);
     box-shadow: 0 0 0 2px rgba(136, 192, 208, 0.2);
   }
 
   .task-card-display.completed {
     opacity: 0.7;
-    background: var(--nord5);
+    background: var(--nord5, #e5e9f0);
   }
 
   .task-card-display.overdue {
-    border-color: var(--nord11);
+    border-color: var(--nord11, #bf616a);
     background: rgba(191, 97, 106, 0.05);
   }
 
@@ -165,14 +165,14 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--nord0);
+    color: var(--nord0, #2e3440);
     line-height: 1.3;
   }
 
   .task-description {
     margin: 0;
     font-size: 0.875rem;
-    color: var(--nord1);
+    color: var(--nord1, #3b4252);
     line-height: 1.4;
   }
 
@@ -182,7 +182,7 @@
     gap: 0.75rem;
     align-items: center;
     font-size: 0.75rem;
-    color: var(--nord2);
+    color: var(--nord2, #434c5e);
   }
 
   .priority-indicator {
@@ -212,7 +212,7 @@
   }
 
   .due-date.overdue {
-    color: var(--nord11);
+    color: var(--nord11, #bf616a);
     font-weight: 600;
   }
 
@@ -225,19 +225,19 @@
   .progress-container {
     width: 100%;
     height: 4px;
-    background: var(--nord4);
+    background: var(--nord4, #d8dee9);
     border-radius: 2px;
     overflow: hidden;
   }
 
   .progress-bar {
     height: 100%;
-    background: var(--nord8);
+    background: var(--nord8, #88c0d0);
     transition: width 0.3s ease;
   }
 
   .progress-bar.overdue {
-    background: var(--nord11);
+    background: var(--nord11, #bf616a);
   }
 
   .intensity-container {
@@ -249,7 +249,7 @@
     display: flex;
     gap: 1rem;
     font-size: 0.6875rem;
-    color: var(--nord3);
+    color: var(--nord3, #4c566a);
   }
 
   @media (max-width: 640px) {

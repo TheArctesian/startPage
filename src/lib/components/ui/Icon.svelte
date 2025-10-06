@@ -1,14 +1,24 @@
 <script lang="ts">
 	export let name: string;
-	export let size = 16;
+	export let size: number | string = 16;
 	export let color = 'currentColor';
 	export let strokeWidth = 2;
+
+	// Convert size prop to number for consistent handling
+	$: iconSize = typeof size === 'string' 
+		? size === 'xs' ? 12 
+		: size === 'sm' ? 16 
+		: size === 'md' ? 20 
+		: size === 'lg' ? 24 
+		: size === 'xl' ? 32 
+		: 16 
+		: size;
 </script>
 
 {#if name === 'edit'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -21,8 +31,8 @@
 	</svg>
 {:else if name === 'check'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -34,8 +44,8 @@
 	</svg>
 {:else if name === 'trash'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -48,8 +58,8 @@
 	</svg>
 {:else if name === 'circle-empty'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -60,7 +70,7 @@
 		<circle cx="12" cy="12" r="10" />
 	</svg>
 {:else if name === 'circle-progress'}
-	<svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+	<svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none">
 		<circle
 			cx="12"
 			cy="12"
@@ -83,7 +93,7 @@
 		/>
 	</svg>
 {:else if name === 'circle-check'}
-	<svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+	<svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none">
 		<circle cx="12" cy="12" r="10" fill={color} />
 		<polyline
 			points="16 8 10 14 7 11"
@@ -95,8 +105,8 @@
 	</svg>
 {:else if name === 'more-vertical'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -110,8 +120,8 @@
 	</svg>
 {:else if name === 'arrow-right'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -124,8 +134,8 @@
 	</svg>
 {:else if name === 'arrow-left'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -138,8 +148,8 @@
 	</svg>
 {:else if name === 'rotate-ccw'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -152,8 +162,8 @@
 	</svg>
 {:else if name === 'play'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -165,8 +175,8 @@
 	</svg>
 {:else if name === 'link'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -179,8 +189,8 @@
 	</svg>
 {:else if name === 'calendar'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -195,8 +205,8 @@
 	</svg>
 {:else if name === 'clock'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -209,8 +219,8 @@
 	</svg>
 {:else if name === 'tag'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -223,8 +233,8 @@
 	</svg>
 {:else if name === 'folder'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -236,8 +246,8 @@
 	</svg>
 {:else if name === 'flag'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -250,8 +260,8 @@
 	</svg>
 {:else if name === 'info'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -265,8 +275,8 @@
 	</svg>
 {:else if name === 'external-link'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -280,8 +290,8 @@
 	</svg>
 {:else if name === 'arrow-up'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -294,8 +304,8 @@
 	</svg>
 {:else if name === 'arrow-down'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -308,8 +318,8 @@
 	</svg>
 {:else if name === 'grid'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -324,8 +334,8 @@
 	</svg>
 {:else if name === 'list'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -342,8 +352,8 @@
 	</svg>
 {:else if name === 'columns'}
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}
@@ -358,8 +368,8 @@
 {:else}
 	<!-- Fallback for unknown icons -->
 	<svg
-		width={size}
-		height={size}
+		width={iconSize}
+		height={iconSize}
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke={color}

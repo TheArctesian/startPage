@@ -54,7 +54,7 @@
   <!-- Timer button -->
   {#if showTimer && isAuthenticated}
     <div class="timer-section">
-      <TimerButton taskId={task.id} />
+      <TimerButton {task} canEdit={true} />
     </div>
   {/if}
 
@@ -165,39 +165,39 @@
   }
 
   .start-btn {
-    background: var(--nord8);
-    color: var(--nord6);
+    background: var(--nord8, #88c0d0);
+    color: var(--nord6, #eceff4);
   }
 
   .start-btn:hover {
-    background: var(--nord7);
+    background: var(--nord7, #8fbcbb);
   }
 
   .complete-btn {
-    background: var(--nord14);
-    color: var(--nord6);
+    background: var(--nord14, #a3be8c);
+    color: var(--nord6, #eceff4);
   }
 
   .complete-btn:hover {
-    background: var(--nord13);
+    background: var(--nord13, #ebcb8b);
   }
 
   .pause-btn {
-    background: var(--nord12);
-    color: var(--nord6);
+    background: var(--nord12, #d08770);
+    color: var(--nord6, #eceff4);
   }
 
   .pause-btn:hover {
-    background: var(--nord11);
+    background: var(--nord11, #bf616a);
   }
 
   .restart-btn {
-    background: var(--nord9);
-    color: var(--nord6);
+    background: var(--nord9, #81a1c1);
+    color: var(--nord6, #eceff4);
   }
 
   .restart-btn:hover {
-    background: var(--nord8);
+    background: var(--nord8, #88c0d0);
   }
 
   .edit-actions {
@@ -219,7 +219,7 @@
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: var(--nord2);
+    color: var(--nord2, #434c5e);
     cursor: pointer;
     transition: all 0.2s ease;
   }
@@ -231,12 +231,12 @@
   }
 
   .action-btn:hover {
-    background: var(--nord4);
-    color: var(--nord0);
+    background: var(--nord4, #d8dee9);
+    color: var(--nord0, #2e3440);
   }
 
   .delete-btn:hover {
-    background: var(--nord11);
-    color: var(--nord6);
+    background: var(--nord11, #bf616a);
+    color: var(--nord6, #eceff4);
   }
 </style>

@@ -46,11 +46,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
       query = query.where(and(...conditions));
     }
 
-    // Default ordering: in_progress first, then by creation date
+    // Default ordering: by creation date (most recent first)
     const taskList = await query
-      .orderBy(
-        tasks.status === 'in_progress' ? asc(tasks.createdAt) : desc(tasks.createdAt)
-      )
+      .orderBy(desc(tasks.createdAt))
       .limit(limit)
       .offset(offset);
 

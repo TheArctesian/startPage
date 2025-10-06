@@ -31,7 +31,6 @@ export const GET: RequestHandler = async ({ url }) => {
         projectName: projects.name,
         projectDescription: projects.description,
         projectColor: projects.color,
-        projectIcon: projects.icon,
         projectStatus: projects.status,
         projectCreatedAt: projects.createdAt,
         projectUpdatedAt: projects.updatedAt
@@ -44,12 +43,7 @@ export const GET: RequestHandler = async ({ url }) => {
           eq(projects.status, 'active') // Only show tasks from active projects
         )
       )
-      .orderBy(
-        // Order by priority (high first), then by updated date (most recent first)
-        tasks.priority === 'high' ? desc(tasks.updatedAt) : 
-        tasks.priority === 'medium' ? desc(tasks.updatedAt) : 
-        desc(tasks.updatedAt)
-      )
+      .orderBy(desc(tasks.updatedAt))
       .limit(limit);
 
     // Get time sessions for each task
@@ -80,7 +74,6 @@ export const GET: RequestHandler = async ({ url }) => {
             name: taskData.projectName,
             description: taskData.projectDescription,
             color: taskData.projectColor,
-            icon: taskData.projectIcon,
             status: taskData.projectStatus,
             createdAt: taskData.projectCreatedAt,
             updatedAt: taskData.projectUpdatedAt
