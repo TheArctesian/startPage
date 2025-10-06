@@ -15,18 +15,33 @@
     edit: { project: ProjectWithDetails };
   }>();
 
-  let isExpanded = false;
+  let isExpanded = project.isExpanded ?? false;
   let showStatusDropdown = false;
 
-  // Calculate project statistics
-  $: stats = {
-    completion: project.totalTasks && project.totalTasks > 0 
-      ? Math.round((project.completedTasks || 0) / project.totalTasks * 100)
-      : 0,
-    tasks: project.totalTasks || 0,
-    completed: project.completedTasks || 0,
-    timeFormatted: formatTime(project.totalMinutes || 0)
-  };
+  // Calculate project statistics based on expansion state
+  $: stats = (() => {
+    // When collapsed or has no children, show aggregated stats (includes subprojects)
+    // When expanded and has children, show direct stats (only this project)
+    const shouldShowDirect = isExpanded && hasChildren;
+    
+    const tasks = shouldShowDirect 
+      ? (project.directTasks || 0)
+      : (project.totalTasks || 0);
+    const completed = shouldShowDirect 
+      ? (project.directCompletedTasks || 0) 
+      : (project.completedTasks || 0);
+    const minutes = shouldShowDirect 
+      ? (project.directMinutes || 0)
+      : (project.totalMinutes || 0);
+    
+    return {
+      completion: tasks > 0 ? Math.round((completed / tasks) * 100) : 0,
+      tasks,
+      completed,
+      timeFormatted: formatTime(minutes),
+      isAggregated: !shouldShowDirect && hasChildren
+    };
+  })();
 
   $: hasChildren = project.children && project.children.length > 0;
   $: indentStyle = `margin-left: ${depth * 1.5}rem`;
@@ -103,11 +118,7 @@
         class="project-indicator"
         style="background-color: {project.color || 'var(--nord8)'}"
       >
-        {#if project.icon}
-          <span class="project-icon">{project.icon}</span>
-        {:else}
-          <div class="project-dot"></div>
-        {/if}
+        <div class="project-dot"></div>
       </div>
       
       <span class="project-name">{project.name}</span>
@@ -139,22 +150,15 @@
     </div>
   </div>
 
-  <!-- Progress Column -->
-  <div class="col-progress">
-    <div class="progress-container">
-      <div class="progress-bar">
-        <div 
-          class="progress-fill"
-          style="width: {stats.completion}%; background-color: {project.color || 'var(--nord8)'}"
-        ></div>
-      </div>
-      <span class="progress-text">{stats.completion}%</span>
-    </div>
-  </div>
 
   <!-- Tasks Column -->
   <div class="col-tasks">
-    <span class="tasks-count">{stats.completed}/{stats.tasks}</span>
+    <span class="tasks-count">
+      {stats.completed}/{stats.tasks}
+      {#if stats.isAggregated}
+        <span class="aggregated-indicator" title="Includes tasks from subprojects">+</span>
+      {/if}
+    </span>
   </div>
 
   <!-- Time Column -->
@@ -195,7 +199,7 @@
 <style>
   .project-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
     gap: 1rem;
     padding: 0.75rem 1.5rem;
     border-bottom: 1px solid var(--nord3);
@@ -221,20 +225,14 @@
     justify-content: center;
     align-items: center;
   }
-  .col-progress { 
+  .col-tasks { 
     grid-area: 1 / 3; 
     display: flex;
     justify-content: center;
     align-items: center;
   }
-  .col-tasks { 
-    grid-area: 1 / 4; 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .col-time { grid-area: 1 / 5; }
-  .col-actions { grid-area: 1 / 6; }
+  .col-time { grid-area: 1 / 4; }
+  .col-actions { grid-area: 1 / 5; }
 
   .name-content {
     display: flex;
@@ -295,9 +293,6 @@
     flex-shrink: 0;
   }
 
-  .project-icon {
-    font-size: 0.875rem;
-  }
 
   .project-dot {
     width: 0.375rem;
@@ -347,39 +342,20 @@
     color: var(--nord6);
   }
 
-  .progress-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    width: 100%;
-    padding: 0 0.5rem;
-  }
-
-  .progress-bar {
-    height: 0.25rem;
-    background: var(--nord3);
-    border-radius: 0.125rem;
-    overflow: hidden;
-    width: 100%;
-  }
-
-  .progress-fill {
-    height: 100%;
-    transition: width 0.3s ease;
-    border-radius: 0.125rem;
-  }
-
-  .progress-text {
-    font-size: 0.75rem;
-    color: var(--nord4);
-    text-align: center;
-  }
 
   .tasks-count,
   .time-value {
     font-size: 0.875rem;
     color: var(--nord6);
     font-weight: 500;
+  }
+
+  .aggregated-indicator {
+    color: var(--nord8);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.25rem;
+    opacity: 0.8;
   }
 
   .action-btn {
@@ -406,7 +382,7 @@
   /* Mobile responsive */
   @media (max-width: 1024px) {
     .project-row {
-      grid-template-columns: 2fr 1fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
     }
@@ -423,7 +399,7 @@
 
   @media (max-width: 640px) {
     .project-row {
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr;
       padding: 0.5rem 0.75rem;
     }
 

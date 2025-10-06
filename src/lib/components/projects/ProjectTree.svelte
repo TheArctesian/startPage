@@ -295,6 +295,7 @@
 
   .tree-list {
     padding: 0.25rem;
+    position: relative;
   }
 
   .loading-state {

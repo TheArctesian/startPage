@@ -20,6 +20,7 @@ import type {
   NewTask, 
   NewTimeSession, 
   NewQuickLink, 
+  QuickLink,
   Project, 
   Task,
   IntensityLevel,

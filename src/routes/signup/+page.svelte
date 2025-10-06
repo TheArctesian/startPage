@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	
 	let { form } = $props();
@@ -32,8 +33,13 @@
 			action="?/signup"
 			use:enhance={() => {
 				loading = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
 					loading = false;
+					if (result.type === 'redirect') {
+						// Refresh all data after successful signup
+						await invalidateAll();
+						return;
+					}
 					await update();
 				};
 			}}

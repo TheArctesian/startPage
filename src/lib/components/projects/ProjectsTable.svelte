@@ -68,7 +68,6 @@
     <div class="header-row">
       <div class="col-name">Name</div>
       <div class="col-status">Status</div>
-      <div class="col-progress">Progress</div>
       <div class="col-tasks">Tasks</div>
       <div class="col-time">Time</div>
       <div class="col-actions">Actions</div>
@@ -87,7 +86,6 @@
             <div class="skeleton-row">
               <div class="skeleton-loader" style="width: 150px; height: 20px;"></div>
               <div class="skeleton-loader" style="width: 80px; height: 20px;"></div>
-              <div class="skeleton-loader" style="width: 100px; height: 20px;"></div>
               <div class="skeleton-loader" style="width: 60px; height: 20px;"></div>
               <div class="skeleton-loader" style="width: 80px; height: 20px;"></div>
               <div class="skeleton-loader" style="width: 40px; height: 20px;"></div>
@@ -135,7 +133,7 @@
 
   .header-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
     gap: 1rem;
     padding: 1rem 1.5rem;
     font-weight: 600;
@@ -152,20 +150,14 @@
     justify-content: center;
     align-items: center;
   }
-  .col-progress { 
+  .col-tasks { 
     grid-area: 1 / 3; 
     display: flex;
     justify-content: center;
     align-items: center;
   }
-  .col-tasks { 
-    grid-area: 1 / 4; 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .col-time { grid-area: 1 / 5; }
-  .col-actions { grid-area: 1 / 6; }
+  .col-time { grid-area: 1 / 4; }
+  .col-actions { grid-area: 1 / 5; }
 
   .table-body {
     max-height: 70vh;
@@ -226,7 +218,7 @@
 
   .skeleton-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 0.5fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;
     gap: 1rem;
     align-items: center;
     padding: 0.75rem 0;
@@ -235,7 +227,7 @@
   /* Mobile responsive */
   @media (max-width: 1024px) {
     .header-row {
-      grid-template-columns: 2fr 1fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr;
       gap: 0.5rem;
       padding: 0.75rem 1rem;
       font-size: 0.75rem;
@@ -249,7 +241,7 @@
 
   @media (max-width: 640px) {
     .header-row {
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr;
       padding: 0.5rem 0.75rem;
     }
 

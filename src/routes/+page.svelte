@@ -21,13 +21,13 @@
 	import { browser } from '$app/environment';
 
 	// Modal and state management
-	let showShortcutsHelp = false;
-	let showCompletionModal = false;
-	let showAnalytics = false;
-	let showReports = false;
-	let showDeleteConfirmation = false;
-	let taskToComplete: TaskWithDetails | null = null;
-	let taskToDelete: TaskWithDetails | null = null;
+	let showShortcutsHelp = $state(false);
+	let showCompletionModal = $state(false);
+	let showAnalytics = $state(false);
+	let showReports = $state(false);
+	let showDeleteConfirmation = $state(false);
+	let taskToComplete: TaskWithDetails | null = $state(null);
+	let taskToDelete: TaskWithDetails | null = $state(null);
 
 	// Handle task selection from board
 	function handleTaskSelect(event: CustomEvent<{ task: TaskWithDetails }>) {

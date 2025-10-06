@@ -2,8 +2,10 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import ProjectSidebar from '$lib/components/projects/ProjectSidebar.svelte';
-	import Timer from '$lib/components/timer/Timer.svelte';
+	import FloatingTimerWidget from '$lib/components/timer/FloatingTimerWidget.svelte';
+	import TimerNotifications from '$lib/components/timer/TimerNotifications.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
+	import PWAInstallPrompt from '$lib/components/PWAInstallPrompt.svelte';
 	import { 
 		sidebarState, 
 		sidebarActions, 
@@ -11,7 +13,7 @@
 		isMobileOpen, 
 		responsiveActions 
 	} from '$lib/stores/sidebar';
-	import { isTimerRunning, selectedTask } from '$lib/stores';
+	import { hasActiveTimers, TimerManager } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	
@@ -38,6 +40,9 @@
 			// Handle navigation events to close mobile sidebar
 			window.addEventListener('popstate', responsiveActions.handleNavigation);
 			
+			// Initialize timers when app loads
+			TimerManager.loadActiveTimers();
+			
 			return () => {
 				window.removeEventListener('popstate', responsiveActions.handleNavigation);
 			};
@@ -50,20 +55,11 @@
 </svelte:head>
 
 <div class="app-root">
-	<!-- Timer Widget (when active) -->
-	{#if $isTimerRunning && $selectedTask}
-		<div class="timer-widget fade-in">
-			<div class="timer-content">
-				<div class="timer-task-info">
-					<div class="timer-task-title">{$selectedTask.title}</div>
-					<div class="timer-task-meta">{$selectedTask.estimatedMinutes}m estimated</div>
-				</div>
-				<div class="timer-display">
-					<Timer />
-				</div>
-			</div>
-		</div>
-	{/if}
+	<!-- Floating Timer Widget -->
+	<FloatingTimerWidget />
+
+	<!-- Timer Notifications -->
+	<TimerNotifications />
 
 	<!-- Guest Banner -->
 	{#if data.isAnonymous}
@@ -118,7 +114,7 @@
 								<span class="role-badge admin">Admin</span>
 							{/if}
 						</div>
-						<a href="/logout" class="auth-link authenticated">
+						<a href="/logout" class="auth-link authenticated" data-sveltekit-reload>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 								<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
 								<polyline points="16,17 21,12 16,7"/>
@@ -176,6 +172,9 @@
 
 	<!-- Global Toast Notifications -->
 	<Toast />
+
+	<!-- PWA Install Prompt -->
+	<PWAInstallPrompt />
 </div>
 
 <style>
@@ -186,43 +185,7 @@
 		color: var(--nord6);
 	}
 
-	/* Timer Widget Styles */
-	.timer-widget {
-		background: var(--nord1);
-		border-bottom: 2px solid var(--nord8);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		padding: 0.75rem 1rem;
-		z-index: 50;
-	}
-
-	.timer-content {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		max-width: 1200px;
-		margin: 0 auto;
-	}
-
-	.timer-task-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.timer-task-title {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--nord6);
-	}
-
-	.timer-task-meta {
-		font-size: 0.75rem;
-		color: var(--nord9);
-	}
-
-	.timer-display {
-		flex-shrink: 0;
-	}
+	/* Floating timer widget styles are in the component */
 
 	/* Main Layout */
 	.app-layout {
@@ -469,12 +432,7 @@
 			visibility: visible;
 		}
 
-		.timer-content {
-			flex-direction: column;
-			gap: 0.5rem;
-			align-items: center;
-			text-align: center;
-		}
+		/* Mobile timer widget adjustments handled in component */
 	}
 
 	@media (max-width: 640px) {

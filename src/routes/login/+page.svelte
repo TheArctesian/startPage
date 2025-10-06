@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	
 	let { form } = $props();
@@ -32,8 +33,13 @@
 			action="?/login"
 			use:enhance={() => {
 				loading = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
 					loading = false;
+					if (result.type === 'redirect') {
+						// Refresh all data after successful login
+						await invalidateAll();
+						return;
+					}
 					await update();
 				};
 			}}
@@ -102,8 +108,13 @@
 			action="?/lurk"
 			use:enhance={() => {
 				lurkLoading = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
 					lurkLoading = false;
+					if (result.type === 'redirect') {
+						// Refresh all data after successful lurk session
+						await invalidateAll();
+						return;
+					}
 					await update();
 				};
 			}}

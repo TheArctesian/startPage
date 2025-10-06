@@ -69,7 +69,7 @@
           }}
         >
           <div class="project-header">
-            <div class="project-icon">{project.icon || '●'}</div>
+            <div class="project-icon">●</div>
             <div class="project-info">
               <h3 class="project-name">{project.name}</h3>
               <p class="project-description">{project.description || 'No description'}</p>

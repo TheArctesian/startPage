@@ -70,11 +70,21 @@ export interface ProjectWithDetails extends Project {
   createdByUser?: User;
   userAccess?: ProjectUserWithDetails[];
   
-  // Computed stats
+  // Computed stats (aggregated - includes subprojects)
   totalTasks?: number;
   completedTasks?: number;
   inProgressTasks?: number;
   totalMinutes?: number;
+  
+  // Direct stats (only this project)
+  directTasks?: number;
+  directCompletedTasks?: number;
+  directInProgressTasks?: number;
+  directMinutes?: number;
+  
+  // Hierarchy metadata
+  hasSubprojects?: boolean;
+  isExpanded?: boolean;
 }
 
 // Auth-related extended types
@@ -190,14 +200,12 @@ export interface TaskFormData {
 export interface ProjectFormData {
   name: string;
   color?: string;
-  icon?: string;
   parentId?: number; // For creating sub-projects
 }
 
 export interface QuickLinkFormData {
   title: string;
   url: string;
-  icon?: string;
   category?: LinkCategory;
   projectId: number;
 }

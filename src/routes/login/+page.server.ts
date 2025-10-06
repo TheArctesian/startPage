@@ -37,7 +37,7 @@ export const actions: Actions = {
       }
 
       if (user.status === 'pending') {
-        return fail(400, { error: 'Account pending approval. Please wait for admin approval.' });
+        throw redirect(302, '/pending-approval');
       }
 
       if (user.status === 'suspended') {

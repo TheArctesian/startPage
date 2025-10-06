@@ -114,27 +114,20 @@ export const timerDisplay = derived(
   }
 );
 
-// Project statistics
+// Project statistics - now enhanced to show projects with full stats from API
 export const projectStats = derived(
-  [projects, tasks, timeSessions],
-  ([$projects, $tasks, $timeSessions]) => {
+  [projects],
+  ([$projects]) => {
+    // Projects now come from API with pre-calculated stats
+    // The API handles both direct and aggregated counts
     return $projects.map(project => {
-      const projectTasks = $tasks.filter(t => t.projectId === project.id);
-      const projectSessions = $timeSessions.filter(s => s.projectId === project.id);
-      
-      const totalTasks = projectTasks.length;
-      const completedTasks = projectTasks.filter(t => t.status === 'done').length;
-      const totalMinutes = Math.round(
-        projectSessions.reduce((sum, session) => sum + (session.duration || 0), 0) / 60
-      );
-      
+      const projectWithDetails = project as ProjectWithDetails;
       return {
-        ...project,
-        totalTasks,
-        completedTasks,
-        totalMinutes,
-        completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
-      } as ProjectWithDetails;
+        ...projectWithDetails,
+        completionRate: (projectWithDetails.totalTasks || 0) > 0 
+          ? ((projectWithDetails.completedTasks || 0) / (projectWithDetails.totalTasks || 0)) * 100 
+          : 0
+      };
     });
   }
 );
@@ -142,3 +135,23 @@ export const projectStats = derived(
 // Export store actions for external use
 export * from './actions';
 export * from './persistence';
+
+// Export new timer stores and manager (with explicit re-exports to avoid conflicts)
+export {
+  timerState as newTimerState,
+  widgetConfig,
+  activeTimers,
+  selectedTimerId as newSelectedTimerId,
+  isTimerLoading,
+  timerError,
+  hasActiveTimers,
+  runningTimers,
+  pausedTimers,
+  selectedTimer as newSelectedTimer,
+  TimerManager,
+  startTimer as startNewTimer,
+  stopTimer as stopNewTimer,
+  pauseTimer,
+  resumeTimer,
+  selectTimer
+} from './timers';

@@ -66,6 +66,7 @@
   class:active={isActive}
   class:has-children={hasChildren}
   class:expanded={node.isExpanded}
+  class:nested={indentLevel > 0}
   style="--indent-level: {indentLevel}; --active-project-color: var({node.color})"
   role="treeitem"
   tabindex="0"
@@ -76,8 +77,7 @@
   oncontextmenu={handleRightClick}
   onkeydown={handleKeydown}
 >
-  <!-- Indentation spacer -->
-  <div class="indent-spacer"></div>
+
   
   <!-- Expand/Collapse Toggle -->
   {#if hasChildren}
@@ -100,9 +100,7 @@
     class="project-indicator"
     style="background-color: {node.color}"
   >
-    {#if node.icon}
-      <span class="project-icon">{node.icon}</span>
-    {:else if hasChildren}
+    {#if hasChildren}
       <span class="folder-icon">📁</span>
     {:else}
       <div class="project-dot"></div>
@@ -142,12 +140,6 @@
           {/if}
         </div>
 
-        <div class="progress-bar">
-          <div 
-            class="progress-fill"
-            style="width: {stats.completion}%; background-color: {node.color}"
-          ></div>
-        </div>
       {/if}
     </div>
   {/if}
@@ -201,14 +193,12 @@
   .tree-node.active .project-stats,
   .tree-node.active .project-name {
     color: var(--nord0);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    font-weight: 600;
     position: relative;
     z-index: 1;
   }
 
   .indent-spacer {
-    width: calc(var(--indent-level) * 1.5rem);
+    width: 0; /* We're using margin-left instead */
     flex-shrink: 0;
   }
 
@@ -239,6 +229,7 @@
     font-size: 0.75rem;
     color: var(--nord4);
     transition: transform 0.2s ease;
+    font-weight: bold;
   }
 
   .tree-node:hover .toggle-icon {
@@ -252,6 +243,10 @@
     z-index: 1;
   }
 
+  .tree-node.has-children .toggle-icon {
+    color: var(--nord8);
+  }
+
   .project-indicator {
     width: 1.75rem;
     height: 1.75rem;
@@ -263,7 +258,6 @@
     margin-right: 0.625rem;
   }
 
-  .project-icon,
   .folder-icon {
     font-size: 0.875rem;
   }
@@ -308,19 +302,6 @@
     line-height: 1.2;
   }
 
-  .progress-bar {
-    width: 100%;
-    height: 0.1875rem;
-    background: var(--nord3);
-    border-radius: 0.09375rem;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    transition: width 0.3s ease;
-    border-radius: 0.09375rem;
-  }
 
   .privacy-indicator {
     display: flex;
@@ -337,54 +318,34 @@
     opacity: 1;
   }
 
-  /* Connecting lines disabled to prevent visual issues
-  .tree-node::before {
-    content: '';
-    position: absolute;
-    left: calc(var(--indent-level) * 1.5rem + 0.625rem);
-    top: 0;
-    width: 1px;
-    height: 100%;
-    background: var(--nord3);
-    opacity: 0.3;
+  /* Clean tree structure */
+  .tree-node {
+    padding-left: calc(var(--indent-level) * 1.5rem);
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    padding-right: 0.5rem;
+    border: none;
+    background: var(--tree-background, transparent);
+    transition: all 0.2s ease;
+    position: relative;
   }
 
-  .tree-node:first-child::before {
-    top: 50%;
-    height: 50%;
+  /* Apply styles to nested items */
+  .tree-node.nested {
+    --tree-background: transparent;
   }
 
-  .tree-node:last-child::before {
-    height: 50%;
+  .tree-node.nested:hover {
+    --tree-background: var(--nord2);
   }
-
-  .tree-node[style*="--indent-level: 0"]::before {
-    display: none;
-  }
-
-  .tree-node::after {
-    content: '';
-    position: absolute;
-    left: calc(var(--indent-level) * 1.5rem + 0.625rem);
-    top: 50%;
-    width: 0.875rem;
-    height: 1px;
-    background: var(--nord3);
-    opacity: 0.3;
-  }
-
-  .tree-node[style*="--indent-level: 0"]::after {
-    display: none;
-  }
-  */
 
   /* Accessibility */
   .tree-node[aria-expanded="true"] .toggle-icon.expanded {
-    transform: rotate(0deg);
+    transform: rotate(90deg);
   }
 
   .tree-node[aria-expanded="false"] .toggle-icon {
-    transform: rotate(-90deg);
+    transform: rotate(0deg);
   }
 
   /* High contrast mode */
@@ -401,17 +362,13 @@
       border-color: var(--nord6);
     }
 
-    .progress-bar {
-      border: 1px solid var(--nord4);
-    }
   }
 
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .tree-node,
     .expand-toggle,
-    .toggle-icon,
-    .progress-fill {
+    .toggle-icon {
       transition: none;
     }
   }

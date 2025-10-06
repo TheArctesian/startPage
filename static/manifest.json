@@ -1,0 +1,32 @@
+{
+  "name": "Personal Productivity Dashboard",
+  "short_name": "Startpage",
+  "description": "Personal productivity dashboard with hierarchical project management, unified todo/kanban system, time tracking, and quick links",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2e3440",
+  "theme_color": "#5e81ac",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

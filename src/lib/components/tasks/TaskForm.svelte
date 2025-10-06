@@ -284,7 +284,7 @@
             <option value={0}>Select a project</option>
             {#each availableProjects as project}
               <option value={project.id}>
-                {project.icon ? `${project.icon} ` : ''}{project.name}
+                {project.name}
               </option>
             {/each}
           </select>

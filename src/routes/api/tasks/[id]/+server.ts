@@ -50,6 +50,47 @@ export const GET: RequestHandler = async ({ params, url }) => {
   }
 };
 
+export const PATCH: RequestHandler = async (event) => {
+  requireAuth(event);
+  const { params, request } = event;
+  
+  try {
+    const taskId = parseInt(params.id);
+    
+    if (isNaN(taskId)) {
+      return json({ error: 'Invalid task ID' }, { status: 400 });
+    }
+
+    const updates = await request.json();
+
+    // For PATCH, allow partial updates without strict validation
+    if (updates.status !== undefined) {
+      // Validate status values
+      const validStatuses = ['todo', 'in_progress', 'done', 'archived'];
+      if (!validStatuses.includes(updates.status)) {
+        return json({ error: 'Invalid status value' }, { status: 400 });
+      }
+    }
+
+    // Add updated timestamp
+    updates.updatedAt = new Date();
+
+    const [updatedTask] = await db.update(tasks)
+      .set(updates)
+      .where(eq(tasks.id, taskId))
+      .returning();
+
+    if (!updatedTask) {
+      return json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    return json(updatedTask);
+  } catch (error) {
+    console.error('Error updating task:', error);
+    return json({ error: 'Failed to update task' }, { status: 500 });
+  }
+};
+
 export const PUT: RequestHandler = async (event) => {
   requireAuth(event);
   const { params, request } = event;

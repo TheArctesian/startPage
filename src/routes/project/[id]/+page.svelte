@@ -1,11 +1,12 @@
 <script lang="ts">
-	import Timer from '$lib/components/timer/Timer.svelte';
+	// Timer import removed - using floating timer widget instead
 	import QuickLinks from '$lib/components/projects/QuickLinks.svelte';
 	import QuickLinkEditModal from '$lib/components/projects/QuickLinkEditModal.svelte';
 	import ProjectEditModal from '$lib/components/projects/ProjectEditModal.svelte';
 	import ProjectCreateModal from '$lib/components/projects/ProjectCreateModal.svelte';
 	import ProjectTree from '$lib/components/projects/ProjectTree.svelte';
-	import KanbanBoard from '$lib/components/tasks/KanbanBoard.svelte';
+	import TasksView from '$lib/components/tasks/TasksView.svelte';
+	import TaskForm from '$lib/components/tasks/TaskForm.svelte';
 	import ShortcutsHelp from '$lib/components/keyboard/ShortcutsHelp.svelte';
 	import TaskCompletionModal from '$lib/components/tasks/TaskCompletionModal.svelte';
 	import AnalyticsDashboard from '$lib/components/analytics/AnalyticsDashboard.svelte';
@@ -20,8 +21,7 @@
 		deleteTask,
 		updateQuickLink,
 		deleteQuickLink,
-		isTimerRunning,
-		selectedTask,
+		// Old timer stores removed - using new timer system
 		loadingQuickLinks,
 		loadingSubProjects
 	} from '$lib/stores';
@@ -33,6 +33,7 @@
 	} from '$lib/stores/keyboard';
 	import { navigateToProject } from '$lib/utils/navigation';
 	import { responsiveActions } from '$lib/stores/sidebar';
+	import { taskViewMode } from '$lib/stores/taskView';
 	import type {
 		TaskWithDetails,
 		ProjectWithDetails,
@@ -53,6 +54,9 @@
 	$: canEdit = data.canEdit;
 	$: isAuthenticated = data.isAuthenticated;
 	$: userPermission = data.userPermission;
+	
+	// Debug: Track permission changes
+	$: console.log('Project page data:', { canEdit, isAuthenticated, userPermission, hasData: !!data });
 
 	let showShortcutsHelp = false;
 	let showNewTaskModal = false;
@@ -66,6 +70,7 @@
 	let taskToComplete: TaskWithDetails | null = null;
 	let linkToEdit: QuickLink | null = null;
 	let subProjects: ProjectWithDetails[] = [];
+	let tasks: TaskWithDetails[] = [];
 
 	// Handle task selection from board
 	function handleTaskSelect(event: CustomEvent<{ task: TaskWithDetails }>) {
@@ -80,13 +85,42 @@
 	}
 
 	// Handle task editing
-	function handleTaskEdit(event: CustomEvent<{ task: TaskWithDetails }>) {
-		console.log('Edit task:', event.detail.task);
+	function handleTaskEdit(task: TaskWithDetails) {
+		console.log('Edit task:', task);
+	}
+
+	// Handle task status change
+	async function handleTaskStatusChange(task: TaskWithDetails, status: string) {
+		try {
+			// Show completion modal for tasks being marked as done (don't update status yet)
+			if (status === 'done') {
+				taskToComplete = task;
+				showCompletionModal = true;
+				setKeyboardContext('modal');
+				return; // Don't update status yet, wait for completion modal
+			}
+
+			// For other status changes, update immediately
+			const response = await fetch(`/api/tasks/${task.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ status })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to update task status');
+			}
+
+			// Refresh tasks for non-done status changes
+			await loadTasks();
+		} catch (error) {
+			console.error('Failed to update task status:', error);
+			toasts.error('Status Update Failed', 'Unable to update task status. Please try again.');
+		}
 	}
 
 	// Handle task deletion
-	async function handleTaskDelete(event: CustomEvent<{ task: TaskWithDetails }>) {
-		const task = event.detail.task;
+	async function handleTaskDelete(task: TaskWithDetails) {
 
 		// Show confirmation dialog
 		const confirmed = confirm(
@@ -97,10 +131,11 @@
 
 		try {
 			await deleteTask(task.id);
-			console.log(`Task "${task.title}" deleted successfully`);
+			await loadTasks(); // Refresh task list
+			toasts.success('Task Deleted', `"${task.title}" has been deleted.`);
 		} catch (error) {
 			console.error('Failed to delete task:', error);
-			alert('Failed to delete task. Please try again.');
+			toasts.error('Delete Failed', 'Failed to delete task. Please try again.');
 		}
 	}
 
@@ -128,6 +163,19 @@
 			showNewTaskModal = false;
 			setKeyboardContext(null);
 		}
+	}
+
+	// Handle new task creation
+	function handleTaskCreated(event: CustomEvent<{ task: TaskWithDetails }>) {
+		showNewTaskModal = false;
+		setKeyboardContext(null);
+		// Refresh tasks
+		window.location.reload();
+	}
+
+	function handleTaskModalCancel() {
+		showNewTaskModal = false;
+		setKeyboardContext(null);
 	}
 
 	// Handle task completion submission
@@ -161,11 +209,8 @@
 			taskToComplete = null;
 			setKeyboardContext(null);
 
-			// Dispatch event to refresh kanban board (browser only)
-			if (browser) {
-				const refreshEvent = new CustomEvent('task-completed', { detail: { task } });
-				document.dispatchEvent(refreshEvent);
-			}
+			// Refresh task list
+			await loadTasks();
 		} catch (error) {
 			console.error('Error completing task:', error);
 			toasts.error('Task Completion Failed', 'Unable to complete the task. Please try again.');
@@ -189,6 +234,18 @@
 
 	function handleShowReports() {
 		showReports = true;
+	}
+
+	function handleSwitchToKanban() {
+		taskViewMode.setKanban();
+	}
+
+	function handleSwitchToGrid() {
+		taskViewMode.setGrid();
+	}
+
+	function handleSwitchToList() {
+		taskViewMode.setList();
 	}
 
 	function handleShowProjectEdit() {
@@ -260,6 +317,27 @@
 		}
 	}
 
+	// Load tasks for the current project
+	async function loadTasks() {
+		if (!data.project) {
+			tasks = [];
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/tasks?project=${data.project.id}&details=true`);
+			if (response.ok) {
+				tasks = await response.json();
+			} else {
+				tasks = [];
+				console.error('Failed to load tasks:', response.statusText);
+			}
+		} catch (error) {
+			console.error('Failed to load tasks:', error);
+			tasks = [];
+		}
+	}
+
 	// Load sub-projects for the current project
 	async function loadSubProjects() {
 		if (!data.project) {
@@ -283,17 +361,20 @@
 		}
 	}
 
-	// Load sub-projects on mount and when project changes
+	// Load data on mount and when project changes
 	onMount(() => {
 		if (data.project) {
+			loadTasks();
 			loadSubProjects();
 		}
 	});
 
-	// Reactive statement to reload sub-projects when project changes
+	// Reactive statement to reload data when project changes
 	$: if (browser && data.project) {
+		loadTasks();
 		loadSubProjects();
 	} else {
+		tasks = [];
 		subProjects = [];
 	}
 
@@ -364,6 +445,31 @@
 		};
 		registerShortcut(helpShortcut);
 
+		// Register view switching shortcuts
+		const kanbanShortcut: KeyboardShortcut = {
+			id: 'switch-kanban',
+			key: '1',
+			description: 'Switch to kanban view',
+			action: handleSwitchToKanban
+		};
+		registerShortcut(kanbanShortcut);
+
+		const gridShortcut: KeyboardShortcut = {
+			id: 'switch-grid',
+			key: '2',
+			description: 'Switch to grid view',
+			action: handleSwitchToGrid
+		};
+		registerShortcut(gridShortcut);
+
+		const listShortcut: KeyboardShortcut = {
+			id: 'switch-list',
+			key: '3',
+			description: 'Switch to list view',
+			action: handleSwitchToList
+		};
+		registerShortcut(listShortcut);
+
 		// Set up custom event listeners for shortcuts (browser only)
 		if (browser) {
 			document.addEventListener('shortcut:new-task', handleNewTask);
@@ -397,20 +503,7 @@
 </svelte:head>
 
 <div class="app-layout page-transition">
-	<!-- Fixed Timer Bar (when active) -->
-	{#if $isTimerRunning && $selectedTask}
-		<div class="fixed-timer-bar">
-			<div class="timer-content">
-				<div class="timer-task-info">
-					<div class="timer-task-title">{$selectedTask.title}</div>
-					<div class="timer-task-meta">{$selectedTask.estimatedMinutes}m estimated</div>
-				</div>
-				<div class="timer-display-wrapper">
-					<Timer />
-				</div>
-			</div>
-		</div>
-	{/if}
+	<!-- Old fixed timer bar removed - using floating timer widget instead -->
 
 	<!-- Main Content -->
 	<main class="main-content">
@@ -424,11 +517,7 @@
 								class="project-indicator"
 								style="background-color: {data.project.color || 'var(--nord8)'}"
 							>
-								{#if data.project.icon}
-									<span class="project-icon">{data.project.icon}</span>
-								{:else}
-									<div class="project-dot"></div>
-								{/if}
+								<div class="project-dot"></div>
 							</div>
 							{data.breadcrumb || data.project.name}
 						</h1>
@@ -558,20 +647,29 @@
 				</div>
 			{/if}
 
-			<!-- Kanban Board -->
-			<KanbanBoard
+			<!-- Tasks View -->
+			<TasksView
+				{tasks}
+				onEdit={handleTaskEdit}
+				onDelete={handleTaskDelete}
+				onStatusChange={handleTaskStatusChange}
+				onNewTask={handleNewTask}
 				{canEdit}
 				{isAuthenticated}
-				on:taskSelect={handleTaskSelect}
-				on:taskEdit={handleTaskEdit}
-				on:taskComplete={handleTaskComplete}
-				on:taskDelete={handleTaskDelete}
 			/>
 		</div>
 	</main>
 
 	<!-- Keyboard Shortcuts Help Modal -->
 	<ShortcutsHelp bind:isOpen={showShortcutsHelp} on:close={() => (showShortcutsHelp = false)} />
+
+	<!-- New Task Modal -->
+	<TaskForm
+		bind:isOpen={showNewTaskModal}
+		on:submit={handleTaskCreated}
+		on:cancel={handleTaskModalCancel}
+		on:close={handleTaskModalCancel}
+	/>
 
 	<!-- Task Completion Modal -->
 	<TaskCompletionModal
@@ -665,47 +763,7 @@
 		color: var(--nord6);
 	}
 
-	/* Fixed Timer Bar */
-	.fixed-timer-bar {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 100;
-		background: var(--nord1);
-		border-bottom: 2px solid var(--nord8);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		padding: 0.75rem 1rem;
-	}
-
-	.timer-content {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		max-width: 1200px;
-		margin: 0 auto;
-	}
-
-	.timer-task-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.timer-task-title {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--nord6);
-	}
-
-	.timer-task-meta {
-		font-size: 0.75rem;
-		color: var(--nord9);
-	}
-
-	.timer-display-wrapper {
-		flex-shrink: 0;
-	}
+	/* Old timer CSS removed - using floating timer widget instead */
 
 	.main-content {
 		background: var(--nord0);
@@ -717,12 +775,7 @@
 
 	/* Mobile Styles */
 	@media (max-width: 1024px) {
-		.timer-content {
-			flex-direction: column;
-			gap: 0.5rem;
-			align-items: center;
-			text-align: center;
-		}
+		/* Timer mobile styles removed */
 	}
 
 	/* Project Header Styles */

@@ -93,7 +93,6 @@ export const POST: RequestHandler = async (event) => {
       title: data.title.trim(),
       url: data.url.trim(),
       projectId: data.projectId,
-      icon: data.icon?.trim() || null,
       category: data.category || null,
       position
     };

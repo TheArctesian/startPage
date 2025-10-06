@@ -15,7 +15,6 @@
 	// Form state
 	let projectName = '';
 	let projectDescription = '';
-	let projectIcon = '';
 	let projectColor = '--nord8';
 	let projectParentId: number | null = null;
 	let isPrivate = false;
@@ -34,11 +33,6 @@
 		{ name: 'Yellow', value: '--nord13', bg: 'var(--nord13)' }
 	];
 
-	// Icon suggestions
-	const iconSuggestions = [
-		'■', '□', '▲', '△', '▶', '▷', '◆', '◇',
-		'○', '●', '◎', '◍', '★', '☆', '◈', '◉'
-	];
 
 	// Get available parent projects
 	$: availableParents = $projects.filter(p => p.id !== defaultParentId);
@@ -47,7 +41,6 @@
 	$: if (isOpen) {
 		projectName = '';
 		projectDescription = '';
-		projectIcon = '';
 		projectColor = '--nord8';
 		projectParentId = defaultParentId;
 		isPrivate = false;
@@ -93,7 +86,6 @@
 			const projectData: NewProject = {
 				name: projectName.trim(),
 				description: projectDescription.trim() || undefined,
-				icon: projectIcon || undefined,
 				color: projectColor,
 				isActive: true,
 				isPublic: !isPrivate,
@@ -134,10 +126,6 @@
 		}
 	}
 
-	// Set icon from suggestion
-	function setIcon(icon: string) {
-		projectIcon = icon;
-	}
 
 	// Focus management
 	let nameInput: HTMLInputElement;
@@ -288,31 +276,6 @@
 						</div>
 					</div>
 
-					<!-- Icon Selection -->
-					<div class="form-group">
-						<label for="project-icon" class="form-label">Icon (Optional)</label>
-						<input
-							bind:value={projectIcon}
-							id="project-icon"
-							type="text"
-							class="form-input"
-							placeholder="Choose or type an icon"
-							maxlength="4"
-						/>
-						<div class="icon-suggestions">
-							{#each iconSuggestions as icon (icon)}
-								<button
-									type="button"
-									class="icon-suggestion"
-									class:selected={projectIcon === icon}
-									onclick={() => setIcon(icon)}
-									title="Use {icon} icon"
-								>
-									{icon}
-								</button>
-							{/each}
-						</div>
-					</div>
 
 					<!-- Error Message -->
 					{#if errorMessage}
@@ -495,38 +458,6 @@
 		box-shadow: 0 0 0 2px var(--nord0), 0 0 0 4px var(--nord8);
 	}
 
-	.icon-suggestions {
-		display: grid;
-		grid-template-columns: repeat(8, 1fr);
-		gap: 0.25rem;
-		margin-top: 0.5rem;
-	}
-
-	.icon-suggestion {
-		width: 2rem;
-		height: 2rem;
-		border: 1px solid var(--nord3);
-		border-radius: 0.25rem;
-		background: var(--nord1);
-		color: var(--nord6);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 0.875rem;
-		transition: all 0.2s ease;
-	}
-
-	.icon-suggestion:hover {
-		background: var(--nord2);
-		border-color: var(--nord8);
-	}
-
-	.icon-suggestion.selected {
-		background: var(--nord8);
-		color: white;
-		border-color: var(--nord8);
-	}
 
 	.modal-footer {
 		display: flex;
@@ -605,9 +536,6 @@
 			grid-template-columns: repeat(4, 1fr);
 		}
 
-		.icon-suggestions {
-			grid-template-columns: repeat(6, 1fr);
-		}
 
 		.modal-footer {
 			gap: 0.5rem;

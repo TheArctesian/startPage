@@ -5,6 +5,7 @@ import { eq, and, isNotNull, isNull, sql, or, inArray } from 'drizzle-orm';
 import { requireAuth } from '$lib/server/auth-guard';
 import { logUserActivity } from '$lib/server/auth';
 import { getUserVisibleProjects, grantProjectPermission } from '$lib/server/permissions';
+import { buildProjectTree, calculateAggregatedStats } from '$lib/utils/projectTree';
 import type { RequestHandler } from './$types';
 import type { NewProject, ProjectWithDetails } from '$lib/types/database';
 
@@ -75,8 +76,8 @@ export const GET: RequestHandler = async ({ url, locals, getClientAddress }) => 
       return json(projectList);
     }
 
-    // Get stats for each project
-    const projectsWithStats: ProjectWithDetails[] = await Promise.all(
+    // Get direct stats for each project first
+    const projectsWithDirectStats: ProjectWithDetails[] = await Promise.all(
       projectList.map(async (project) => {
         // Get task counts
         const allTasks = await db.select({ id: tasks.id, status: tasks.status })
@@ -108,6 +109,33 @@ export const GET: RequestHandler = async ({ url, locals, getClientAddress }) => 
         };
       })
     );
+
+    // Build tree structure to calculate aggregated stats
+    const treeData = buildProjectTree(projectsWithDirectStats);
+    
+    // Add aggregated stats to each project
+    const projectsWithStats: ProjectWithDetails[] = projectsWithDirectStats.map(project => {
+      const node = treeData.flatMap.get(project.id);
+      if (!node) return project;
+
+      const aggregatedStats = calculateAggregatedStats(node);
+      
+      return {
+        ...project,
+        // Keep direct stats
+        directTasks: project.totalTasks,
+        directCompletedTasks: project.completedTasks,
+        directInProgressTasks: project.inProgressTasks,
+        directMinutes: project.totalMinutes,
+        // Add aggregated stats (includes self + all descendants)
+        totalTasks: aggregatedStats.totalTasks,
+        completedTasks: aggregatedStats.completedTasks,
+        totalMinutes: aggregatedStats.totalMinutes,
+        // Additional metadata
+        hasSubprojects: node.hasChildren,
+        isExpanded: project.isExpanded ?? true
+      };
+    });
 
     return json(projectsWithStats);
   } catch (error) {
@@ -164,7 +192,6 @@ export const POST: RequestHandler = async (event) => {
     const projectData: NewProject = {
       name: data.name.trim(),
       color: data.color || '--nord8',
-      icon: data.icon,
       isActive: data.isActive ?? true,
       isPublic: data.isPublic ?? true, // Default to public
       parentId: data.parentId || null,

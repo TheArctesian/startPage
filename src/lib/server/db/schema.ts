@@ -37,7 +37,6 @@ export const projects = pgTable('projects', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   color: varchar('color', { length: 50 }).default('--nord8'),
-  icon: varchar('icon', { length: 50 }),
   isActive: boolean('is_active').default(true),
   status: projectStatusEnum('status').default('active').notNull(),
   isPublic: boolean('is_public').default(true).notNull(),
@@ -93,7 +92,6 @@ export const quickLinks = pgTable('quick_links', {
   projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 255 }).notNull(),
   url: text('url').notNull(),
-  icon: varchar('icon', { length: 50 }),
   category: linkCategoryEnum('category'),
   position: integer('position').default(0),
   createdAt: timestamp('created_at').defaultNow().notNull()

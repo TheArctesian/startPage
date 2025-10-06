@@ -71,11 +71,7 @@
           class="project-indicator"
           style="background-color: {project.color || 'var(--nord8)'}"
         >
-          {#if project.icon}
-            <span class="project-icon">{project.icon}</span>
-          {:else}
-            <div class="project-dot"></div>
-          {/if}
+          <div class="project-dot"></div>
         </div>
         <h1 class="project-name">{project.name}</h1>
         <button 

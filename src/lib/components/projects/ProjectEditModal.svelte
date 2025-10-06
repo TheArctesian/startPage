@@ -14,7 +14,6 @@
   // Form state
   let editName = '';
   let editDescription = '';
-  let editIcon = '';
   let editColor = '--nord8';
   let editParentId: string | number | null = null;
   let isPrivate = false;
@@ -43,11 +42,6 @@
     { name: 'Yellow', value: '--nord13', bg: 'var(--nord13)' }
   ];
 
-  // Icon suggestions
-  const iconSuggestions = [
-    '■', '□', '▲', '△', '▶', '▷', '◆', '◇',
-    '○', '●', '◎', '◍', '★', '☆', '◈', '◉'
-  ];
 
   // Load available parent projects (excluding self and descendants)
   async function loadAvailableParents() {
@@ -186,7 +180,6 @@
   $: if (isOpen && project) {
     editName = project.name;
     editDescription = project.description || '';
-    editIcon = project.icon || '';
     editColor = project.color || '--nord8';
     editParentId = project.parentId || '';
     isPrivate = !project.isPublic;
@@ -227,7 +220,6 @@
       const updates = {
         name: editName.trim(),
         description: editDescription.trim() || undefined,
-        icon: editIcon || undefined,
         color: editColor,
         parentId: cleanParentId,
         isPublic: !isPrivate
@@ -253,9 +245,6 @@
     }
   }
 
-  function setIcon(icon: string) {
-    editIcon = icon;
-  }
 </script>
 
 {#if isOpen && project}
@@ -336,33 +325,6 @@
           </select>
         </div>
 
-        <!-- Project Icon -->
-        <div class="form-group">
-          <label for="edit-project-icon" class="form-label">Icon (optional)</label>
-          <input
-            bind:value={editIcon}
-            type="text"
-            id="edit-project-icon"
-            class="form-input"
-            placeholder="◆"
-            maxlength="10"
-          />
-          
-          <!-- Icon Suggestions -->
-          <div class="icon-suggestions">
-            {#each iconSuggestions as icon}
-              <button
-                type="button"
-                class="icon-suggestion"
-                class:selected={editIcon === icon}
-                onclick={() => setIcon(icon)}
-                title="Use {icon} icon"
-              >
-                {icon}
-              </button>
-            {/each}
-          </div>
-        </div>
 
         <!-- Project Color -->
         <div class="form-group">
@@ -522,11 +484,7 @@
               class="preview-indicator"
               style="background-color: {editColor}"
             >
-              {#if editIcon}
-                <span class="preview-icon">{editIcon}</span>
-              {:else}
-                <div class="preview-dot"></div>
-              {/if}
+              <div class="preview-dot"></div>
             </div>
             <span class="preview-name">
               {editName || 'Project Name'}
@@ -689,32 +647,6 @@
     min-height: 4rem;
   }
 
-  .icon-suggestions {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-  }
-
-  .icon-suggestion {
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid var(--nord3);
-    border-radius: 0.25rem;
-    background: var(--nord1);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-
-  .icon-suggestion:hover,
-  .icon-suggestion.selected {
-    border-color: var(--nord8);
-    background: var(--nord8);
-    color: var(--nord0);
-  }
 
   .color-options {
     display: grid;
@@ -761,9 +693,6 @@
     justify-content: center;
   }
 
-  .preview-icon {
-    font-size: 1rem;
-  }
 
   .preview-dot {
     width: 0.5rem;
@@ -1085,9 +1014,6 @@
       padding: 1rem;
     }
 
-    .icon-suggestions {
-      grid-template-columns: repeat(6, 1fr);
-    }
 
     .color-options {
       grid-template-columns: repeat(3, 1fr);
@@ -1102,7 +1028,6 @@
   @media (prefers-reduced-motion: reduce) {
     .btn,
     .close-btn,
-    .icon-suggestion,
     .color-option,
     .loading-spinner {
       transition: none;
@@ -1117,8 +1042,7 @@
     }
 
     .form-input,
-    .form-textarea,
-    .icon-suggestion {
+    .form-textarea {
       border-width: 2px;
     }
 

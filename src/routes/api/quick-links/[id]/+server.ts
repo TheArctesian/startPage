@@ -64,9 +64,6 @@ export const PUT: RequestHandler = async ({ params, request }) => {
       updates.url = updates.url.trim();
     }
 
-    if (updates.icon !== undefined && updates.icon) {
-      updates.icon = updates.icon.trim();
-    }
 
     const [updatedLink] = await db.update(quickLinks)
       .set(updates)

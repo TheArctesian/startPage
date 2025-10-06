@@ -64,6 +64,11 @@ export const actions: Actions = {
       // Redirect to pending approval page
       throw redirect(302, '/pending-approval');
     } catch (error) {
+      // Re-throw redirects (these are successful operations)
+      if (error instanceof Response) {
+        throw error;
+      }
+      
       console.error('Signup error:', error);
       
       if (error instanceof Error && error.message === 'Username already exists') {
