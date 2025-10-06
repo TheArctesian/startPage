@@ -27,17 +27,14 @@ export const GET: RequestHandler = async ({ url }) => {
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
         projectId: tasks.projectId,
-        // Project fields
-        project: {
-          id: projects.id,
-          name: projects.name,
-          description: projects.description,
-          color: projects.color,
-          icon: projects.icon,
-          status: projects.status,
-          createdAt: projects.createdAt,
-          updatedAt: projects.updatedAt
-        }
+        // Project fields (flattened)
+        projectName: projects.name,
+        projectDescription: projects.description,
+        projectColor: projects.color,
+        projectIcon: projects.icon,
+        projectStatus: projects.status,
+        projectCreatedAt: projects.createdAt,
+        projectUpdatedAt: projects.updatedAt
       })
       .from(tasks)
       .innerJoin(projects, eq(tasks.projectId, projects.id))
@@ -78,7 +75,16 @@ export const GET: RequestHandler = async ({ url }) => {
           createdAt: taskData.createdAt,
           updatedAt: taskData.updatedAt,
           projectId: taskData.projectId,
-          project: taskData.project,
+          project: {
+            id: taskData.projectId,
+            name: taskData.projectName,
+            description: taskData.projectDescription,
+            color: taskData.projectColor,
+            icon: taskData.projectIcon,
+            status: taskData.projectStatus,
+            createdAt: taskData.projectCreatedAt,
+            updatedAt: taskData.projectUpdatedAt
+          },
           timeSessions: taskTimeSessions
         };
       })

@@ -243,11 +243,12 @@
 
   .timer-item {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     padding: 12px 16px;
     border-bottom: 1px solid var(--nord3);
     transition: background-color 0.2s ease;
     cursor: pointer;
+    min-height: 60px;
   }
 
   .timer-item:hover {
@@ -267,12 +268,16 @@
     flex: 1;
     min-width: 0;
     padding-right: 0.75rem;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
   }
 
   .timer-controls {
     display: flex;
     gap: 0.25rem;
     flex-shrink: 0;
+    align-items: center;
   }
 
   .control-btn {

@@ -8,6 +8,7 @@
 	import ProjectsTable from '$lib/components/projects/ProjectsTable.svelte';
 	import ProjectEditModal from '$lib/components/projects/ProjectEditModal.svelte';
 	import TaskCard from '$lib/components/tasks/TaskCard.svelte';
+	import ActiveTimersSection from '$lib/components/timer/ActiveTimersSection.svelte';
 	import { toasts } from '$lib/stores/toasts';
 	import type { ProjectWithDetails, ProjectStatus, TaskWithDetails } from '$lib/types/database';
 
@@ -134,6 +135,9 @@
 				on:projectEdit={handleProjectEdit}
 			/>
 		</section>
+
+		<!-- Active Timers Section -->
+		<ActiveTimersSection />
 
 		<!-- In-Progress Tasks Section -->
 		<section class="tasks-section">

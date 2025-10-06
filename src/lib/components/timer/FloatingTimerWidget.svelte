@@ -279,8 +279,8 @@
     bottom: 20px;
     right: 20px;
     z-index: 1000;
-    min-width: 280px;
-    max-width: 400px;
+    min-width: 300px;
+    max-width: 420px;
     background: rgba(46, 52, 64, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid var(--nord3);
@@ -291,6 +291,7 @@
     font-family: inherit;
     user-select: none;
     transition: all 0.2s ease;
+    overflow: hidden;
   }
 
   .floating-timer-widget:hover {
@@ -320,6 +321,7 @@
       rgba(129, 161, 193, 0.1) 0%, 
       rgba(94, 129, 172, 0.1) 100%
     );
+    min-height: 48px;
   }
 
   .widget-header:hover {
@@ -332,6 +334,7 @@
   .timer-summary {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
   }
 
   .multi-timer-summary {
@@ -339,6 +342,7 @@
     align-items: center;
     gap: 0.5rem;
     color: var(--nord6);
+    white-space: nowrap;
   }
 
   .timer-count {

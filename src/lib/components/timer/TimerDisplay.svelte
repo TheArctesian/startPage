@@ -155,6 +155,7 @@
     align-items: center;
     gap: 0.75rem;
     width: 100%;
+    min-height: 40px;
   }
 
   .timer-display.compact {
@@ -226,10 +227,11 @@
     font-weight: 500;
     color: var(--nord6);
     font-size: 0.875rem;
-    line-height: 1.2;
+    line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-bottom: 2px;
   }
 
   .task-meta {

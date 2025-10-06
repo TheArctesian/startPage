@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import ProjectSidebar from '$lib/components/projects/ProjectSidebar.svelte';
 	import FloatingTimerWidget from '$lib/components/timer/FloatingTimerWidget.svelte';
+	import TimerBar from '$lib/components/timer/TimerBar.svelte';
 	import TimerNotifications from '$lib/components/timer/TimerNotifications.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import PWAInstallPrompt from '$lib/components/PWAInstallPrompt.svelte';
@@ -92,6 +93,8 @@
 
 		<!-- Main Content Area -->
 		<main class="app-main">
+			<!-- Timer Bar -->
+			<TimerBar />
 			<!-- Mobile Header Controls -->
 			<div class="mobile-header">
 				<button
