@@ -1,12 +1,13 @@
 <script lang="ts">
-	import HomePage from '$lib/components/dashboard/HomePage.svelte';
+	import HomePage from '$lib/features/dashboard/home-page.svelte';
+	import { currentUser, isAuthenticated, canEdit, isAnonymous } from '$lib/stores/user-state';
 	
 	let { data } = $props();
-	import ShortcutsHelp from '$lib/components/keyboard/ShortcutsHelp.svelte';
-	import TaskCompletionModal from '$lib/components/tasks/TaskCompletionModal.svelte';
-	import AnalyticsDashboard from '$lib/components/analytics/AnalyticsDashboard.svelte';
-	import ReportsView from '$lib/components/analytics/ReportsView.svelte';
-	import ConfirmationModal from '$lib/components/ui/ConfirmationModal.svelte';
+	import ShortcutsHelp from '$lib/features/keyboard/shortcuts-help.svelte';
+	import TaskCompletionModal from '$lib/features/tasks/task-completion-modal.svelte';
+	import AnalyticsDashboard from '$lib/features/analytics/analytics-dashboard.svelte';
+	import ReportsView from '$lib/features/analytics/reports-view.svelte';
+	import ConfirmationModal from '$lib/ui/modal/confirmation-modal.svelte';
 	import { setSelectedTask } from '$lib/stores';
 	import { toasts } from '$lib/stores/toasts';
 	import { responsiveActions } from '$lib/stores/sidebar';
@@ -252,10 +253,10 @@
 	<!-- Page Content -->
 	<div class="page-content">
 		<HomePage
-			user={data.user}
-			isAuthenticated={data.isAuthenticated}
-			canEdit={data.canEdit}
-			isAnonymous={data.isAnonymous}
+			user={$currentUser}
+			isAuthenticated={$isAuthenticated}
+			canEdit={$canEdit}
+			isAnonymous={$isAnonymous}
 			onProjectSelect={() => {
 				// Close mobile sidebar when project is selected
 				responsiveActions.handleNavigation();

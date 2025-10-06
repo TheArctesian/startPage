@@ -198,35 +198,34 @@
 .task-actions {
   display: flex;
   gap: var(--space-xs);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-}
-
-.task-card:hover .task-actions {
   opacity: 1;
+  transition: opacity var(--transition-normal);
 }
 
 .task-action {
   padding: var(--space-xs);
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
+  border: 1px solid var(--nord3);
+  background: var(--nord2);
+  color: var(--nord5);
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
 }
 
 .task-action:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
+  background: var(--nord3);
+  color: var(--nord6);
+  border-color: var(--nord8);
 }
 
 .task-action.edit:hover {
   color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .task-action.delete:hover {
   color: var(--color-destructive);
+  border-color: var(--color-destructive);
 }
 
 .task-badges {

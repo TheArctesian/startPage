@@ -1,12 +1,12 @@
 <script lang="ts">
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import ProjectSidebar from '$lib/components/projects/ProjectSidebar.svelte';
-	import FloatingTimerWidget from '$lib/components/timer/FloatingTimerWidget.svelte';
-	import TimerBar from '$lib/components/timer/TimerBar.svelte';
-	import TimerNotifications from '$lib/components/timer/TimerNotifications.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
-	import PWAInstallPrompt from '$lib/components/PWAInstallPrompt.svelte';
+	import ProjectSidebar from '$lib/features/projects/project-sidebar.svelte';
+	import FloatingTimerWidget from '$lib/features/timer/floating-timer-widget.svelte';
+	import TimerBar from '$lib/features/timer/timer-bar.svelte';
+	import TimerNotifications from '$lib/features/timer/timer-notifications.svelte';
+	import Toast from '$lib/ui/toast.svelte';
+	import PWAInstallPrompt from '$lib/features/pwa-install-prompt.svelte';
 	import { 
 		sidebarState, 
 		sidebarActions, 
@@ -15,10 +15,22 @@
 		responsiveActions 
 	} from '$lib/stores/sidebar';
 	import { hasActiveTimers, TimerManager } from '$lib/stores';
+	import { userStateActions, userState, isAuthenticated, isAnonymous, currentUser } from '$lib/stores/user-state';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	
 	let { children, data } = $props();
+
+	// Initialize user state from server data
+	$effect(() => {
+		userStateActions.initialize({
+			user: data.user,
+			isAuthenticated: data.isAuthenticated,
+			isAnonymous: data.isAnonymous,
+			canEdit: data.canEdit,
+			sessionId: data.sessionId
+		});
+	});
 
 	// Handle mobile sidebar toggle
 	function toggleMobileSidebar() {
@@ -63,7 +75,7 @@
 	<TimerNotifications />
 
 	<!-- Guest Banner -->
-	{#if data.isAnonymous}
+	{#if $isAnonymous}
 		<div class="guest-banner">
 			<div class="guest-banner-content">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -80,7 +92,7 @@
 	<div 
 		class="app-layout"
 		class:sidebar-collapsed={$isCollapsed}
-		class:has-guest-banner={data.isAnonymous}
+		class:has-guest-banner={$isAnonymous}
 	>
 		<!-- Persistent Sidebar -->
 		<aside 
@@ -88,7 +100,7 @@
 			class:collapsed={$isCollapsed}
 			class:mobile-open={$isMobileOpen}
 		>
-			<ProjectSidebar user={data.user} isAuthenticated={!!data.user && !data.isAnonymous} on:collapse={handleSidebarCollapse} />
+			<ProjectSidebar user={$currentUser} isAuthenticated={$isAuthenticated} on:collapse={handleSidebarCollapse} />
 		</aside>
 
 		<!-- Main Content Area -->
@@ -110,10 +122,10 @@
 				
 				<!-- Auth Status -->
 				<div class="auth-status">
-					{#if data.user}
+					{#if $currentUser}
 						<div class="user-info">
-							<span class="username">{data.user.username}</span>
-							{#if data.user.role === 'admin'}
+							<span class="username">{$currentUser.username}</span>
+							{#if $currentUser.role === 'admin'}
 								<span class="role-badge admin">Admin</span>
 							{/if}
 						</div>
@@ -125,7 +137,7 @@
 							</svg>
 							Logout
 						</a>
-					{:else if data.isAnonymous}
+					{:else if $isAnonymous}
 						<div class="guest-info">
 							<span class="guest-label">Viewing as Guest</span>
 						</div>

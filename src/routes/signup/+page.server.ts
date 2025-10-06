@@ -63,9 +63,9 @@ export const actions: Actions = {
 
       // Redirect to pending approval page
       throw redirect(302, '/pending-approval');
-    } catch (error) {
-      // Re-throw redirects (these are successful operations)
-      if (error instanceof Response) {
+    } catch (error: any) {
+      // Re-throw redirects (they have status and location properties)
+      if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
         throw error;
       }
       

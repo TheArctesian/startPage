@@ -38,8 +38,11 @@
 					if (result.type === 'redirect') {
 						// Refresh all data after successful login
 						await invalidateAll();
+						// For redirect responses, we don't need to call update()
+						// The redirect will handle navigation
 						return;
 					}
+					// For non-redirect responses (errors), update the form state
 					await update();
 				};
 			}}
@@ -113,8 +116,11 @@
 					if (result.type === 'redirect') {
 						// Refresh all data after successful lurk session
 						await invalidateAll();
+						// For redirect responses, we don't need to call update()
+						// The redirect will handle navigation
 						return;
 					}
+					// For non-redirect responses (errors), update the form state
 					await update();
 				};
 			}}

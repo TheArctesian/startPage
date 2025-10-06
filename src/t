@@ -1,0 +1,179 @@
+.
+├── app.css
+├── app.d.ts
+├── app.html
+├── hooks.server.ts
+├── lib
+│   ├── assets
+│   │   └── favicon.svg
+│   ├── components
+│   │   ├── analytics
+│   │   │   ├── AccuracyChart.svelte
+│   │   │   ├── AnalyticsDashboard.svelte
+│   │   │   ├── README.md
+│   │   │   ├── ReportsView.svelte
+│   │   │   └── TimeChart.svelte
+│   │   ├── base
+│   │   │   ├── Badge.svelte
+│   │   │   ├── Button.svelte
+│   │   │   ├── Card.svelte
+│   │   │   ├── LoadingSpinner.svelte
+│   │   │   ├── Modal.svelte
+│   │   │   ├── README.md
+│   │   │   └── SkeletonLoader.svelte
+│   │   ├── dashboard
+│   │   │   └── HomePage.svelte
+│   │   ├── keyboard
+│   │   │   ├── README.md
+│   │   │   └── ShortcutsHelp.svelte
+│   │   ├── layout
+│   │   │   └── README.md
+│   │   ├── projects
+│   │   │   ├── ProjectCreateModal.svelte
+│   │   │   ├── ProjectEditModal.svelte
+│   │   │   ├── ProjectRow.svelte
+│   │   │   ├── ProjectsGrid.svelte
+│   │   │   ├── ProjectSidebar.svelte
+│   │   │   ├── ProjectsTable.svelte
+│   │   │   ├── ProjectStatusBadge.svelte
+│   │   │   ├── ProjectStatusDropdown.svelte
+│   │   │   ├── ProjectStatusManager.svelte
+│   │   │   ├── ProjectTree.svelte
+│   │   │   ├── ProjectTreeNode.svelte
+│   │   │   ├── QuickLinkEditModal.svelte
+│   │   │   ├── QuickLinks.svelte
+│   │   │   └── README.md
+│   │   ├── PWAInstallPrompt.svelte
+│   │   ├── tasks
+│   │   │   ├── KanbanBoard.svelte
+│   │   │   ├── README.md
+│   │   │   ├── TaskCard.svelte
+│   │   │   ├── TaskCardActions.svelte
+│   │   │   ├── TaskCardDisplay.svelte
+│   │   │   ├── TaskCardDraggable.svelte
+│   │   │   ├── TaskCompletionModal.svelte
+│   │   │   ├── TaskForm.svelte
+│   │   │   ├── TaskGridView.svelte
+│   │   │   ├── TaskListView.svelte
+│   │   │   └── TasksView.svelte
+│   │   ├── timer
+│   │   │   ├── ActiveTimersSection.svelte
+│   │   │   ├── FloatingTimerWidget.svelte
+│   │   │   ├── ManualTimeEntryModal.svelte
+│   │   │   ├── MultiTimerPanel.svelte
+│   │   │   ├── NotificationSettingsModal.svelte
+│   │   │   ├── README.md
+│   │   │   ├── Timer.svelte
+│   │   │   ├── TimerBar.svelte
+│   │   │   ├── TimerButton.svelte
+│   │   │   ├── TimerControls.svelte
+│   │   │   ├── TimerDisplay.svelte
+│   │   │   ├── TimerHistory.svelte
+│   │   │   ├── TimerHistoryModal.svelte
+│   │   │   └── TimerNotifications.svelte
+│   │   └── ui
+│   │       ├── BaseModal.svelte
+│   │       ├── ConfirmationModal.svelte
+│   │       ├── FormModal.svelte
+│   │       ├── Icon.svelte
+│   │       ├── IntensityDisplay.svelte
+│   │       ├── IntensityPicker.svelte
+│   │       ├── README.md
+│   │       └── Toast.svelte
+│   ├── index.ts
+│   ├── server
+│   │   ├── auth-guard.ts
+│   │   ├── auth.ts
+│   │   ├── db
+│   │   │   ├── index.ts
+│   │   │   ├── README.md
+│   │   │   └── schema.ts
+│   │   └── permissions.ts
+│   ├── stores
+│   │   ├── actions.ts
+│   │   ├── index.ts
+│   │   ├── keyboard.ts
+│   │   ├── persistence.ts
+│   │   ├── README.md
+│   │   ├── sidebar.ts
+│   │   ├── taskView.ts
+│   │   ├── timers.ts
+│   │   └── toasts.ts
+│   ├── styles
+│   │   ├── components.css
+│   │   ├── nord-theme.css
+│   │   └── README.md
+│   ├── types
+│   │   ├── database.ts
+│   │   ├── README.md
+│   │   └── timer.ts
+│   └── utils
+│       ├── date.ts
+│       ├── logger.ts
+│       ├── navigation.ts
+│       ├── projectTree.ts
+│       ├── task.ts
+│       └── time.ts
+├── routes
+│   ├── +layout.server.ts
+│   ├── +layout.svelte
+│   ├── +page.server.ts
+│   ├── +page.svelte
+│   ├── admin
+│   │   ├── +page.server.ts
+│   │   └── +page.svelte
+│   ├── api
+│   │   ├── admin
+│   │   │   └── users
+│   │   │       └── [id]
+│   │   │           └── +server.ts
+│   │   ├── projects
+│   │   │   ├── +server.ts
+│   │   │   ├── [id]
+│   │   │   │   ├── +server.ts
+│   │   │   │   └── users
+│   │   │   │       ├── +server.ts
+│   │   │   │       └── [userId]
+│   │   │   │           └── +server.ts
+│   │   │   └── tree
+│   │   │       └── +server.ts
+│   │   ├── quick-links
+│   │   │   ├── +server.ts
+│   │   │   └── [id]
+│   │   │       └── +server.ts
+│   │   ├── README.md
+│   │   ├── tasks
+│   │   │   ├── +server.ts
+│   │   │   ├── [id]
+│   │   │   │   ├── +server.ts
+│   │   │   │   └── complete
+│   │   │   │       └── +server.ts
+│   │   │   └── in-progress
+│   │   │       └── +server.ts
+│   │   ├── time-sessions
+│   │   │   ├── +server.ts
+│   │   │   ├── [id]
+│   │   │   │   └── +server.ts
+│   │   │   ├── active
+│   │   │   │   └── +server.ts
+│   │   │   ├── start
+│   │   │   │   └── +server.ts
+│   │   │   └── stop
+│   │   │       └── +server.ts
+│   │   └── users
+│   │       └── +server.ts
+│   ├── login
+│   │   ├── +page.server.ts
+│   │   └── +page.svelte
+│   ├── logout
+│   │   └── +page.server.ts
+│   ├── pending-approval
+│   │   └── +page.svelte
+│   ├── project
+│   │   └── [id]
+│   │       ├── +page.server.ts
+│   │       └── +page.svelte
+│   └── signup
+│       ├── +page.server.ts
+│       └── +page.svelte
+└── t

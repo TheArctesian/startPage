@@ -1,18 +1,18 @@
 <script lang="ts">
 	// Timer import removed - using floating timer widget instead
-	import QuickLinks from '$lib/components/projects/QuickLinks.svelte';
-	import QuickLinkEditModal from '$lib/components/projects/QuickLinkEditModal.svelte';
-	import ProjectEditModal from '$lib/components/projects/ProjectEditModal.svelte';
-	import ProjectCreateModal from '$lib/components/projects/ProjectCreateModal.svelte';
-	import ProjectTree from '$lib/components/projects/ProjectTree.svelte';
-	import TasksView from '$lib/components/tasks/TasksView.svelte';
-	import TaskForm from '$lib/components/tasks/TaskForm.svelte';
-	import ShortcutsHelp from '$lib/components/keyboard/ShortcutsHelp.svelte';
-	import TaskCompletionModal from '$lib/components/tasks/TaskCompletionModal.svelte';
-	import AnalyticsDashboard from '$lib/components/analytics/AnalyticsDashboard.svelte';
-	import ReportsView from '$lib/components/analytics/ReportsView.svelte';
-	import LoadingSpinner from '$lib/components/base/LoadingSpinner.svelte';
-	import SkeletonLoader from '$lib/components/base/SkeletonLoader.svelte';
+	import QuickLinks from '$lib/features/projects/quick-links.svelte';
+	import QuickLinkEditModal from '$lib/features/projects/modals/quick-link-edit-modal.svelte';
+	import ProjectEditModal from '$lib/features/projects/modals/project-edit-modal.svelte';
+	import ProjectCreateModal from '$lib/features/projects/modals/project-create-modal.svelte';
+	import ProjectTree from '$lib/features/projects/project-tree/project-tree.svelte';
+	import TasksView from '$lib/features/tasks/tasks-view.svelte';
+	import TaskForm from '$lib/features/tasks/task-form.svelte';
+	import ShortcutsHelp from '$lib/features/keyboard/shortcuts-help.svelte';
+	import TaskCompletionModal from '$lib/features/tasks/task-completion-modal.svelte';
+	import AnalyticsDashboard from '$lib/features/analytics/analytics-dashboard.svelte';
+	import ReportsView from '$lib/features/analytics/reports-view.svelte';
+	import LoadingSpinner from '$lib/ui/loading/loading-spinner.svelte';
+	import SkeletonLoader from '$lib/ui/loading/skeleton-loader.svelte';
 	import { toasts } from '$lib/stores/toasts';
 	import {
 		setActiveProject,
@@ -60,6 +60,7 @@
 
 	let showShortcutsHelp = false;
 	let showNewTaskModal = false;
+	let showEditTaskModal = false;
 	let showCompletionModal = false;
 	let showAnalytics = false;
 	let showReports = false;
@@ -68,6 +69,7 @@
 	let showQuickLinkEdit = false;
 	let showSubProjectModal = false;
 	let taskToComplete: TaskWithDetails | null = null;
+	let taskToEdit: TaskWithDetails | null = null;
 	let linkToEdit: QuickLink | null = null;
 	let subProjects: ProjectWithDetails[] = [];
 	let tasks: TaskWithDetails[] = [];
@@ -86,7 +88,9 @@
 
 	// Handle task editing
 	function handleTaskEdit(task: TaskWithDetails) {
-		console.log('Edit task:', task);
+		taskToEdit = task;
+		showEditTaskModal = true;
+		setKeyboardContext('modal');
 	}
 
 	// Handle task status change
@@ -159,6 +163,10 @@
 			showCompletionModal = false;
 			taskToComplete = null;
 			setKeyboardContext(null);
+		} else if (showEditTaskModal) {
+			showEditTaskModal = false;
+			taskToEdit = null;
+			setKeyboardContext(null);
 		} else if (showNewTaskModal) {
 			showNewTaskModal = false;
 			setKeyboardContext(null);
@@ -175,6 +183,21 @@
 
 	function handleTaskModalCancel() {
 		showNewTaskModal = false;
+		setKeyboardContext(null);
+	}
+
+	// Handle task edit submission
+	function handleTaskUpdated(event: CustomEvent<{ task: TaskWithDetails }>) {
+		showEditTaskModal = false;
+		taskToEdit = null;
+		setKeyboardContext(null);
+		// Refresh tasks
+		window.location.reload();
+	}
+
+	function handleTaskEditCancel() {
+		showEditTaskModal = false;
+		taskToEdit = null;
 		setKeyboardContext(null);
 	}
 
@@ -487,7 +510,7 @@
 
 	// Update keyboard context based on active area
 	$: {
-		if (showNewTaskModal || showCompletionModal) {
+		if (showNewTaskModal || showEditTaskModal || showCompletionModal) {
 			setKeyboardContext('modal');
 		} else if (data.project) {
 			setKeyboardContext('kanban');
@@ -669,6 +692,15 @@
 		on:submit={handleTaskCreated}
 		on:cancel={handleTaskModalCancel}
 		on:close={handleTaskModalCancel}
+	/>
+
+	<!-- Task Edit Modal -->
+	<TaskForm
+		bind:isOpen={showEditTaskModal}
+		task={taskToEdit}
+		on:submit={handleTaskUpdated}
+		on:cancel={handleTaskEditCancel}
+		on:close={handleTaskEditCancel}
 	/>
 
 	<!-- Task Completion Modal -->
