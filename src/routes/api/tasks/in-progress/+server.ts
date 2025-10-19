@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { tasks, projects, timeSessions } from '$lib/server/db/schema';
+import { tasks, projects } from '$lib/server/db/schema';
 import { eq, desc, and, or, inArray } from 'drizzle-orm';
 import { hasProjectAccess } from '$lib/server/auth';
 import type { RequestHandler } from './$types';
@@ -80,43 +80,35 @@ export const GET: RequestHandler = async ({ url, locals }) => {
       .orderBy(desc(tasks.updatedAt))
       .limit(limit);
 
-    // Get time sessions for each task
-    const tasksWithDetails: TaskWithDetails[] = await Promise.all(
-      inProgressTasks.map(async (taskData) => {
-        const taskTimeSessions = await db
-          .select()
-          .from(timeSessions)
-          .where(eq(timeSessions.taskId, taskData.id));
-
-        return {
-          id: taskData.id,
-          title: taskData.title,
-          description: taskData.description,
-          status: taskData.status,
-          priority: taskData.priority,
-          estimatedMinutes: taskData.estimatedMinutes,
-          estimatedIntensity: taskData.estimatedIntensity,
-          actualMinutes: taskData.actualMinutes,
-          actualIntensity: taskData.actualIntensity,
-          dueDate: taskData.dueDate,
-          completedAt: taskData.completedAt,
-          createdAt: taskData.createdAt,
-          updatedAt: taskData.updatedAt,
-          projectId: taskData.projectId,
-          project: {
-            id: taskData.projectId,
-            name: taskData.projectName,
-            description: taskData.projectDescription,
-            color: taskData.projectColor,
-            status: taskData.projectStatus,
-            isPublic: taskData.projectIsPublic,
-            createdAt: taskData.projectCreatedAt,
-            updatedAt: taskData.projectUpdatedAt
-          },
-          timeSessions: taskTimeSessions
-        };
-      })
-    );
+    // Map tasks with project details
+    const tasksWithDetails: TaskWithDetails[] = inProgressTasks.map((taskData) => {
+      return {
+        id: taskData.id,
+        title: taskData.title,
+        description: taskData.description,
+        status: taskData.status,
+        priority: taskData.priority,
+        estimatedMinutes: taskData.estimatedMinutes,
+        estimatedIntensity: taskData.estimatedIntensity,
+        actualMinutes: taskData.actualMinutes,
+        actualIntensity: taskData.actualIntensity,
+        dueDate: taskData.dueDate,
+        completedAt: taskData.completedAt,
+        createdAt: taskData.createdAt,
+        updatedAt: taskData.updatedAt,
+        projectId: taskData.projectId,
+        project: {
+          id: taskData.projectId,
+          name: taskData.projectName,
+          description: taskData.projectDescription,
+          color: taskData.projectColor,
+          status: taskData.projectStatus,
+          isPublic: taskData.projectIsPublic,
+          createdAt: taskData.projectCreatedAt,
+          updatedAt: taskData.projectUpdatedAt
+        }
+      };
+    });
 
     return json(tasksWithDetails);
   } catch (error) {

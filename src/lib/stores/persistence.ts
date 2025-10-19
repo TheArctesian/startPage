@@ -1,12 +1,11 @@
 // Local storage persistence following UNIX philosophy: simple, focused functions
 import { get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { activeProject, timerState } from './index';
-import type { Project, TimerState } from '$lib/types/database';
+import { activeProject } from './index';
+import type { Project } from '$lib/types/database';
 
 const STORAGE_KEYS = {
   ACTIVE_PROJECT: 'productivity_active_project',
-  TIMER_STATE: 'productivity_timer_state',
   PREFERENCES: 'productivity_preferences'
 } as const;
 
@@ -61,31 +60,6 @@ export function loadActiveProject(): Project | null {
   return getFromStorage<Project | null>(STORAGE_KEYS.ACTIVE_PROJECT, null);
 }
 
-// Timer state persistence (for page refresh during active session)
-export function saveTimerState(timer: TimerState): void {
-  if (timer.isRunning) {
-    saveToStorage(STORAGE_KEYS.TIMER_STATE, {
-      ...timer,
-      startTime: timer.startTime?.toISOString()
-    });
-  } else {
-    removeFromStorage(STORAGE_KEYS.TIMER_STATE);
-  }
-}
-
-export function loadTimerState(): TimerState | null {
-  const stored = getFromStorage<any>(STORAGE_KEYS.TIMER_STATE, null);
-  
-  if (!stored || !stored.isRunning) {
-    return null;
-  }
-  
-  return {
-    ...stored,
-    startTime: stored.startTime ? new Date(stored.startTime) : undefined
-  };
-}
-
 // User preferences
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'auto';
@@ -116,43 +90,21 @@ export function loadPreferences(): UserPreferences {
 // Auto-save subscriptions
 export function initializePersistence(): void {
   if (!browser) return;
-  
+
   // Save active project when it changes
   activeProject.subscribe(project => {
     saveActiveProject(project);
-  });
-  
-  // Save timer state when it changes
-  timerState.subscribe(timer => {
-    saveTimerState(timer);
   });
 }
 
 // Restore state on app initialization
 export function restorePersistedState(): void {
   if (!browser) return;
-  
+
   // Restore active project
   const savedProject = loadActiveProject();
   if (savedProject) {
     activeProject.set(savedProject);
-  }
-  
-  // Restore timer state if there was an active session
-  const savedTimer = loadTimerState();
-  if (savedTimer) {
-    // Calculate current elapsed time
-    const now = new Date();
-    const startTime = savedTimer.startTime;
-    
-    if (startTime) {
-      const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
-      
-      timerState.set({
-        ...savedTimer,
-        elapsedSeconds
-      });
-    }
   }
 }
 

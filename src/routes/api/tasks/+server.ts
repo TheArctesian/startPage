@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { tasks, projects, timeSessions, tags, taskTags } from '$lib/server/db/schema';
+import { tasks, projects, tags, taskTags } from '$lib/server/db/schema';
 import { eq, and, or, desc, asc, ilike, inArray } from 'drizzle-orm';
 import { requireAuth, requireEditAccess } from '$lib/server/auth-guard';
 import { hasProjectAccess, logUserActivity } from '$lib/server/auth';
@@ -59,18 +59,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
     // Get details for each task
     const tasksWithDetails: TaskWithDetails[] = await Promise.all(
       taskList.map(async (task) => {
-        const [project, taskTimeSessions] = await Promise.all([
-          // Get project
-          db.select().from(projects).where(eq(projects.id, task.projectId!)).limit(1),
-          
-          // Get time sessions
-          db.select().from(timeSessions).where(eq(timeSessions.taskId, task.id))
-        ]);
+        const [project] = await db.select().from(projects).where(eq(projects.id, task.projectId!)).limit(1);
 
         return {
           ...task,
-          project: project[0],
-          timeSessions: taskTimeSessions
+          project: project
         };
       })
     );

@@ -2,19 +2,14 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import ProjectSidebar from '$lib/features/projects/project-sidebar.svelte';
-	import FloatingTimerWidget from '$lib/features/timer/floating-timer-widget.svelte';
-	import TimerBar from '$lib/features/timer/timer-bar.svelte';
-	import TimerNotifications from '$lib/features/timer/timer-notifications.svelte';
 	import Toast from '$lib/ui/toast.svelte';
-	import PWAInstallPrompt from '$lib/features/pwa-install-prompt.svelte';
-	import { 
-		sidebarState, 
-		sidebarActions, 
-		isCollapsed, 
-		isMobileOpen, 
-		responsiveActions 
+	import {
+		sidebarState,
+		sidebarActions,
+		isCollapsed,
+		isMobileOpen,
+		responsiveActions
 	} from '$lib/stores/sidebar';
-	import { hasActiveTimers, TimerManager } from '$lib/stores';
 	import { userStateActions, userState, isAuthenticated, isAnonymous, currentUser } from '$lib/stores/user-state';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
@@ -52,10 +47,7 @@
 		if (browser) {
 			// Handle navigation events to close mobile sidebar
 			window.addEventListener('popstate', responsiveActions.handleNavigation);
-			
-			// Initialize timers when app loads
-			TimerManager.loadActiveTimers();
-			
+
 			return () => {
 				window.removeEventListener('popstate', responsiveActions.handleNavigation);
 			};
@@ -68,12 +60,6 @@
 </svelte:head>
 
 <div class="app-root">
-	<!-- Floating Timer Widget -->
-	<FloatingTimerWidget />
-
-	<!-- Timer Notifications -->
-	<TimerNotifications />
-
 	<!-- Guest Banner -->
 	{#if $isAnonymous}
 		<div class="guest-banner">
@@ -105,8 +91,6 @@
 
 		<!-- Main Content Area -->
 		<main class="app-main">
-			<!-- Timer Bar -->
-			<TimerBar />
 			<!-- Mobile Header Controls -->
 			<div class="mobile-header">
 				<button
@@ -187,9 +171,6 @@
 
 	<!-- Global Toast Notifications -->
 	<Toast />
-
-	<!-- PWA Install Prompt -->
-	<PWAInstallPrompt />
 </div>
 
 <style>
@@ -199,8 +180,6 @@
 		background: var(--nord0);
 		color: var(--nord6);
 	}
-
-	/* Floating timer widget styles are in the component */
 
 	/* Main Layout */
 	.app-layout {
@@ -446,8 +425,6 @@
 			opacity: 1;
 			visibility: visible;
 		}
-
-		/* Mobile timer widget adjustments handled in component */
 	}
 
 	@media (max-width: 640px) {

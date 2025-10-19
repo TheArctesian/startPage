@@ -7,7 +7,6 @@ Personal productivity dashboard with hierarchical project management, unified to
 
 **Recent Updates:**
 - Authentication system with user management and permissions
-- PWA support with manifest, service worker, and app icons  
 - Enhanced task management with improved type safety
 - Timer system improvements and bug fixes
 - UI refinements and component modularization
@@ -84,7 +83,7 @@ src/
 │   ├── pending-approval/ # User approval workflow
 │   └── project/[id]/     # Dynamic project pages
 └── app.css               # Global styles with Tailwind directives
-static/                   # PWA assets (manifest, icons, service worker)
+static/                   # Static assets (favicon, etc.)
 ```
 
 ### Design Principles
@@ -187,9 +186,8 @@ Tasks include both estimation and actual tracking:
 5. **Kanban Board**: Drag-and-drop support with column positions
 6. **Analytics Dashboard**: D3.js charts for accuracy metrics and time analysis
 7. **Authentication System**: User registration, login, and permission-based access
-8. **PWA Support**: Progressive Web App with offline capabilities, app icons, and service worker
-9. **Multi-Timer System**: Simultaneous task timing with floating timer widgets
-10. **Admin Interface**: User management and approval workflow for new registrations
+8. **Multi-Timer System**: Simultaneous task timing with floating timer widgets
+9. **Admin Interface**: User management and approval workflow for new registrations
 
 ### Testing & Development Notes
 - MDSvex enabled for Markdown component support
@@ -197,6 +195,5 @@ Tasks include both estimation and actual tracking:
 - TypeScript strict mode enabled
 - Drizzle Kit for database schema management
 - Environment variable validation on startup
-- PWA manifest and service worker configured for offline support
 - Authentication middleware protects routes and API endpoints
 - Component composition patterns maintain UNIX philosophy (small, focused modules)

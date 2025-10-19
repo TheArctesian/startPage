@@ -3,6 +3,7 @@
   import ProjectStatusBadge from './project-status-badge.svelte';
   import ProjectStatusDropdown from './project-status-dropdown.svelte';
   import type { ProjectWithDetails, ProjectStatus } from '$lib/types/database';
+  import { setProjectExpansion } from '$lib/features/projects/services/project-expansion';
 
   export let project: ProjectWithDetails & { children?: ProjectWithDetails[] };
   export let depth = 0;
@@ -53,9 +54,17 @@
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   }
 
-  function toggleExpanded() {
+  async function toggleExpanded() {
     if (hasChildren) {
-      isExpanded = !isExpanded;
+      const nextExpanded = !isExpanded;
+      isExpanded = nextExpanded;
+
+      try {
+        await setProjectExpansion(project.id, nextExpanded);
+      } catch (error) {
+        console.error('Failed to update project expansion state:', error);
+        isExpanded = !nextExpanded;
+      }
     }
   }
 

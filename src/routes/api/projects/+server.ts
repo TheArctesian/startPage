@@ -1,13 +1,16 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { projects, tasks, timeSessions } from '$lib/server/db/schema';
-import { eq, and, isNotNull, isNull, sql, or, inArray } from 'drizzle-orm';
+import { projects } from '$lib/server/db/schema';
+import { eq, and, isNull } from 'drizzle-orm';
 import { requireAuth } from '$lib/server/auth-guard';
 import { logUserActivity } from '$lib/server/auth';
 import { getUserVisibleProjects, grantProjectPermission } from '$lib/server/permissions';
 import { buildProjectTree, calculateAggregatedStats } from '$lib/utils/projectTree';
+import { ProjectStatsService } from '$lib/server/projects/project-stats.service';
 import type { RequestHandler } from './$types';
 import type { NewProject, ProjectWithDetails } from '$lib/types/database';
+
+const projectStatsService = new ProjectStatsService();
 
 export const GET: RequestHandler = async ({ url, locals, getClientAddress }) => {
   try {
@@ -77,38 +80,17 @@ export const GET: RequestHandler = async ({ url, locals, getClientAddress }) => 
     }
 
     // Get direct stats for each project first
-    const projectsWithDirectStats: ProjectWithDetails[] = await Promise.all(
-      projectList.map(async (project) => {
-        // Get task counts
-        const allTasks = await db.select({ id: tasks.id, status: tasks.status })
-          .from(tasks)
-          .where(eq(tasks.projectId, project.id));
-
-        const totalTasks = allTasks.length;
-        const completedTasks = allTasks.filter(task => task.status === 'done').length;
-        const inProgressTasks = allTasks.filter(task => task.status === 'in_progress').length;
-
-        // Get total time spent
-        const timeData = await db.select({ duration: timeSessions.duration })
-          .from(timeSessions)
-          .where(and(
-            eq(timeSessions.projectId, project.id),
-            isNotNull(timeSessions.duration)
-          ));
-
-        const totalMinutes = Math.round(
-          timeData.reduce((sum, session) => sum + (session.duration || 0), 0) / 60
-        );
-
-        return {
-          ...project,
-          totalTasks,
-          completedTasks,
-          inProgressTasks,
-          totalMinutes
-        };
-      })
-    );
+    const statsMap = await projectStatsService.getDirectStats(projectList);
+    const projectsWithDirectStats: ProjectWithDetails[] = projectList.map((project) => {
+      const stats = projectStatsService.getStatsForProject(project.id, statsMap);
+      return {
+        ...project,
+        totalTasks: stats.totalTasks,
+        completedTasks: stats.completedTasks,
+        inProgressTasks: stats.inProgressTasks,
+        totalMinutes: stats.totalMinutes
+      };
+    });
 
     // Build tree structure to calculate aggregated stats
     const treeData = buildProjectTree(projectsWithDirectStats);
@@ -130,6 +112,7 @@ export const GET: RequestHandler = async ({ url, locals, getClientAddress }) => 
         // Add aggregated stats (includes self + all descendants)
         totalTasks: aggregatedStats.totalTasks,
         completedTasks: aggregatedStats.completedTasks,
+        inProgressTasks: aggregatedStats.inProgressTasks,
         totalMinutes: aggregatedStats.totalMinutes,
         // Additional metadata
         hasSubprojects: node.hasChildren,

@@ -60,31 +60,19 @@ export const tasks = pgTable('tasks', {
   linkUrl: text('link_url'),
   status: taskStatusEnum('status').default('todo').notNull(),
   priority: priorityEnum('priority').default('medium').notNull(),
-  
+
   estimatedMinutes: integer('estimated_minutes').notNull(),
   estimatedIntensity: integer('estimated_intensity').notNull(),
   actualMinutes: integer('actual_minutes'),
   actualIntensity: integer('actual_intensity'),
-  
+
   dueDate: timestamp('due_date'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   completedAt: timestamp('completed_at'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  
+
   boardColumn: varchar('board_column', { length: 100 }),
   position: integer('position')
-});
-
-export const timeSessions = pgTable('time_sessions', {
-  id: serial('id').primaryKey(),
-  taskId: integer('task_id').references(() => tasks.id, { onDelete: 'cascade' }),
-  projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }),
-  description: text('description'),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time'),
-  duration: integer('duration'),
-  isActive: boolean('is_active').default(false),
-  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 export const quickLinks = pgTable('quick_links', {
@@ -129,13 +117,12 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   tasks: many(tasks),
   quickLinks: many(quickLinks),
-  timeSessions: many(timeSessions),
   createdByUser: one(users, {
     fields: [projects.createdBy],
     references: [users.id]
   }),
   userAccess: many(projectUsers),
-  
+
   // Hierarchical relations
   parent: one(projects, {
     fields: [projects.parentId],
@@ -152,19 +139,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     fields: [tasks.projectId],
     references: [projects.id]
   }),
-  timeSessions: many(timeSessions),
   taskTags: many(taskTags)
-}));
-
-export const timeSessionsRelations = relations(timeSessions, ({ one }) => ({
-  task: one(tasks, {
-    fields: [timeSessions.taskId],
-    references: [tasks.id]
-  }),
-  project: one(projects, {
-    fields: [timeSessions.projectId],
-    references: [projects.id]
-  })
 }));
 
 export const quickLinksRelations = relations(quickLinks, ({ one }) => ({

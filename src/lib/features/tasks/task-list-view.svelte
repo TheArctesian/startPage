@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import TimerControls from '$lib/features/timer/timer-controls.svelte';
   import IntensityDisplay from '$lib/ui/intensity-display.svelte';
   import Icon from '$lib/ui/icon.svelte';
   import { formatDueDate, formatRelativeTime } from '$lib/utils/date';
@@ -397,16 +396,6 @@
         
         <div class="task-cell actions-cell">
           <div class="task-actions">
-            {#if canEdit && task.status !== 'done'}
-              <TimerControls 
-                {task} 
-                size="xs" 
-                variant="minimal"
-                {canEdit}
-                {isAuthenticated}
-              />
-            {/if}
-            
             {#if canEdit}
               <button 
                 class="action-btn edit-btn"

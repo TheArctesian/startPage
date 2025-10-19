@@ -1,34 +1,32 @@
 // Store actions following UNIX philosophy: each function does one thing well
 import { get } from 'svelte/store';
 import { storeLogger } from '$lib/utils/logger';
-import { 
-  projects, 
-  tasks, 
-  timeSessions, 
-  quickLinks, 
-  activeProject, 
-  selectedTask, 
-  timerState,
+import {
+  projects,
+  tasks,
+  timeSessions,
+  quickLinks,
+  activeProject,
+  selectedTask,
   isLoading,
   loadingTasks,
   loadingQuickLinks,
   loadingSubProjects,
   error,
-  projectTreeData 
+  projectTreeData
 } from './index';
-import type { 
-  NewProject, 
-  NewTask, 
-  NewTimeSession, 
-  NewQuickLink, 
+import type {
+  NewProject,
+  NewTask,
+  NewQuickLink,
   QuickLink,
-  Project, 
+  Project,
   Task,
   IntensityLevel,
   ProjectTreeData,
-  ProjectNode 
+  ProjectNode
 } from '$lib/types/database';
-import { buildProjectTree } from '$lib/utils/projectTree';
+import { buildProjectTree, compareProjectsByUpdatedAtDesc } from '$lib/utils/projectTree';
 
 // Error handling helper
 function handleError(err: any, message: string) {
@@ -56,7 +54,10 @@ export async function loadProjects(includeStats = false) {
     }
     
     const data = await response.json();
-    projects.set(data);
+    const sortedProjects = Array.isArray(data)
+      ? [...data].sort(compareProjectsByUpdatedAtDesc)
+      : [];
+    projects.set(sortedProjects);
     
     // Don't automatically set any project as active
     // Let users explicitly navigate to projects
@@ -101,7 +102,10 @@ export async function createProject(projectData: NewProject) {
     const newProject = await response.json();
     
     // Add to store
-    projects.update(list => [...list, newProject]);
+    projects.update(list => {
+      const nextProjects = [...list, newProject];
+      return nextProjects.sort(compareProjectsByUpdatedAtDesc);
+    });
     
     // Set as active project
     activeProject.set(newProject);
@@ -134,9 +138,10 @@ export async function updateProject(id: number, updates: Partial<Project>) {
     const updatedProject = await response.json();
     
     // Update in store
-    projects.update(list => 
-      list.map(p => p.id === id ? updatedProject : p)
-    );
+    projects.update(list => {
+      const nextProjects = list.map(p => (p.id === id ? updatedProject : p));
+      return nextProjects.sort(compareProjectsByUpdatedAtDesc);
+    });
     
     // Update active project if it's the one being updated
     const current = get(activeProject);
@@ -280,13 +285,7 @@ export async function completeTask(id: number, actualIntensity: IntensityLevel) 
     if (current && current.id === id) {
       selectedTask.set(null);
     }
-    
-    // Stop timer if running for this task
-    const timer = get(timerState);
-    if (timer.isRunning && timer.currentTaskId === id) {
-      await stopTimer();
-    }
-    
+
     return { task: completedTask, estimationAccuracy };
   } catch (err) {
     handleError(err, 'Failed to complete task');
@@ -318,132 +317,13 @@ export async function deleteTask(id: number) {
     if (current && current.id === id) {
       selectedTask.set(null);
     }
-    
-    // Stop timer if running for this task
-    const timer = get(timerState);
-    if (timer.isRunning && timer.currentTaskId === id) {
-      await stopTimer();
-    }
-    
+
     return true;
   } catch (err) {
     handleError(err, 'Failed to delete task');
     throw err;
   } finally {
     isLoading.set(false);
-  }
-}
-
-// TIMER ACTIONS
-export async function startTimer(taskId: number) {
-  clearError();
-  
-  try {
-    const response = await fetch('/api/time-sessions/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to start timer');
-    }
-    
-    const { session } = await response.json();
-    
-    // Update timer state
-    timerState.update(state => ({
-      ...state,
-      isRunning: true,
-      currentTaskId: taskId,
-      currentSessionId: session.id,
-      startTime: new Date(session.startTime),
-      elapsedSeconds: 0
-    }));
-    
-    // Find and set the task
-    const currentTasks = get(tasks);
-    const task = currentTasks.find(t => t.id === taskId);
-    if (task) {
-      selectedTask.set(task);
-    }
-    
-    return session;
-  } catch (err) {
-    handleError(err, 'Failed to start timer');
-    throw err;
-  }
-}
-
-export async function stopTimer() {
-  clearError();
-  
-  try {
-    const timer = get(timerState);
-    if (!timer.isRunning || !timer.currentTaskId) {
-      throw new Error('No active timer to stop');
-    }
-    
-    const response = await fetch('/api/time-sessions/stop', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId: timer.currentTaskId })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to stop timer');
-    }
-    
-    const { session } = await response.json();
-    
-    // Update timer state
-    timerState.update(state => ({
-      ...state,
-      isRunning: false,
-      currentTaskId: undefined,
-      currentSessionId: undefined,
-      startTime: undefined,
-      elapsedSeconds: 0
-    }));
-    
-    return session;
-  } catch (err) {
-    handleError(err, 'Failed to stop timer');
-    throw err;
-  }
-}
-
-export async function loadActiveTimer() {
-  clearError();
-  
-  try {
-    const response = await fetch('/api/time-sessions/active');
-    
-    if (!response.ok) {
-      throw new Error('Failed to load active timer');
-    }
-    
-    const { activeSession, elapsedSeconds } = await response.json();
-    
-    if (activeSession) {
-      timerState.set({
-        isRunning: true,
-        currentTaskId: activeSession.taskId,
-        currentSessionId: activeSession.id,
-        startTime: new Date(activeSession.startTime),
-        elapsedSeconds: elapsedSeconds || 0
-      });
-      
-      if (activeSession.task) {
-        selectedTask.set(activeSession.task);
-      }
-    }
-    
-    return activeSession;
-  } catch (err) {
-    handleError(err, 'Failed to load active timer');
   }
 }
 
@@ -559,20 +439,6 @@ export async function deleteQuickLink(linkId: number) {
 // UTILITY ACTIONS
 export function setSelectedTask(task: Task | null) {
   selectedTask.set(task);
-}
-
-export function updateTimerElapsed() {
-  timerState.update(state => {
-    if (!state.isRunning || !state.startTime) return state;
-    
-    const now = new Date();
-    const elapsed = Math.floor((now.getTime() - state.startTime.getTime()) / 1000);
-    
-    return {
-      ...state,
-      elapsedSeconds: elapsed
-    };
-  });
 }
 
 // TREE-SPECIFIC ACTIONS

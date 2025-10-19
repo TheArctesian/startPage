@@ -1,10 +1,9 @@
 import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
-import type { 
-  projects, 
-  tasks, 
-  timeSessions, 
-  quickLinks, 
-  tags, 
+import type {
+  projects,
+  tasks,
+  quickLinks,
+  tags,
   taskTags,
   users,
   authSessions,
@@ -18,9 +17,6 @@ export type NewProject = InferInsertModel<typeof projects>;
 
 export type Task = InferSelectModel<typeof tasks>;
 export type NewTask = InferInsertModel<typeof tasks>;
-
-export type TimeSession = InferSelectModel<typeof timeSessions>;
-export type NewTimeSession = InferInsertModel<typeof timeSessions>;
 
 export type QuickLink = InferSelectModel<typeof quickLinks>;
 export type NewQuickLink = InferInsertModel<typeof quickLinks>;
@@ -59,29 +55,27 @@ export type PermissionLevel = 'view_only' | 'editor' | 'project_admin';
 // Extended Types with Relations
 export interface TaskWithDetails extends Task {
   project?: Project;
-  timeSessions?: TimeSession[];
   tags?: Tag[];
 }
 
 export interface ProjectWithDetails extends Project {
   tasks?: Task[];
   quickLinks?: QuickLink[];
-  timeSessions?: TimeSession[];
   createdByUser?: User;
   userAccess?: ProjectUserWithDetails[];
-  
+
   // Computed stats (aggregated - includes subprojects)
   totalTasks?: number;
   completedTasks?: number;
   inProgressTasks?: number;
   totalMinutes?: number;
-  
+
   // Direct stats (only this project)
   directTasks?: number;
   directCompletedTasks?: number;
   directInProgressTasks?: number;
   directMinutes?: number;
-  
+
   // Hierarchy metadata
   hasSubprojects?: boolean;
   isExpanded?: boolean;
@@ -121,11 +115,6 @@ export interface ProjectHierarchyStats {
   rootProjects: number;
   maxDepth: number;
   avgChildrenPerParent: number;
-}
-
-export interface TimeSessionWithDetails extends TimeSession {
-  task?: Task;
-  project?: Project;
 }
 
 // API Response Types
@@ -175,15 +164,6 @@ export interface WeeklySummary {
   }>;
 }
 
-// Timer State Types
-export interface TimerState {
-  isRunning: boolean;
-  currentTaskId?: number;
-  currentSessionId?: number;
-  startTime?: Date;
-  elapsedSeconds: number;
-}
-
 // Form Types
 export interface TaskFormData {
   title: string;
@@ -223,24 +203,7 @@ export interface UpdateTaskRequest {
 export interface CompleteTaskRequest {
   id: number;
   actualIntensity: IntensityLevel;
-  actualMinutes?: number; // Optional if using timer
-}
-
-export interface StartTimerRequest {
-  taskId: number;
-}
-
-export interface StopTimerRequest {
-  sessionId: number;
-  endTime?: Date; // Optional, defaults to now
-}
-
-export interface CreateTimeEntryRequest {
-  taskId?: number;
-  projectId: number;
-  description: string;
-  startTime: Date;
-  endTime: Date;
+  actualMinutes?: number;
 }
 
 // Validation Types
@@ -287,12 +250,4 @@ export interface TaskFilters {
   };
   tags?: number[];
   search?: string;
-}
-
-export interface TimeSessionFilters {
-  taskId?: number;
-  projectId?: number;
-  startDate?: Date;
-  endDate?: Date;
-  isActive?: boolean;
 }

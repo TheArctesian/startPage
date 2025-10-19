@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Task } from '$lib/types/task';
+	import type { TaskWithDetails } from '$lib/types/database';
 	import TaskCard from './task-card/task-card.svelte';
 
-	export let tasks: Task[] = [];
-	export let onEdit: ((task: Task) => void) | undefined = undefined;
-	export let onDelete: ((task: Task) => void) | undefined = undefined;
-	export let onStatusChange: ((task: Task, status: string) => void) | undefined = undefined;
+	export let tasks: TaskWithDetails[] = [];
+	export let onEdit: ((task: TaskWithDetails) => void) | undefined = undefined;
+	export let onDelete: ((task: TaskWithDetails) => void) | undefined = undefined;
+	export let onStatusChange: ((task: TaskWithDetails, status: string) => void) | undefined = undefined;
 	export let canEdit = false;
 	export let isAuthenticated = false;
 

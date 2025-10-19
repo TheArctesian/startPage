@@ -1,36 +1,86 @@
 <script lang="ts">
-	import type { Task } from '$lib/types/task';
-	import { taskViewMode, isKanbanView, isGridView, isListView } from '$lib/stores/taskView';
+	import { onMount } from 'svelte';
+	import type { TaskWithDetails } from '$lib/types/database';
+	import { isKanbanView, isGridView, isListView } from '$lib/stores/taskView';
+	import { taskFilters } from '$lib/stores/taskFilters';
 	import Icon from '$lib/ui/icon.svelte';
 	import TaskCard from './task-card/task-card.svelte';
 	import TaskGridView from './task-grid-view.svelte';
 	import TaskListView from './task-list-view.svelte';
+	import TaskViewToolbar from './task-view-toolbar.svelte';
+	import MinutesPerDayChart from '$lib/features/analytics/minutes-per-day-chart.svelte';
+	import TasksPerDayChart from '$lib/features/analytics/tasks-per-day-chart.svelte';
 
-	export let tasks: Task[] = [];
-	export let onEdit: ((task: Task) => void) | undefined = undefined;
-	export let onDelete: ((task: Task) => void) | undefined = undefined;
-	export let onStatusChange: ((task: Task, status: string) => void) | undefined = undefined;
+	export let tasks: TaskWithDetails[] = [];
+	export let onEdit: ((task: TaskWithDetails) => void) | undefined = undefined;
+	export let onDelete: ((task: TaskWithDetails) => void) | undefined = undefined;
+	export let onStatusChange: ((task: TaskWithDetails, status: string) => void) | undefined = undefined;
 	export let onNewTask: (() => void) | undefined = undefined;
 	export let showViewSelector = true;
 	export let canEdit = false;
 	export let isAuthenticated = false;
-	
-	// Debug: Track when canEdit changes
-	$: if (canEdit !== undefined) {
-		console.log('TasksView canEdit changed:', canEdit, 'onNewTask:', !!onNewTask);
+
+	// Analytics data
+	let analyticsData: { days: Array<{ date: string; minutes: number; tasksCompleted: number }> } | null = null;
+
+	async function fetchAnalytics() {
+		try {
+			const response = await fetch('/api/analytics/daily?days=7');
+			if (response.ok) {
+				analyticsData = await response.json();
+			}
+		} catch (error) {
+			console.error('Failed to fetch analytics:', error);
+		}
 	}
 
-	// Kanban columns
-	$: todoTasks = tasks.filter(task => task.status === 'todo');
-	$: inProgressTasks = tasks.filter(task => task.status === 'in_progress');
-	$: doneTasks = tasks.filter(task => task.status === 'done');
+	onMount(() => {
+		fetchAnalytics();
+	});
+
+	function matchesSearch(task: TaskWithDetails, term: string) {
+		if (!term) return true;
+		const normalised = term.toLowerCase();
+		return (
+			task.title?.toLowerCase().includes(normalised) ||
+			task.description?.toLowerCase().includes(normalised)
+		);
+	}
+
+	function matchesPriority(task: TaskWithDetails, priorityFilter: string) {
+		if (priorityFilter === 'all') return true;
+		return task.priority === priorityFilter;
+	}
+
+	$: filters = $taskFilters;
+	$: baseFilteredTasks = tasks.filter(
+		(task) => matchesSearch(task, filters.search) && matchesPriority(task, filters.priority)
+	);
+	$: statusFilteredTasks =
+		filters.status === 'all'
+			? baseFilteredTasks
+			: baseFilteredTasks.filter((task) => task.status === filters.status);
+
+	// Kanban columns respect search + priority filters; status filter narrows to matching column
+	$: todoTasks = baseFilteredTasks.filter(
+		(task) => task.status === 'todo' && (filters.status === 'all' || filters.status === 'todo')
+	);
+	$: inProgressTasks = baseFilteredTasks.filter(
+		(task) =>
+			task.status === 'in_progress' && (filters.status === 'all' || filters.status === 'in_progress')
+	);
+	$: doneTasks = baseFilteredTasks.filter(
+		(task) => task.status === 'done' && (filters.status === 'all' || filters.status === 'done')
+	);
+
+	$: gridAndListTasks = $isKanbanView ? baseFilteredTasks : statusFilteredTasks;
 
 	// Drag and drop state
-	let draggedTask: Task | null = null;
+	let draggedTask: TaskWithDetails | null = null;
 	let dragOverColumn: string | null = null;
 
 	// Drag and drop handlers
-	function handleDragStart(task: Task) {
+	function handleDragStart(task: TaskWithDetails) {
 		if (!canEdit) return;
 		draggedTask = task;
 	}
@@ -98,53 +148,8 @@
 
 <div class="tasks-view">
 	{#if showViewSelector}
-		<div class="view-selector">
-			<div class="view-options">
-				<button
-					type="button"
-					class="view-option"
-					class:active={$isKanbanView}
-					onclick={() => taskViewMode.setKanban()}
-					title="Kanban view"
-				>
-					<Icon name="columns" size={16} />
-					<span>Kanban</span>
-				</button>
-				
-				<button
-					type="button"
-					class="view-option"
-					class:active={$isGridView}
-					onclick={() => taskViewMode.setGrid()}
-					title="Grid view"
-				>
-					<Icon name="grid" size={16} />
-					<span>Grid</span>
-				</button>
-				
-				<button
-					type="button"
-					class="view-option"
-					class:active={$isListView}
-					onclick={() => taskViewMode.setList()}
-					title="List view"
-				>
-					<Icon name="list" size={16} />
-					<span>List</span>
-				</button>
-				
-				{#if canEdit && onNewTask}
-					<button
-						type="button"
-						class="view-option add-task-option"
-						onclick={onNewTask}
-						title="Add new task"
-					>
-						<span class="plus-icon">+</span>
-						<span>Add Task</span>
-					</button>
-				{/if}
-			</div>
+		<div class="toolbar-wrapper">
+			<TaskViewToolbar {canEdit} {onNewTask} />
 		</div>
 	{/if}
 
@@ -193,20 +198,26 @@
 						<span class="task-count">{todoTasks.length}</span>
 					</div>
 					<div class="column-content">
-						{#each todoTasks as task (task.id)}
-							<TaskCard
-								{task}
-								{onEdit}
-								{onDelete}
-								{onStatusChange}
-								{canEdit}
-								{isAuthenticated}
-								draggable={canEdit}
-								variant="kanban"
-								on:dragstart={(e) => handleDragStart(e.detail.task)}
-								on:dragend={handleDragEnd}
-							/>
-						{/each}
+						{#if todoTasks.length === 0}
+							<div class="empty-column">
+								<span>No tasks match the current filters.</span>
+							</div>
+						{:else}
+							{#each todoTasks as task (task.id)}
+								<TaskCard
+									{task}
+									{onEdit}
+									{onDelete}
+									{onStatusChange}
+									{canEdit}
+									{isAuthenticated}
+									draggable={canEdit}
+									variant="kanban"
+									on:dragstart={(e) => handleDragStart(e.detail.task)}
+									on:dragend={handleDragEnd}
+								/>
+							{/each}
+						{/if}
 					</div>
 				</div>
 
@@ -222,20 +233,26 @@
 						<span class="task-count">{inProgressTasks.length}</span>
 					</div>
 					<div class="column-content">
-						{#each inProgressTasks as task (task.id)}
-							<TaskCard
-								{task}
-								{onEdit}
-								{onDelete}
-								{onStatusChange}
-								{canEdit}
-								{isAuthenticated}
-								draggable={canEdit}
-								variant="kanban"
-								on:dragstart={(e) => handleDragStart(e.detail.task)}
-								on:dragend={handleDragEnd}
-							/>
-						{/each}
+						{#if inProgressTasks.length === 0}
+							<div class="empty-column">
+								<span>No tasks match the current filters.</span>
+							</div>
+						{:else}
+							{#each inProgressTasks as task (task.id)}
+								<TaskCard
+									{task}
+									{onEdit}
+									{onDelete}
+									{onStatusChange}
+									{canEdit}
+									{isAuthenticated}
+									draggable={canEdit}
+									variant="kanban"
+									on:dragstart={(e) => handleDragStart(e.detail.task)}
+									on:dragend={handleDragEnd}
+								/>
+							{/each}
+						{/if}
 					</div>
 				</div>
 
@@ -251,41 +268,75 @@
 						<span class="task-count">{doneTasks.length}</span>
 					</div>
 					<div class="column-content">
-						{#each doneTasks as task (task.id)}
-							<TaskCard
-								{task}
-								{onEdit}
-								{onDelete}
-								{onStatusChange}
-								{canEdit}
-								{isAuthenticated}
-								draggable={canEdit}
-								variant="kanban"
-								on:dragstart={(e) => handleDragStart(e.detail.task)}
-								on:dragend={handleDragEnd}
-							/>
-						{/each}
+						{#if doneTasks.length === 0}
+							<div class="empty-column">
+								<span>No tasks match the current filters.</span>
+							</div>
+						{:else}
+							{#each doneTasks as task (task.id)}
+								<TaskCard
+									{task}
+									{onEdit}
+									{onDelete}
+									{onStatusChange}
+									{canEdit}
+									{isAuthenticated}
+									draggable={canEdit}
+									variant="kanban"
+									on:dragstart={(e) => handleDragStart(e.detail.task)}
+									on:dragend={handleDragEnd}
+								/>
+							{/each}
+						{/if}
 					</div>
 				</div>
 			</div>
+
+			<!-- Analytics Charts -->
+			{#if analyticsData && analyticsData.days.length > 0}
+				<div class="analytics-section">
+					<MinutesPerDayChart days={analyticsData.days} />
+					<TasksPerDayChart days={analyticsData.days} />
+				</div>
+			{/if}
 		{:else if $isGridView}
-			<TaskGridView
-				{tasks}
-				{onEdit}
-				{onDelete}
-				{onStatusChange}
-				{canEdit}
-				{isAuthenticated}
-			/>
+			{#if gridAndListTasks.length === 0}
+				<div class="empty-grid">
+					<span>No tasks match the current filters.</span>
+				</div>
+			{:else}
+				<TaskGridView
+					tasks={gridAndListTasks}
+					{onEdit}
+					{onDelete}
+					{onStatusChange}
+					{canEdit}
+					{isAuthenticated}
+				/>
+			{/if}
 		{:else if $isListView}
-			<TaskListView
-				{tasks}
-				{onEdit}
-				{onDelete}
-				{onStatusChange}
-				{canEdit}
-				{isAuthenticated}
-			/>
+			{#if gridAndListTasks.length === 0}
+				<div class="empty-grid">
+					<span>No tasks match the current filters.</span>
+				</div>
+			{:else}
+				<TaskListView
+					tasks={gridAndListTasks}
+					{onEdit}
+					{onDelete}
+					{onStatusChange}
+					{canEdit}
+					{isAuthenticated}
+				/>
+
+				<!-- Analytics Charts -->
+				{#if analyticsData && analyticsData.days.length > 0}
+					<div class="analytics-section">
+						<MinutesPerDayChart days={analyticsData.days} />
+						<TasksPerDayChart days={analyticsData.days} />
+					</div>
+				{/if}
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -294,141 +345,55 @@
 	.tasks-view {
 		display: flex;
 		flex-direction: column;
+		gap: 1.5rem;
 		height: 100%;
 	}
 
-	.view-selector {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 1rem;
-		border-bottom: 1px solid var(--nord3);
-		background: var(--nord1);
-	}
-
-	.view-options {
-		display: flex;
-		gap: 0.5rem;
-		background: var(--nord2);
-		border-radius: 8px;
-		padding: 4px;
-	}
-
-	.view-option {
-		display: flex !important;
-		align-items: center !important;
-		gap: 0.5rem !important;
-		padding: 0.5rem 0.75rem !important;
-		border: 1px solid transparent !important;
-		background: transparent !important;
-		color: var(--nord4) !important;
-		border-radius: 6px !important;
-		cursor: pointer !important;
-		transition: all 0.2s ease !important;
-		font-size: 0.875rem !important;
-		font-weight: 500 !important;
-		text-decoration: none !important;
-		outline: none !important;
-		appearance: none !important;
-		user-select: none !important;
-		box-sizing: border-box !important;
-		font-family: inherit !important;
-		line-height: inherit !important;
-		vertical-align: middle !important;
-	}
-
-	.view-option:hover {
-		background: var(--nord3) !important;
-		color: var(--nord6) !important;
-	}
-
-	.view-option.active {
-		background: var(--nord0) !important;
-		color: var(--nord6) !important;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-	}
-
-	.view-option span {
-		display: inline !important;
-		vertical-align: middle !important;
-		flex-shrink: 0 !important;
-	}
-
-	/* Ensure Icon components render properly within buttons */
-	:global(.view-option svg) {
-		display: inline-block !important;
-		vertical-align: middle !important;
-		flex-shrink: 0 !important;
-		width: 16px !important;
-		height: 16px !important;
-		stroke: currentColor !important;
-		fill: none !important;
-	}
-
-	.add-task-option {
-		background: var(--nord8) !important;
-		color: white !important;
-	}
-
-	.add-task-option:hover {
-		background: var(--nord9) !important;
-		color: white !important;
-	}
-
-	/* Specific styling for add task button */
-	:global(.add-task-option svg) {
-		stroke: white !important;
-	}
-
-	.plus-icon {
-		font-size: 16px;
-		font-weight: 300;
-		line-height: 1;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 16px;
-		height: 16px;
+	.toolbar-wrapper {
+		position: sticky;
+		top: 0;
+		z-index: 5;
 	}
 
 	.tasks-content {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 		flex: 1;
-		overflow: hidden;
+		min-height: 0;
 	}
 
 	.kanban-board {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 1rem;
-		height: 100%;
-		padding: 1rem;
-		overflow: hidden;
+		gap: 1.75rem;
+		padding: 0.5rem;
 	}
 
 	.kanban-column {
 		display: flex;
 		flex-direction: column;
-		background: var(--nord1);
-		border: 1px solid var(--nord3);
-		border-radius: 8px;
-		overflow: hidden;
-		transition: all 0.2s ease;
+		background: rgba(46, 52, 64, 0.85);
+		border: 1px solid rgba(94, 129, 172, 0.35);
+		border-radius: 0.85rem;
+		box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+		transition: transform 0.2s ease, border-color 0.2s ease;
 	}
 
 	.kanban-column.drag-over {
 		border-color: var(--nord8);
-		background: rgba(136, 192, 208, 0.05);
-		transform: scale(1.01);
-		box-shadow: 0 4px 12px rgba(136, 192, 208, 0.2);
+		transform: translateY(-4px);
+		box-shadow: 0 16px 32px rgba(136, 192, 208, 0.2);
 	}
 
 	.column-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem;
-		background: var(--nord2);
-		border-bottom: 1px solid var(--nord3);
+		padding: 1rem 1.1rem;
+		background: rgba(67, 76, 94, 0.85);
+		border-bottom: 1px solid rgba(76, 86, 106, 0.65);
+		border-radius: 0.85rem 0.85rem 0 0;
 	}
 
 	.column-header h3 {
@@ -441,8 +406,8 @@
 	.task-count {
 		background: var(--nord8);
 		color: var(--nord0);
-		padding: 0.25rem 0.5rem;
-		border-radius: 12px;
+		padding: 0.25rem 0.55rem;
+		border-radius: 999px;
 		font-size: 0.75rem;
 		font-weight: 600;
 		min-width: 1.5rem;
@@ -450,163 +415,136 @@
 	}
 
 	.column-content {
-		flex: 1;
-		padding: 1rem;
-		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.85rem;
+		padding: 1rem 1.1rem 1.25rem;
+		max-height: 60vh;
+		overflow-y: auto;
 	}
 
-	/* Mobile Column Navigation */
+	.empty-column {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 130px;
+		border: 1px dashed rgba(94, 129, 172, 0.4);
+		border-radius: 0.75rem;
+		color: var(--nord4);
+		font-size: 0.85rem;
+		background: rgba(46, 52, 64, 0.35);
+	}
+
+	.empty-grid {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 4rem 1rem;
+		border-radius: 0.75rem;
+		border: 1px dashed rgba(94, 129, 172, 0.35);
+		color: var(--nord4);
+		background: rgba(46, 52, 64, 0.45);
+		font-size: 0.95rem;
+		text-align: center;
+	}
+
+	.analytics-section {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		margin-top: 1.5rem;
+		padding: 0 0.5rem;
+	}
+
+	.kanban-column .task-card {
+		background: var(--nord0);
+		border-radius: 0.75rem;
+		padding: 1rem;
+		border: 1px solid rgba(136, 192, 208, 0.2);
+		box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.kanban-column .task-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 18px 32px rgba(136, 192, 208, 0.22);
+	}
+
 	.mobile-column-nav {
 		display: none;
-		flex-direction: row;
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
-		background: var(--nord1);
-		border-bottom: 1px solid var(--nord3);
-		overflow-x: auto;
+		background: rgba(46, 52, 64, 0.9);
+		border: 1px solid rgba(76, 86, 106, 0.45);
+		border-radius: 0.75rem;
 	}
 
 	.column-nav-btn {
 		display: flex !important;
 		align-items: center !important;
-		gap: 0.5rem !important;
+		gap: 0.45rem !important;
 		padding: 0.5rem 0.75rem !important;
-		border: 1px solid var(--nord3) !important;
-		background: var(--nord0) !important;
-		border-radius: 0.5rem !important;
-		font-size: 0.875rem !important;
-		cursor: pointer !important;
-		transition: all 0.2s ease !important;
+		border: 1px solid rgba(94, 129, 172, 0.35) !important;
+		background: rgba(46, 52, 64, 0.9) !important;
+		border-radius: 0.65rem !important;
+		font-size: 0.85rem !important;
 		color: var(--nord6) !important;
-		white-space: nowrap !important;
-		flex-shrink: 0 !important;
-		appearance: none !important;
-		text-decoration: none !important;
-		outline: none !important;
-		box-sizing: border-box !important;
-		font-family: inherit !important;
-		line-height: inherit !important;
+		cursor: pointer !important;
+		transition: background 0.2s ease, border-color 0.2s ease !important;
 	}
 
 	.column-nav-btn:hover {
-		background: var(--nord2) !important;
-		border-color: var(--nord4) !important;
-	}
-
-	.column-nav-btn:active {
-		background: var(--nord3) !important;
-		transform: scale(0.98) !important;
-	}
-
-	/* Ensure mobile nav icons render properly */
-	:global(.column-nav-btn svg) {
-		display: inline-block !important;
-		vertical-align: middle !important;
-		flex-shrink: 0 !important;
-		width: 16px !important;
-		height: 16px !important;
-		stroke: currentColor !important;
-		fill: currentColor !important;
+		background: rgba(76, 86, 106, 0.65) !important;
+		border-color: rgba(136, 192, 208, 0.4) !important;
 	}
 
 	.nav-count {
 		background: var(--nord8);
 		color: var(--nord0);
-		padding: 0.125rem 0.375rem;
-		border-radius: 0.75rem;
+		padding: 0.1rem 0.4rem;
+		border-radius: 999px;
 		font-size: 0.75rem;
 		font-weight: 600;
-		min-width: 1.25rem;
-		text-align: center;
 	}
 
-	/* Responsive design */
+	:global(.column-nav-btn svg) {
+		stroke: currentColor !important;
+		fill: none !important;
+	}
 
-	@media (max-width: 768px) {
-		.mobile-column-nav {
-			display: flex;
+	@media (max-width: 1100px) {
+		.kanban-board {
+			grid-template-columns: repeat(2, 1fr);
+			gap: 1.25rem;
 		}
+	}
 
+	@media (max-width: 820px) {
 		.kanban-board {
 			display: flex;
+			gap: 1rem;
 			overflow-x: auto;
-			overflow-y: hidden;
+			scroll-snap-type: x mandatory;
+			padding: 0.75rem 0.5rem;
 		}
 
 		.kanban-column {
-			min-width: 320px;
-			width: 320px;
-			min-height: 300px;
-			flex-shrink: 0;
-			transition: width 0.3s ease;
+			min-width: min(360px, 85vw);
+			scroll-snap-align: start;
 		}
 
-		.kanban-column.focused-column {
-			width: calc(100vw - 3rem);
-			min-width: calc(100vw - 3rem);
-		}
-
-		.column-content {
-			max-height: 400px;
+		.mobile-column-nav {
+			display: flex;
 		}
 	}
 
 	@media (max-width: 640px) {
-		.mobile-column-nav {
-			display: flex;
-		}
-
-		.view-selector {
-			padding: 0.75rem;
-		}
-
-		.view-options {
-			gap: 0.25rem;
-			padding: 2px;
-		}
-
-		.view-option {
-			padding: 0.5rem;
-		}
-
-		.add-task-option span:not(.plus-icon) {
-			display: none;
-		}
-
-		.kanban-board {
-			display: flex;
-			overflow-x: auto;
-			overflow-y: hidden;
-			padding: 0.75rem;
-			gap: 0.75rem;
-			scroll-snap-type: x mandatory;
-		}
-
-		.kanban-column {
-			min-width: calc(100vw - 3rem);
-			width: calc(100vw - 3rem);
-			transition: width 0.3s ease;
-			scroll-snap-align: start;
-			flex-shrink: 0;
-		}
-
-		.kanban-column.focused-column {
-			width: calc(100vw - 3rem);
-			min-width: calc(100vw - 3rem);
-		}
-
-		.column-header {
-			padding: 0.75rem;
+		.toolbar-wrapper {
+			position: static;
 		}
 
 		.column-content {
-			padding: 0.75rem;
-			gap: 0.5rem;
-			max-height: 60vh;
-			overflow-y: auto;
+			max-height: none;
 		}
 	}
 </style>

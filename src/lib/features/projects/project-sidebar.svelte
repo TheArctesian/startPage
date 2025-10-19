@@ -67,6 +67,11 @@
 		await loadProjectsWithStats();
 	}
 
+	// Handle tree bulk expand/collapse events by refreshing shared data
+	async function handleTreeBulkChange() {
+		await loadProjectsWithStats();
+	}
+
 	// Toggle sidebar collapse
 	function toggleCollapse() {
 		isCollapsed = !isCollapsed;
@@ -190,6 +195,8 @@
 			loading={isLoadingTree}
 			on:projectSelect={handleTreeProjectSelect}
 			on:refresh={handleTreeRefresh}
+			on:expandAll={handleTreeBulkChange}
+			on:collapseAll={handleTreeBulkChange}
 		/>
 	</div>
 

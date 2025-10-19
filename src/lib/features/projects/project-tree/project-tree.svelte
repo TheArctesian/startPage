@@ -3,7 +3,8 @@
   import { fade } from 'svelte/transition';
   import ProjectTreeNode from './project-tree-node.svelte';
   import type { ProjectNode, ProjectTreeData } from '$lib/types/database';
-  import { buildProjectTree, flattenTree, toggleExpanded } from '$lib/utils/projectTree';
+  import { flattenTree } from '$lib/utils/projectTree';
+  import { setProjectExpansion } from '$lib/features/projects/services/project-expansion';
 
   export let treeData: ProjectTreeData | null = null;
   export let activeProjectId: number | null = null;
@@ -29,31 +30,22 @@
 
   async function handleProjectToggle(event: CustomEvent<{ project: ProjectNode }>) {
     const { project } = event.detail;
+    const currentExpanded = project.isExpanded ?? false;
+    const newExpanded = !currentExpanded;
     
     try {
       // Update local state immediately for responsive UI
       if (treeData) {
         const node = treeData.flatMap.get(project.id);
         if (node) {
-          node.isExpanded = !node.isExpanded;
+          node.isExpanded = newExpanded;
           // Force reactivity update
           treeData = { ...treeData };
         }
       }
 
       // Persist state to backend
-      const response = await fetch('/api/projects/tree', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: project.id,
-          isExpanded: !project.isExpanded
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update project state');
-      }
+      await setProjectExpansion(project.id, newExpanded);
 
       dispatch('projectToggle', event.detail);
     } catch (error) {
@@ -62,7 +54,7 @@
       if (treeData) {
         const node = treeData.flatMap.get(project.id);
         if (node) {
-          node.isExpanded = !node.isExpanded;
+          node.isExpanded = currentExpanded;
           treeData = { ...treeData };
         }
       }
@@ -74,26 +66,60 @@
     console.log('Context menu for project:', event.detail.project.name);
   }
 
-  function handleExpandAll() {
-    if (treeData) {
-      // Update all nodes to expanded
-      for (const node of treeData.flatMap.values()) {
-        node.isExpanded = true;
+  async function handleExpandAll() {
+    if (!treeData) {
+      dispatch('expandAll');
+      return;
+    }
+
+    const previousStates = new Map<number, boolean>();
+    for (const [id, node] of treeData.flatMap.entries()) {
+      previousStates.set(id, node.isExpanded ?? false);
+      node.isExpanded = true;
+    }
+    treeData = { ...treeData };
+
+    try {
+      await setProjectExpansion(Array.from(previousStates.keys()), true);
+      dispatch('expandAll');
+    } catch (error) {
+      console.error('Error expanding all projects:', error);
+      for (const [id, wasExpanded] of previousStates.entries()) {
+        const node = treeData.flatMap.get(id);
+        if (node) {
+          node.isExpanded = wasExpanded;
+        }
       }
       treeData = { ...treeData };
     }
-    dispatch('expandAll');
   }
 
-  function handleCollapseAll() {
-    if (treeData) {
-      // Update all nodes to collapsed
-      for (const node of treeData.flatMap.values()) {
-        node.isExpanded = false;
+  async function handleCollapseAll() {
+    if (!treeData) {
+      dispatch('collapseAll');
+      return;
+    }
+
+    const previousStates = new Map<number, boolean>();
+    for (const [id, node] of treeData.flatMap.entries()) {
+      previousStates.set(id, node.isExpanded ?? false);
+      node.isExpanded = false;
+    }
+    treeData = { ...treeData };
+
+    try {
+      await setProjectExpansion(Array.from(previousStates.keys()), false);
+      dispatch('collapseAll');
+    } catch (error) {
+      console.error('Error collapsing all projects:', error);
+      for (const [id, wasExpanded] of previousStates.entries()) {
+        const node = treeData.flatMap.get(id);
+        if (node) {
+          node.isExpanded = wasExpanded;
+        }
       }
       treeData = { ...treeData };
     }
-    dispatch('collapseAll');
   }
 
   function handleRefresh() {
@@ -159,9 +185,9 @@
     <div class="tree-controls">
       <div class="control-group">
         <button 
-          class="control-btn"
+          class="control-btn tooltip-trigger"
           onclick={handleExpandAll}
-          title="Expand all projects"
+          data-tooltip="Expand all projects"
           aria-label="Expand all projects"
           disabled={!hasProjects}
         >
@@ -169,9 +195,9 @@
         </button>
         
         <button 
-          class="control-btn"
+          class="control-btn tooltip-trigger"
           onclick={handleCollapseAll}
-          title="Collapse all projects"
+          data-tooltip="Collapse all projects"
           aria-label="Collapse all projects"
           disabled={!hasProjects}
         >
@@ -179,9 +205,9 @@
         </button>
         
         <button 
-          class="control-btn"
+          class="control-btn tooltip-trigger"
           onclick={handleRefresh}
-          title="Refresh project tree"
+          data-tooltip="Refresh project tree"
           aria-label="Refresh project tree"
         >
           <span class="control-icon" class:spinning={loading}>↻</span>
@@ -271,6 +297,34 @@
   .control-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .tooltip-trigger {
+    position: relative;
+  }
+
+  .tooltip-trigger::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 0.35rem);
+    left: 50%;
+    transform: translateX(-50%) translateY(0.25rem);
+    background: rgba(45, 52, 64, 0.95);
+    color: var(--nord6);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 10;
+  }
+
+  .tooltip-trigger:focus-visible::after,
+  .tooltip-trigger:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 
   .control-icon {

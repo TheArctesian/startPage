@@ -1,13 +1,12 @@
 import { writable, derived } from 'svelte/store';
-import type { 
-  Project, 
-  Task, 
-  TimeSession, 
-  QuickLink, 
-  TimerState,
+import type {
+  Project,
+  Task,
+  TimeSession,
+  QuickLink,
   ProjectWithDetails,
   TaskWithDetails,
-  ProjectTreeData 
+  ProjectTreeData
 } from '$lib/types/database';
 
 // Core data stores
@@ -19,12 +18,6 @@ export const quickLinks = writable<QuickLink[]>([]);
 // Active selections
 export const activeProject = writable<Project | null>(null);
 export const selectedTask = writable<Task | null>(null);
-
-// Timer state
-export const timerState = writable<TimerState>({
-  isRunning: false,
-  elapsedSeconds: 0
-});
 
 // UI state
 export const isLoading = writable<boolean>(false);
@@ -85,35 +78,6 @@ export const doneTasks = derived(
   ($tasks) => $tasks.filter(task => task.status === 'done')
 );
 
-export const currentTimer = derived(
-  [timerState, selectedTask],
-  ([$timerState, $selectedTask]) => ({
-    ...$timerState,
-    task: $selectedTask
-  })
-);
-
-// Timer helpers
-export const isTimerRunning = derived(
-  timerState,
-  ($timerState) => $timerState.isRunning
-);
-
-export const timerDisplay = derived(
-  timerState,
-  ($timerState) => {
-    const seconds = $timerState.elapsedSeconds;
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  }
-);
-
 // Project statistics - now enhanced to show projects with full stats from API
 export const projectStats = derived(
   [projects],
@@ -135,23 +99,3 @@ export const projectStats = derived(
 // Export store actions for external use
 export * from './actions';
 export * from './persistence';
-
-// Export new timer stores and manager (with explicit re-exports to avoid conflicts)
-export {
-  timerState as newTimerState,
-  widgetConfig,
-  activeTimers,
-  selectedTimerId as newSelectedTimerId,
-  isTimerLoading,
-  timerError,
-  hasActiveTimers,
-  runningTimers,
-  pausedTimers,
-  selectedTimer as newSelectedTimer,
-  TimerManager,
-  startTimer as startNewTimer,
-  stopTimer as stopNewTimer,
-  pauseTimer,
-  resumeTimer,
-  selectTimer
-} from './timers';

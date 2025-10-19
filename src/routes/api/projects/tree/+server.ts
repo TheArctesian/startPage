@@ -1,10 +1,13 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { projects, tasks, timeSessions } from '$lib/server/db/schema';
-import { eq, and, isNotNull } from 'drizzle-orm';
+import { projects } from '$lib/server/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 import type { ProjectWithDetails } from '$lib/types/database';
 import { buildProjectTree } from '$lib/utils/projectTree';
+import { ProjectStatsService } from '$lib/server/projects/project-stats.service';
+
+const projectStatsService = new ProjectStatsService();
 
 export const GET: RequestHandler = async ({ url }) => {
   try {
@@ -27,36 +30,17 @@ export const GET: RequestHandler = async ({ url }) => {
     }
 
     // Get stats for each project
-    const projectsWithStats: ProjectWithDetails[] = await Promise.all(
-      projectList.map(async (project) => {
-        // Get task counts
-        const allTasks = await db.select({ id: tasks.id, status: tasks.status })
-          .from(tasks)
-          .where(eq(tasks.projectId, project.id));
-
-        const totalTasks = allTasks.length;
-        const completedTasks = allTasks.filter(task => task.status === 'done').length;
-
-        // Get total time spent
-        const timeData = await db.select({ duration: timeSessions.duration })
-          .from(timeSessions)
-          .where(and(
-            eq(timeSessions.projectId, project.id),
-            isNotNull(timeSessions.duration)
-          ));
-
-        const totalMinutes = Math.round(
-          timeData.reduce((sum, session) => sum + (session.duration || 0), 0) / 60
-        );
-
-        return {
-          ...project,
-          totalTasks,
-          completedTasks,
-          totalMinutes
-        };
-      })
-    );
+    const statsMap = await projectStatsService.getDirectStats(projectList);
+    const projectsWithStats: ProjectWithDetails[] = projectList.map((project) => {
+      const stats = projectStatsService.getStatsForProject(project.id, statsMap);
+      return {
+        ...project,
+        totalTasks: stats.totalTasks,
+        completedTasks: stats.completedTasks,
+        inProgressTasks: stats.inProgressTasks,
+        totalMinutes: stats.totalMinutes
+      };
+    });
 
     // Build tree structure with stats
     const treeData = buildProjectTree(projectsWithStats);
@@ -71,32 +55,52 @@ export const GET: RequestHandler = async ({ url }) => {
 export const PUT: RequestHandler = async ({ request }) => {
   try {
     const data = await request.json();
-    const { projectId, isExpanded } = data;
+    const { projectId, projectIds, isExpanded } = data;
 
-    if (!projectId || typeof isExpanded !== 'boolean') {
+    if (typeof isExpanded !== 'boolean') {
       return json(
-        { error: 'Project ID and isExpanded are required' }, 
+        { error: 'isExpanded flag is required' }, 
+        { status: 400 }
+      );
+    }
+
+    const targetIds = Array.isArray(projectIds)
+      ? projectIds.filter((id): id is number => typeof id === 'number' && Number.isFinite(id))
+      : (typeof projectId === 'number' ? [projectId] : []);
+
+    if (targetIds.length === 0) {
+      return json(
+        { error: 'Project ID(s) are required' }, 
         { status: 400 }
       );
     }
 
     // Update the expanded state
-    const [updatedProject] = await db.update(projects)
+    const updatedProjects = await db.update(projects)
       .set({ 
         isExpanded,
         updatedAt: new Date()
       })
-      .where(eq(projects.id, projectId))
-      .returning();
+      .where(inArray(projects.id, targetIds))
+      .returning({
+        id: projects.id,
+        isExpanded: projects.isExpanded,
+        updatedAt: projects.updatedAt
+      });
 
-    if (!updatedProject) {
+    if (updatedProjects.length === 0) {
       return json(
-        { error: 'Project not found' }, 
+        { error: 'Project(s) not found' }, 
         { status: 404 }
       );
     }
 
-    return json(updatedProject);
+    // Preserve previous response shape for single updates
+    if (!Array.isArray(projectIds) && updatedProjects.length === 1) {
+      return json(updatedProjects[0]);
+    }
+
+    return json({ updatedIds: updatedProjects.map(project => project.id) });
   } catch (error) {
     console.error('Error updating project tree state:', error);
     return json({ error: 'Failed to update project tree state' }, { status: 500 });

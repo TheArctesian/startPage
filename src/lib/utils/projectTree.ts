@@ -1,5 +1,37 @@
 import type { Project, ProjectNode, ProjectTreeData, ProjectWithDetails } from '$lib/types/database';
 
+type ProjectLike = Pick<Project, 'name' | 'updatedAt'>;
+
+function getUpdatedAtTimestamp(project: { updatedAt?: ProjectLike['updatedAt'] | null }): number {
+  const { updatedAt } = project;
+  if (!updatedAt) return 0;
+
+  if (updatedAt instanceof Date) {
+    const value = updatedAt.getTime();
+    return Number.isNaN(value) ? 0 : value;
+  }
+
+  const parsed = new Date(updatedAt);
+  const timestamp = parsed.getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getProjectName(project: { name?: ProjectLike['name'] }): string {
+  return typeof project.name === 'string' ? project.name : '';
+}
+
+export function compareProjectsByUpdatedAtDesc<T extends { name?: string; updatedAt?: ProjectLike['updatedAt'] | null }>(
+  a: T,
+  b: T
+): number {
+  const diff = getUpdatedAtTimestamp(b) - getUpdatedAtTimestamp(a);
+  if (diff !== 0) {
+    return diff;
+  }
+
+  return getProjectName(a).localeCompare(getProjectName(b));
+}
+
 /**
  * Builds a hierarchical tree structure from a flat array of projects
  */
@@ -46,18 +78,18 @@ export function buildProjectTree(projects: ProjectWithDetails[]): ProjectTreeDat
     pathMap.set(node.breadcrumb, node);
   }
   
-  // Sort children by name within each parent
+  // Sort children within each parent by most recent update
   function sortChildren(nodes: ProjectNode[]) {
     for (const node of nodes) {
       if (node.children && node.children.length > 0) {
-        node.children.sort((a, b) => a.name.localeCompare(b.name));
+        node.children.sort(compareProjectsByUpdatedAtDesc);
         sortChildren(node.children);
       }
     }
   }
   
   // Sort roots and all children
-  roots.sort((a, b) => a.name.localeCompare(b.name));
+  roots.sort(compareProjectsByUpdatedAtDesc);
   sortChildren(roots);
   
   const maxDepth = Math.max(...Array.from(flatMap.values()).map(node => node.depth || 0));
@@ -149,6 +181,7 @@ export function calculateAggregatedStats(node: ProjectNode): {
   totalTasks: number;
   completedTasks: number;
   totalMinutes: number;
+  inProgressTasks: number;
   descendantCount: number;
 } {
   const descendants = getDescendants(node);
@@ -156,17 +189,20 @@ export function calculateAggregatedStats(node: ProjectNode): {
   let totalTasks = node.totalTasks || 0;
   let completedTasks = node.completedTasks || 0;
   let totalMinutes = node.totalMinutes || 0;
+  let inProgressTasks = node.inProgressTasks || 0;
   
   for (const descendant of descendants) {
     totalTasks += descendant.totalTasks || 0;
     completedTasks += descendant.completedTasks || 0;
     totalMinutes += descendant.totalMinutes || 0;
+    inProgressTasks += descendant.inProgressTasks || 0;
   }
   
   return {
     totalTasks,
     completedTasks,
     totalMinutes,
+    inProgressTasks,
     descendantCount: descendants.length
   };
 }

@@ -8,8 +8,9 @@
 	import ProjectsTable from '$lib/features/projects/projects-table.svelte';
 	import ProjectEditModal from '$lib/features/projects/modals/project-edit-modal.svelte';
 	import TaskCard from '$lib/features/tasks/task-card/task-card.svelte';
-	import ActiveTimersSection from '$lib/features/timer/active-timers-section.svelte';
 	import { toasts } from '$lib/stores/toasts';
+	import MinutesPerDayChart from '$lib/features/analytics/minutes-per-day-chart.svelte';
+	import TasksPerDayChart from '$lib/features/analytics/tasks-per-day-chart.svelte';
 	import type { ProjectWithDetails, ProjectStatus, TaskWithDetails } from '$lib/types/database';
 
 	export let onProjectSelect: (project: ProjectWithDetails) => void = () => {};
@@ -23,10 +24,23 @@
 	let inProgressTasks: TaskWithDetails[] = [];
 	let showProjectEdit = false;
 	let projectToEdit: ProjectWithDetails | null = null;
+	let analyticsData: { days: Array<{ date: string; minutes: number; tasksCompleted: number }> } | null = null;
 
 	onMount(async () => {
 		await loadData();
+		await fetchAnalytics();
 	});
+
+	async function fetchAnalytics() {
+		try {
+			const response = await fetch('/api/analytics/daily?days=7');
+			if (response.ok) {
+				analyticsData = await response.json();
+			}
+		} catch (error) {
+			console.error('Failed to fetch analytics:', error);
+		}
+	}
 
 	async function loadData() {
 		isLoadingProjects = true;
@@ -136,9 +150,6 @@
 			/>
 		</section>
 
-		<!-- Active Timers Section -->
-		<ActiveTimersSection />
-
 		<!-- In-Progress Tasks Section -->
 		<section class="tasks-section">
 			<div class="section-header">
@@ -209,6 +220,14 @@
 				</div>
 			{/if}
 		</section>
+
+		<!-- Analytics Section -->
+		{#if analyticsData && analyticsData.days.length > 0}
+			<section class="analytics-section">
+				<MinutesPerDayChart days={analyticsData.days} />
+				<TasksPerDayChart days={analyticsData.days} />
+			</section>
+		{/if}
 	</div>
 
 	<!-- Project Edit Modal -->
@@ -262,6 +281,13 @@
 
 	.tasks-section {
 		width: 100%;
+	}
+
+	.analytics-section {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 	}
 
 	.section-header {

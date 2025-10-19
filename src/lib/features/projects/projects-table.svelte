@@ -3,6 +3,7 @@
   import ProjectRow from './project-row.svelte';
   import type { ProjectWithDetails, ProjectStatus } from '$lib/types/database';
   import { navigateToProject } from '$lib/utils/navigation';
+  import { compareProjectsByUpdatedAtDesc } from '$lib/utils/projectTree';
 
   export let projects: ProjectWithDetails[] = [];
   export let isLoading = false;
@@ -45,6 +46,19 @@
         roots.push(projectWithChildren);
       }
     });
+
+    roots.sort(compareProjectsByUpdatedAtDesc);
+
+    function sortChildren(nodes: (ProjectWithDetails & { children: ProjectWithDetails[] })[]) {
+      for (const node of nodes) {
+        if (node.children.length > 0) {
+          node.children.sort(compareProjectsByUpdatedAtDesc);
+          sortChildren(node.children);
+        }
+      }
+    }
+
+    sortChildren(roots);
 
     return roots;
   }
@@ -162,6 +176,19 @@
   .table-body {
     max-height: 70vh;
     overflow-y: auto;
+  }
+
+  :global(.projects-table .table-body .project-row) {
+    background: var(--nord0);
+    transition: background 0.2s ease;
+  }
+
+  :global(.projects-table .table-body .project-row:nth-of-type(even)) {
+    background: var(--nord1);
+  }
+
+  :global(.projects-table .table-body .project-row:hover) {
+    background: var(--nord2);
   }
 
   .loading-state,

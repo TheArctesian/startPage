@@ -25,10 +25,12 @@
   // Mobile detection
   let isMobile = false;
 
+  const MOBILE_BREAKPOINT = 640;
+
   onMount(() => {
-    isMobile = window.innerWidth < 768;
+    isMobile = window.innerWidth < MOBILE_BREAKPOINT;
     const handleResize = () => {
-      isMobile = window.innerWidth < 768;
+      isMobile = window.innerWidth < MOBILE_BREAKPOINT;
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

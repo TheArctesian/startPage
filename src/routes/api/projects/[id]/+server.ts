@@ -1,10 +1,11 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { projects, tasks, timeSessions, quickLinks } from '$lib/server/db/schema';
-import { eq, and, isNotNull } from 'drizzle-orm';
-import { requireEditAccess, requireProjectAccess } from '$lib/server/auth-guard';
+import { projects, tasks, quickLinks } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
+import { requireEditAccess } from '$lib/server/auth-guard';
 import { logUserActivity } from '$lib/server/auth';
 import { hasProjectPermission } from '$lib/server/permissions';
+import { ProjectStatsService } from '$lib/server/projects/project-stats.service';
 import type { RequestHandler } from './$types';
 import type { ProjectWithDetails } from '$lib/types/database';
 
@@ -37,37 +38,31 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     }
 
     // Get full project details
-    const [projectTasks, projectQuickLinks, timeData] = await Promise.all([
+    const [projectTasks, projectQuickLinks] = await Promise.all([
       // Get all tasks for this project
       db.select().from(tasks).where(eq(tasks.projectId, projectId)),
       
       // Get quick links
       db.select().from(quickLinks)
         .where(eq(quickLinks.projectId, projectId))
-        .orderBy(quickLinks.position, quickLinks.title),
-      
-      // Get time data
-      db.select({ duration: timeSessions.duration })
-        .from(timeSessions)
-        .where(and(
-          eq(timeSessions.projectId, projectId),
-          isNotNull(timeSessions.duration)
-        ))
+        .orderBy(quickLinks.position, quickLinks.title)
     ]);
 
-    const totalTasks = projectTasks.length;
-    const completedTasks = projectTasks.filter(task => task.status === 'done').length;
-    const totalMinutes = Math.round(
-      timeData.reduce((sum, session) => sum + (session.duration || 0), 0) / 60
+    const stats = ProjectStatsService.fromTaskList(
+      projectTasks.map((task) => ({
+        status: task.status,
+        actualMinutes: task.actualMinutes ?? 0
+      }))
     );
 
     const projectWithDetails: ProjectWithDetails = {
       ...project,
       tasks: projectTasks,
       quickLinks: projectQuickLinks,
-      totalTasks,
-      completedTasks,
-      totalMinutes
+      totalTasks: stats.totalTasks,
+      completedTasks: stats.completedTasks,
+      inProgressTasks: stats.inProgressTasks,
+      totalMinutes: stats.totalMinutes
     };
 
     return json(projectWithDetails);
