@@ -6,7 +6,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 
   return {
     user,
-    isAnonymous: locals.isAnonymous,
+    isAnonymous: !isUserAuthenticated, // Always consistent with user state
     isAuthenticated: isUserAuthenticated,
     canEdit: isUserAuthenticated,
     sessionId: locals.sessionId

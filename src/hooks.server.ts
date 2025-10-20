@@ -17,10 +17,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   if (sessionId) {
     const session = await validateSession(sessionId);
-    
+
     if (session) {
-      event.locals.isAnonymous = session.isAnonymous;
-      
       if (session.userId) {
         // Authenticated user session
         const user = await getUserById(session.userId);
@@ -28,6 +26,7 @@ export const handle: Handle = async ({ event, resolve }) => {
           event.locals.user = user;
           event.locals.isAnonymous = false;
         }
+        // If user doesn't exist or not approved, keep defaults (anonymous)
       }
       // For anonymous sessions, keep isAnonymous = true and user = undefined
     } else {

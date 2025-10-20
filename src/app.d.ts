@@ -1,16 +1,12 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+import type { PublicUser } from '$lib/server/auth/user-repository';
+
 declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			user?: {
-				id: number;
-				username: string;
-				role: string;
-				status: string;
-				projectAccess: string;
-			};
+			user?: PublicUser;
 			sessionId?: string;
 			isAnonymous: boolean;
 		}
