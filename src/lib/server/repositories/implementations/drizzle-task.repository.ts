@@ -10,7 +10,7 @@
  * - Business logic doesn't depend on ORM details
  */
 
-import { eq, and, or, desc, asc, ilike, gte, lte, count as drizzleCount } from 'drizzle-orm';
+import { eq, and, or, desc, asc, ilike, gte, lte, ne, count as drizzleCount } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type {
   ITaskRepository,
@@ -93,7 +93,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
       .update(tasks)
       .set({
         ...data,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(tasks.id, id))
       .returning();
@@ -212,8 +212,8 @@ export class DrizzleTaskRepository implements ITaskRepository {
    */
   async findDueInRange(startDate: Date, endDate: Date, projectId?: number): Promise<Task[]> {
     const conditions = [
-      gte(tasks.dueDate, startDate.toISOString()),
-      lte(tasks.dueDate, endDate.toISOString())
+      gte(tasks.dueDate, startDate),
+      lte(tasks.dueDate, endDate)
     ];
 
     if (projectId !== undefined) {
@@ -237,7 +237,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
       status: 'done',
       actualIntensity,
       actualMinutes: actualMinutes || null,
-      completedAt: new Date().toISOString()
+      completedAt: new Date()
     });
   }
 
@@ -314,7 +314,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
   async archiveCompleted(olderThan: Date, projectId?: number): Promise<number> {
     const conditions = [
       eq(tasks.status, 'done'),
-      lte(tasks.completedAt, olderThan.toISOString())
+      lte(tasks.completedAt, olderThan)
     ];
 
     if (projectId !== undefined) {
@@ -361,23 +361,23 @@ export class DrizzleTaskRepository implements ITaskRepository {
     }
 
     if (filters.createdAfter) {
-      conditions.push(gte(tasks.createdAt, filters.createdAfter.toISOString()));
+      conditions.push(gte(tasks.createdAt, filters.createdAfter));
     }
 
     if (filters.createdBefore) {
-      conditions.push(lte(tasks.createdAt, filters.createdBefore.toISOString()));
+      conditions.push(lte(tasks.createdAt, filters.createdBefore));
     }
 
     if (filters.dueAfter) {
-      conditions.push(gte(tasks.dueDate, filters.dueAfter.toISOString()));
+      conditions.push(gte(tasks.dueDate, filters.dueAfter));
     }
 
     if (filters.dueBefore) {
-      conditions.push(lte(tasks.dueDate, filters.dueBefore.toISOString()));
+      conditions.push(lte(tasks.dueDate, filters.dueBefore));
     }
 
     if (!filters.includeArchived) {
-      conditions.push(eq(tasks.status, 'archived'));
+      conditions.push(ne(tasks.status, 'archived'));
     }
 
     return conditions;
