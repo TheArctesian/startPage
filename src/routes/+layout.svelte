@@ -13,6 +13,7 @@
 	import { userStateActions, userState, isAuthenticated, isAnonymous, currentUser } from '$lib/stores/user-state';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	
 	let { children, data } = $props();
 
@@ -25,6 +26,14 @@
 			canEdit: data.canEdit,
 			sessionId: data.sessionId
 		});
+	});
+
+	const loginHref = $derived.by(() => {
+		const { pathname, search, hash } = $page.url;
+		const fullPath = `${pathname}${search}${hash}`;
+		const shouldRedirect =
+			pathname === '/login' || pathname === '/signup' ? '/' : fullPath || '/';
+		return shouldRedirect === '/' ? '/login' : `/login?redirectTo=${encodeURIComponent(shouldRedirect)}`;
 	});
 
 	// Handle mobile sidebar toggle
@@ -69,7 +78,7 @@
 					<circle cx="12" cy="12" r="3"/>
 				</svg>
 				<span>Viewing in read-only mode</span>
-				<a href="/login" class="guest-signin-link">Sign in to edit</a>
+				<a href={loginHref} class="guest-signin-link">Sign in to edit</a>
 			</div>
 		</div>
 	{/if}
@@ -125,7 +134,7 @@
 						<div class="guest-info">
 							<span class="guest-label">Viewing as Guest</span>
 						</div>
-						<a href="/login" class="auth-link">
+						<a href={loginHref} class="auth-link">
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 								<rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
 								<circle cx="12" cy="16" r="1"/>
@@ -134,7 +143,7 @@
 							Sign In
 						</a>
 					{:else}
-						<a href="/login" class="auth-link">
+						<a href={loginHref} class="auth-link">
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 								<rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
 								<circle cx="12" cy="16" r="1"/>

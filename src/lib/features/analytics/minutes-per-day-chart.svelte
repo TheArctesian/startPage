@@ -1,16 +1,22 @@
 <!--
   Minutes Per Day Chart
 
-  Displays minutes worked per day using D3.js bar chart.
+  Displays minutes worked per day using D3.js bar chart with week navigation.
   Follows UNIX philosophy: single responsibility for daily minutes visualization.
 -->
 
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import * as d3 from 'd3';
+  import WeekNavigator from '$lib/components/analytics/week-navigator.svelte';
 
-  export let days: Array<{ date: string; minutes: number; tasksCompleted: number }> = [];
-  export let height = 300;
+  let { height = 300 } = $props<{ height?: number }>();
+
+  let weekOffset = $state(0);
+  let currentWeekData = $state<Array<{ date: string; minutes: number; tasksCompleted: number }>>([]);
+  let dataCache = $state(new Map<number, Array<{ date: string; minutes: number; tasksCompleted: number }>>());
+  let hasNextWeek = $state(false);
+  let hasPrevWeek = $state(true);
 
   let chartContainer: HTMLDivElement;
   let resizeObserver: ResizeObserver;
@@ -19,12 +25,97 @@
   const margin = { top: 20, right: 20, bottom: 50, left: 60 };
   let width = 800;
 
-  $: if (chartContainer && days.length > 0) {
-    drawChart();
+  // Fetch data when week changes
+  $effect(() => {
+    fetchWeekData(weekOffset);
+    // Preload adjacent weeks
+    preloadWeek(weekOffset - 1);
+    preloadWeek(weekOffset + 1);
+  });
+
+  // Redraw chart when data changes
+  $effect(() => {
+    if (chartContainer && currentWeekData.length > 0) {
+      drawChart();
+    }
+  });
+
+  function getWeekDateRange(offset: number): { start: Date; end: Date } {
+    const today = new Date();
+    const currentWeekStart = d3.timeWeek.floor(today);
+    const targetWeekStart = new Date(currentWeekStart);
+    targetWeekStart.setDate(targetWeekStart.getDate() + (offset * 7));
+
+    const targetWeekEnd = new Date(targetWeekStart);
+    targetWeekEnd.setDate(targetWeekEnd.getDate() + 6);
+
+    return { start: targetWeekStart, end: targetWeekEnd };
+  }
+
+  async function fetchWeekData(offset: number) {
+    // Check cache first
+    if (dataCache.has(offset)) {
+      currentWeekData = dataCache.get(offset)!;
+      updateNavigationState();
+      return;
+    }
+
+    const { start, end } = getWeekDateRange(offset);
+
+    try {
+      const response = await fetch(
+        `/api/analytics/daily?start=${start.toISOString()}&end=${end.toISOString()}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const weekData = data.days || [];
+
+        // Cache the data
+        dataCache.set(offset, weekData);
+        currentWeekData = weekData;
+        updateNavigationState();
+      }
+    } catch (error) {
+      console.error('Failed to fetch week data:', error);
+    }
+  }
+
+  async function preloadWeek(offset: number) {
+    // Don't preload if already cached or if it's a future week
+    if (dataCache.has(offset) || offset > 0) return;
+
+    const { start, end } = getWeekDateRange(offset);
+
+    try {
+      const response = await fetch(
+        `/api/analytics/daily?start=${start.toISOString()}&end=${end.toISOString()}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        dataCache.set(offset, data.days || []);
+      }
+    } catch (error) {
+      // Silently fail for preloading
+    }
+  }
+
+  function updateNavigationState() {
+    // Can go to next week only if it's not the current week
+    hasNextWeek = weekOffset < 0;
+
+    // Can go to previous week if there's data
+    const prevWeekData = dataCache.get(weekOffset - 1);
+    hasPrevWeek = prevWeekData ? prevWeekData.some(d => d.minutes > 0 || d.tasksCompleted > 0) : true;
+  }
+
+  function handleWeekChange(newOffset: number) {
+    weekOffset = newOffset;
   }
 
   function drawChart() {
-    if (!chartContainer || days.length === 0) return;
+    if (!chartContainer || currentWeekData.length === 0) return;
 
     // Clear previous chart
     d3.select(chartContainer).selectAll('*').remove();
@@ -35,6 +126,12 @@
 
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
+
+    // Filter out days with no data for display
+    const displayData = currentWeekData.filter(d => d.minutes > 0 || d.tasksCompleted > 0);
+
+    // If no data at all, show all days with zero values
+    const chartData = displayData.length > 0 ? displayData : currentWeekData;
 
     // Create SVG
     const svg = d3.select(chartContainer)
@@ -48,11 +145,11 @@
 
     // Scales
     const xScale = d3.scaleBand()
-      .domain(days.map(d => d.date))
+      .domain(chartData.map(d => d.date))
       .range([0, innerWidth])
       .padding(0.2);
 
-    const maxMinutes = d3.max(days, d => d.minutes) || 60;
+    const maxMinutes = d3.max(chartData, d => d.minutes) || 60;
     const yScale = d3.scaleLinear()
       .domain([0, maxMinutes])
       .nice()
@@ -89,7 +186,7 @@
 
     // Add bars
     g.selectAll('.minutes-bar')
-      .data(days)
+      .data(chartData)
       .enter().append('rect')
       .attr('class', 'minutes-bar')
       .attr('x', d => xScale(d.date)!)
@@ -110,7 +207,7 @@
 
     // Add value labels on bars
     g.selectAll('.bar-label')
-      .data(days)
+      .data(chartData)
       .enter().append('text')
       .attr('class', 'bar-label')
       .attr('x', d => xScale(d.date)! + xScale.bandwidth() / 2)
@@ -173,7 +270,7 @@
   onMount(() => {
     if (typeof ResizeObserver !== 'undefined') {
       resizeObserver = new ResizeObserver(() => {
-        if (chartContainer && days.length > 0) {
+        if (chartContainer && currentWeekData.length > 0) {
           drawChart();
         }
       });
@@ -191,11 +288,17 @@
 
 <div class="chart-wrapper">
   <h3 class="chart-title">Minutes Per Day</h3>
+  <WeekNavigator
+    {weekOffset}
+    {hasNextWeek}
+    {hasPrevWeek}
+    onWeekChange={handleWeekChange}
+  />
   <div class="chart-container" bind:this={chartContainer}>
-    {#if days.length === 0}
+    {#if currentWeekData.length === 0 || currentWeekData.every(d => d.minutes === 0 && d.tasksCompleted === 0)}
       <div class="empty-state">
         <div class="empty-icon">⏱</div>
-        <p class="empty-description">No time data available</p>
+        <p class="empty-description">No time data available for this week</p>
       </div>
     {/if}
   </div>

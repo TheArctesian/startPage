@@ -1,26 +1,56 @@
 import { redirect, fail } from '@sveltejs/kit';
-import { 
-  authenticateUser, 
-  createSession, 
-  logUserActivity 
+import {
+  authenticateUser,
+  createSession,
+  logUserActivity
 } from '$lib/server/auth';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
-  // If already authenticated with a real user account, redirect to home
+function sanitizeRedirect(target: string | null | undefined): string {
+  if (!target) {
+    return '/';
+  }
+
+  let candidate = target;
+  try {
+    candidate = decodeURIComponent(target);
+  } catch {
+    // keep original value if decoding fails
+  }
+
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) {
+    return '/';
+  }
+
+  // avoid loops back to auth screens
+  if (candidate === '/login' || candidate === '/signup') {
+    return '/';
+  }
+
+  return candidate;
+}
+
+export const load: PageServerLoad = async ({ locals, url }) => {
+  const redirectTo = sanitizeRedirect(url.searchParams.get('redirectTo'));
+
+  // If already authenticated with a real user account, redirect to destination
   if (locals.user && locals.user.status === 'approved') {
-    throw redirect(302, '/');
+    throw redirect(302, redirectTo);
   }
 
   // Allow anonymous users to access login page
-  return {};
+  return { redirectTo };
 };
 
 export const actions: Actions = {
-  login: async ({ request, cookies, getClientAddress }) => {
+  login: async ({ request, cookies, getClientAddress, url }) => {
     const data = await request.formData();
     const username = data.get('username') as string;
     const password = data.get('password') as string;
+    const submittedRedirect = data.get('redirectTo') as string | null;
+    const redirectTarget = sanitizeRedirect(
+      submittedRedirect ?? url.searchParams.get('redirectTo')
+    );
 
     if (!username) {
       return fail(400, { error: 'Username is required' });
@@ -77,7 +107,7 @@ export const actions: Actions = {
       });
       console.log('Cookie set, redirecting...');
 
-      throw redirect(302, '/');
+      throw redirect(302, redirectTarget);
     } catch (error: any) {
       // Re-throw redirects (they have status and location properties)
       if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
@@ -88,7 +118,13 @@ export const actions: Actions = {
     }
   },
 
-  lurk: async ({ cookies, getClientAddress, request }) => {
+  lurk: async ({ cookies, getClientAddress, request, url }) => {
+    const data = await request.formData();
+    const submittedRedirect = data.get('redirectTo') as string | null;
+    const redirectTarget = sanitizeRedirect(
+      submittedRedirect ?? url.searchParams.get('redirectTo')
+    );
+
     try {
       // Create anonymous session
       const sessionId = await createSession(
@@ -106,7 +142,7 @@ export const actions: Actions = {
         maxAge: 7 * 24 * 60 * 60 // 7 days
       });
 
-      throw redirect(302, '/');
+      throw redirect(302, redirectTarget);
     } catch (error: any) {
       // Re-throw redirects (they have status and location properties)
       if (error && typeof error === 'object' && 'status' in error && 'location' in error) {

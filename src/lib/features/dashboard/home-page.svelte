@@ -24,23 +24,10 @@
 	let inProgressTasks: TaskWithDetails[] = [];
 	let showProjectEdit = false;
 	let projectToEdit: ProjectWithDetails | null = null;
-	let analyticsData: { days: Array<{ date: string; minutes: number; tasksCompleted: number }> } | null = null;
 
 	onMount(async () => {
 		await loadData();
-		await fetchAnalytics();
 	});
-
-	async function fetchAnalytics() {
-		try {
-			const response = await fetch('/api/analytics/daily?days=7');
-			if (response.ok) {
-				analyticsData = await response.json();
-			}
-		} catch (error) {
-			console.error('Failed to fetch analytics:', error);
-		}
-	}
 
 	async function loadData() {
 		isLoadingProjects = true;
@@ -222,12 +209,10 @@
 		</section>
 
 		<!-- Analytics Section -->
-		{#if analyticsData && analyticsData.days.length > 0}
-			<section class="analytics-section">
-				<MinutesPerDayChart days={analyticsData.days} />
-				<TasksPerDayChart days={analyticsData.days} />
-			</section>
-		{/if}
+		<section class="analytics-section">
+			<MinutesPerDayChart />
+			<TasksPerDayChart />
+		</section>
 	</div>
 
 	<!-- Project Edit Modal -->

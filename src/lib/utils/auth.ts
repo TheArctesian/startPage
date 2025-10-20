@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import type { User } from '$lib/types/database';
 import { get } from 'svelte/store';
 import { userState } from '$lib/stores/user-state';
@@ -15,6 +16,9 @@ export function isAuthenticated(user?: User | null): boolean {
   }
   
   // Use store if no user provided
+  if (!browser) {
+    return false;
+  }
   const state = get(userState);
   return state.isAuthenticated;
 }
@@ -28,6 +32,9 @@ export function isAnonymous(user?: User | null): boolean {
   }
   
   // Use store if no user provided
+  if (!browser) {
+    return true;
+  }
   const state = get(userState);
   return state.isAnonymous;
 }
@@ -41,6 +48,9 @@ export function isAdmin(user?: User | null): boolean {
   }
   
   // Use store if no user provided
+  if (!browser) {
+    return false;
+  }
   const state = get(userState);
   return state.user !== null && state.user.role === 'admin';
 }
@@ -54,6 +64,9 @@ export function isMember(user?: User | null): boolean {
   }
   
   // Use store if no user provided
+  if (!browser) {
+    return false;
+  }
   const state = get(userState);
   return state.user !== null && state.user.status === 'approved' && state.user.role === 'member';
 }
@@ -67,6 +80,9 @@ export function canEdit(user?: User | null): boolean {
   }
   
   // Use store if no user provided
+  if (!browser) {
+    return false;
+  }
   const state = get(userState);
   return state.canEdit;
 }
@@ -75,7 +91,11 @@ export function canEdit(user?: User | null): boolean {
  * Check if user has access to a project (based on projectAccess field)
  */
 export function hasProjectAccess(projectId: number, user?: User | null): boolean {
-  const currentUser = user !== undefined ? user : get(userState).user;
+  const currentUser = user !== undefined
+    ? user
+    : browser
+      ? get(userState).user
+      : null;
   
   if (!currentUser || !isAuthenticated(currentUser)) {
     return false;
@@ -105,6 +125,9 @@ export function isSuspended(user?: User | null): boolean {
   }
   
   // Use store if no user provided
+  if (!browser) {
+    return false;
+  }
   const state = get(userState);
   return state.user !== null && state.user.status === 'suspended';
 }
@@ -118,6 +141,9 @@ export function isPending(user?: User | null): boolean {
   }
   
   // Use store if no user provided
+  if (!browser) {
+    return false;
+  }
   const state = get(userState);
   return state.user !== null && state.user.status === 'pending';
 }
@@ -126,7 +152,12 @@ export function isPending(user?: User | null): boolean {
  * Get user's display name
  */
 export function getUserDisplayName(user?: User | null): string {
-  const currentUser = user !== undefined ? user : get(userState).user;
+  const currentUser =
+    user !== undefined
+      ? user
+      : browser
+        ? get(userState).user
+        : null;
   
   if (!currentUser) {
     return 'Anonymous';
@@ -139,6 +170,9 @@ export function getUserDisplayName(user?: User | null): string {
  * Get current user from store
  */
 export function getCurrentUser(): User | null {
+  if (!browser) {
+    return null;
+  }
   const state = get(userState);
   return state.user;
 }

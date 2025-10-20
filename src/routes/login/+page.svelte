@@ -48,6 +48,8 @@
 			}}
 			class="login-form"
 		>
+			<input type="hidden" name="redirectTo" value={$page.url.searchParams.get('redirectTo') ?? ''} />
+
 			<div class="form-group">
 				<label for="username" class="form-label">Username</label>
 				<input
@@ -125,6 +127,8 @@
 				};
 			}}
 		>
+			<input type="hidden" name="redirectTo" value={$page.url.searchParams.get('redirectTo') ?? ''} />
+
 			<button 
 				type="submit" 
 				disabled={loading || lurkLoading}

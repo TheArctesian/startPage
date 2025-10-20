@@ -8,13 +8,27 @@ export const GET: RequestHandler = async ({ url }) => {
   try {
     const days = parseInt(url.searchParams.get('days') || '7');
     const projectId = url.searchParams.get('project');
+    const startParam = url.searchParams.get('start');
+    const endParam = url.searchParams.get('end');
 
-    // Calculate date range (last N days)
-    const endDate = new Date();
-    endDate.setHours(23, 59, 59, 999);
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-    startDate.setHours(0, 0, 0, 0);
+    // Calculate date range
+    let endDate: Date;
+    let startDate: Date;
+
+    if (startParam && endParam) {
+      // Use explicit date range if provided
+      startDate = new Date(startParam);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(endParam);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // Default to last N days
+      endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      startDate.setHours(0, 0, 0, 0);
+    }
 
     // Build query conditions
     const conditions = [
@@ -40,7 +54,8 @@ export const GET: RequestHandler = async ({ url }) => {
     const dailyData = new Map<string, { minutes: number; count: number }>();
 
     // Initialize all days in range
-    for (let i = 0; i < days; i++) {
+    const dayCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    for (let i = 0; i < dayCount; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
       const dateKey = date.toISOString().split('T')[0];
