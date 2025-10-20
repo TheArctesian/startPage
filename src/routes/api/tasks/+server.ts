@@ -1,74 +1,41 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { tasks, projects, tags, taskTags } from '$lib/server/db/schema';
-import { eq, and, or, desc, asc, ilike, inArray } from 'drizzle-orm';
+import { taskService } from '$lib/server/services';
+import { ValidationException } from '$lib/server/validation';
 import { requireAuth, requireEditAccess } from '$lib/server/auth-guard';
-import { hasProjectAccess, logUserActivity } from '$lib/server/auth';
+import { logUserActivity } from '$lib/server/auth';
 import type { RequestHandler } from './$types';
-import type { NewTask, TaskWithDetails, TaskFilters } from '$lib/types/database';
+import type { NewTask, TaskStatus, Priority } from '$lib/types/database';
 
-export const GET: RequestHandler = async ({ url, locals }) => {
+export const GET: RequestHandler = async ({ url }) => {
   try {
     const projectId = url.searchParams.get('project');
     const status = url.searchParams.get('status');
     const priority = url.searchParams.get('priority');
     const search = url.searchParams.get('search');
-    const includeDetails = url.searchParams.get('details') === 'true';
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    let query = db.select().from(tasks);
-    const conditions = [];
+    // Build filters
+    const filters: any = {};
 
-    // Apply filters
     if (projectId) {
-      conditions.push(eq(tasks.projectId, parseInt(projectId)));
+      filters.projectId = parseInt(projectId);
     }
-    
+
     if (status) {
-      conditions.push(eq(tasks.status, status as any));
+      filters.status = status as TaskStatus;
     }
-    
+
     if (priority) {
-      conditions.push(eq(tasks.priority, priority as any));
+      filters.priority = priority as Priority;
     }
-    
+
     if (search) {
-      conditions.push(
-        or(
-          ilike(tasks.title, `%${search}%`),
-          ilike(tasks.description, `%${search}%`)
-        )
-      );
+      filters.search = search;
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    // Use service layer to get tasks
+    const taskList = await taskService.searchTasks(search || '', projectId ? parseInt(projectId) : undefined);
 
-    // Default ordering: by creation date (most recent first)
-    const taskList = await query
-      .orderBy(desc(tasks.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    if (!includeDetails) {
-      return json(taskList);
-    }
-
-    // Get details for each task
-    const tasksWithDetails: TaskWithDetails[] = await Promise.all(
-      taskList.map(async (task) => {
-        const [project] = await db.select().from(projects).where(eq(projects.id, task.projectId!)).limit(1);
-
-        return {
-          ...task,
-          project: project
-        };
-      })
-    );
-
-    return json(tasksWithDetails);
+    return json(taskList);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return json({ error: 'Failed to fetch tasks' }, { status: 500 });
@@ -78,65 +45,28 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 export const POST: RequestHandler = async (event) => {
   requireAuth(event);
   const { request, locals, getClientAddress } = event;
-  
+
   try {
     const data: NewTask = await request.json();
 
-    // Validate required fields
-    if (!data.title || data.title.trim().length === 0) {
-      return json({ error: 'Task title is required' }, { status: 400 });
-    }
-
-    if (data.title.length > 500) {
-      return json({ error: 'Task title must be less than 500 characters' }, { status: 400 });
-    }
-
-    if (!data.projectId) {
-      return json({ error: 'Project ID is required' }, { status: 400 });
-    }
-
     // Check project access
-    requireEditAccess(event, data.projectId);
-
-    if (!data.estimatedMinutes || data.estimatedMinutes < 1 || data.estimatedMinutes > 1440) {
-      return json({ 
-        error: 'Estimated minutes must be between 1 and 1440 (24 hours)' 
-      }, { status: 400 });
+    if (data.projectId) {
+      requireEditAccess(event, data.projectId);
     }
 
-    if (!data.estimatedIntensity || data.estimatedIntensity < 1 || data.estimatedIntensity > 5) {
-      return json({ 
-        error: 'Estimated intensity must be between 1 and 5' 
-      }, { status: 400 });
-    }
-
-    // Verify project exists
-    const [project] = await db.select({ id: projects.id })
-      .from(projects)
-      .where(eq(projects.id, data.projectId))
-      .limit(1);
-
-    if (!project) {
-      return json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // Set defaults and clean data
+    // Set defaults
     const taskData: NewTask = {
-      title: data.title.trim(),
+      ...data,
+      title: data.title?.trim(),
       description: data.description?.trim() || null,
-      projectId: data.projectId,
       status: data.status || 'todo',
       priority: data.priority || 'medium',
-      estimatedMinutes: data.estimatedMinutes,
-      estimatedIntensity: data.estimatedIntensity,
-      dueDate: data.dueDate,
       boardColumn: data.boardColumn || 'todo',
       position: data.position || 0
     };
 
-    const [newTask] = await db.insert(tasks)
-      .values(taskData)
-      .returning();
+    // Use service layer for creation with validation
+    const newTask = await taskService.createTask(taskData);
 
     // Log activity
     await logUserActivity(
@@ -150,6 +80,14 @@ export const POST: RequestHandler = async (event) => {
 
     return json(newTask, { status: 201 });
   } catch (error) {
+    if (error instanceof ValidationException) {
+      return json(error.toJSON(), { status: 400 });
+    }
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      return json({ error: error.message }, { status: 404 });
+    }
+
     console.error('Error creating task:', error);
     return json({ error: 'Failed to create task' }, { status: 500 });
   }

@@ -1,42 +1,24 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { tasks, projects } from '$lib/server/db/schema';
-import { eq, sum, isNotNull } from 'drizzle-orm';
+import { taskService } from '$lib/server/services';
+import { ValidationException } from '$lib/server/validation';
 import { requireAuth } from '$lib/server/auth-guard';
 import type { RequestHandler } from './$types';
-import type { TaskWithDetails } from '$lib/types/database';
 
-export const GET: RequestHandler = async ({ params, url }) => {
+export const GET: RequestHandler = async ({ params }) => {
   try {
     const taskId = parseInt(params.id);
-    const includeDetails = url.searchParams.get('details') === 'true';
 
     if (isNaN(taskId)) {
       return json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
-    const [task] = await db.select()
-      .from(tasks)
-      .where(eq(tasks.id, taskId))
-      .limit(1);
+    const task = await taskService.getTaskById(taskId);
 
     if (!task) {
       return json({ error: 'Task not found' }, { status: 404 });
     }
 
-    if (!includeDetails) {
-      return json(task);
-    }
-
-    // Get task details
-    const [project] = await db.select().from(projects).where(eq(projects.id, task.projectId!)).limit(1);
-
-    const taskWithDetails: TaskWithDetails = {
-      ...task,
-      project: project
-    };
-
-    return json(taskWithDetails);
+    return json(task);
   } catch (error) {
     console.error('Error fetching task:', error);
     return json({ error: 'Failed to fetch task' }, { status: 500 });
@@ -46,39 +28,29 @@ export const GET: RequestHandler = async ({ params, url }) => {
 export const PATCH: RequestHandler = async (event) => {
   requireAuth(event);
   const { params, request } = event;
-  
+
   try {
     const taskId = parseInt(params.id);
-    
+
     if (isNaN(taskId)) {
       return json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
     const updates = await request.json();
 
-    // For PATCH, allow partial updates without strict validation
-    if (updates.status !== undefined) {
-      // Validate status values
-      const validStatuses = ['todo', 'in_progress', 'done', 'archived'];
-      if (!validStatuses.includes(updates.status)) {
-        return json({ error: 'Invalid status value' }, { status: 400 });
-      }
-    }
-
-    // Add updated timestamp
-    updates.updatedAt = new Date();
-
-    const [updatedTask] = await db.update(tasks)
-      .set(updates)
-      .where(eq(tasks.id, taskId))
-      .returning();
-
-    if (!updatedTask) {
-      return json({ error: 'Task not found' }, { status: 404 });
-    }
+    // Use service layer for update with validation
+    const updatedTask = await taskService.updateTask(taskId, updates);
 
     return json(updatedTask);
   } catch (error) {
+    if (error instanceof ValidationException) {
+      return json(error.toJSON(), { status: 400 });
+    }
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      return json({ error: error.message }, { status: 404 });
+    }
+
     console.error('Error updating task:', error);
     return json({ error: 'Failed to update task' }, { status: 500 });
   }
@@ -87,65 +59,29 @@ export const PATCH: RequestHandler = async (event) => {
 export const PUT: RequestHandler = async (event) => {
   requireAuth(event);
   const { params, request } = event;
-  
+
   try {
     const taskId = parseInt(params.id);
-    
+
     if (isNaN(taskId)) {
       return json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
     const updates = await request.json();
 
-    // Validate updates
-    if (updates.title !== undefined) {
-      if (!updates.title || updates.title.trim().length === 0) {
-        return json({ error: 'Task title cannot be empty' }, { status: 400 });
-      }
-      if (updates.title.length > 500) {
-        return json({ error: 'Task title must be less than 500 characters' }, { status: 400 });
-      }
-      updates.title = updates.title.trim();
-    }
-
-    if (updates.estimatedMinutes !== undefined) {
-      if (updates.estimatedMinutes < 1 || updates.estimatedMinutes > 1440) {
-        return json({ 
-          error: 'Estimated minutes must be between 1 and 1440 (24 hours)' 
-        }, { status: 400 });
-      }
-    }
-
-    if (updates.estimatedIntensity !== undefined) {
-      if (updates.estimatedIntensity < 1 || updates.estimatedIntensity > 5) {
-        return json({ 
-          error: 'Estimated intensity must be between 1 and 5' 
-        }, { status: 400 });
-      }
-    }
-
-    if (updates.actualIntensity !== undefined) {
-      if (updates.actualIntensity < 1 || updates.actualIntensity > 5) {
-        return json({ 
-          error: 'Actual intensity must be between 1 and 5' 
-        }, { status: 400 });
-      }
-    }
-
-    // Add updated timestamp
-    updates.updatedAt = new Date();
-
-    const [updatedTask] = await db.update(tasks)
-      .set(updates)
-      .where(eq(tasks.id, taskId))
-      .returning();
-
-    if (!updatedTask) {
-      return json({ error: 'Task not found' }, { status: 404 });
-    }
+    // Use service layer for update with validation
+    const updatedTask = await taskService.updateTask(taskId, updates);
 
     return json(updatedTask);
   } catch (error) {
+    if (error instanceof ValidationException) {
+      return json(error.toJSON(), { status: 400 });
+    }
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      return json({ error: error.message }, { status: 404 });
+    }
+
     console.error('Error updating task:', error);
     return json({ error: 'Failed to update task' }, { status: 500 });
   }
@@ -154,7 +90,7 @@ export const PUT: RequestHandler = async (event) => {
 export const DELETE: RequestHandler = async (event) => {
   requireAuth(event);
   const { params } = event;
-  
+
   try {
     const taskId = parseInt(params.id);
 
@@ -162,16 +98,18 @@ export const DELETE: RequestHandler = async (event) => {
       return json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
-    const [deletedTask] = await db.delete(tasks)
-      .where(eq(tasks.id, taskId))
-      .returning();
+    const success = await taskService.deleteTask(taskId);
 
-    if (!deletedTask) {
+    if (!success) {
       return json({ error: 'Task not found' }, { status: 404 });
     }
 
-    return json({ message: 'Task deleted successfully', task: deletedTask });
+    return json({ message: 'Task deleted successfully' });
   } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      return json({ error: error.message }, { status: 404 });
+    }
+
     console.error('Error deleting task:', error);
     return json({ error: 'Failed to delete task' }, { status: 500 });
   }

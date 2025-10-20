@@ -1,33 +1,31 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { quickLinks, projects } from '$lib/server/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { quickLinkService } from '$lib/server/services';
+import { ValidationException } from '$lib/server/validation';
 import { requireAuth } from '$lib/server/auth-guard';
 import type { RequestHandler } from './$types';
-import type { NewQuickLink } from '$lib/types/database';
+import type { NewQuickLink, LinkCategory } from '$lib/types/database';
 
 export const GET: RequestHandler = async ({ url }) => {
   try {
     const projectId = url.searchParams.get('project');
     const category = url.searchParams.get('category');
 
-    let query = db.select().from(quickLinks);
-    const conditions = [];
+    // Use service layer for filtering
+    let linkList;
 
-    // Apply filters
-    if (projectId) {
-      conditions.push(eq(quickLinks.projectId, parseInt(projectId)));
+    if (category && projectId) {
+      linkList = await quickLinkService.getQuickLinksByCategory(
+        category as LinkCategory,
+        parseInt(projectId)
+      );
+    } else if (category) {
+      linkList = await quickLinkService.getQuickLinksByCategory(category as LinkCategory);
+    } else if (projectId) {
+      linkList = await quickLinkService.getQuickLinksByProject(parseInt(projectId));
+    } else {
+      const result = await quickLinkService.getAllQuickLinks();
+      linkList = result.items;
     }
-    
-    if (category) {
-      conditions.push(eq(quickLinks.category, category as any));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const linkList = await query.orderBy(quickLinks.position, quickLinks.title);
 
     return json(linkList);
   } catch (error) {
@@ -39,70 +37,32 @@ export const GET: RequestHandler = async ({ url }) => {
 export const POST: RequestHandler = async (event) => {
   requireAuth(event);
   const { request } = event;
-  
+
   try {
     const data: NewQuickLink = await request.json();
 
-    // Validate required fields
-    if (!data.title || data.title.trim().length === 0) {
-      return json({ error: 'Link title is required' }, { status: 400 });
-    }
-
-    if (data.title.length > 255) {
-      return json({ error: 'Link title must be less than 255 characters' }, { status: 400 });
-    }
-
-    if (!data.url || data.url.trim().length === 0) {
-      return json({ error: 'URL is required' }, { status: 400 });
-    }
-
-    if (!data.projectId) {
-      return json({ error: 'Project ID is required' }, { status: 400 });
-    }
-
-    // Verify project exists
-    const [project] = await db.select({ id: projects.id })
-      .from(projects)
-      .where(eq(projects.id, data.projectId))
-      .limit(1);
-
-    if (!project) {
-      return json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // Basic URL validation
-    try {
-      new URL(data.url);
-    } catch {
-      return json({ error: 'Invalid URL format' }, { status: 400 });
-    }
-
-    // Get next position if not provided
-    let position = data.position || 0;
-    if (position === 0) {
-      const [lastLink] = await db.select({ position: quickLinks.position })
-        .from(quickLinks)
-        .where(eq(quickLinks.projectId, data.projectId))
-        .orderBy(desc(quickLinks.position))
-        .limit(1);
-      
-      position = (lastLink?.position || 0) + 1;
-    }
-
+    // Set defaults
     const linkData: NewQuickLink = {
-      title: data.title.trim(),
-      url: data.url.trim(),
-      projectId: data.projectId,
+      ...data,
+      title: data.title?.trim(),
+      url: data.url?.trim(),
       category: data.category || null,
-      position
+      position: data.position || 0
     };
 
-    const [newLink] = await db.insert(quickLinks)
-      .values(linkData)
-      .returning();
+    // Use service layer for creation with validation
+    const newLink = await quickLinkService.createQuickLink(linkData);
 
     return json(newLink, { status: 201 });
   } catch (error) {
+    if (error instanceof ValidationException) {
+      return json(error.toJSON(), { status: 400 });
+    }
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      return json({ error: error.message }, { status: 404 });
+    }
+
     console.error('Error creating quick link:', error);
     return json({ error: 'Failed to create quick link' }, { status: 500 });
   }
