@@ -7,6 +7,7 @@
 
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
   import * as d3 from 'd3';
   import type { TaskWithDetails, Project } from '$lib/types/database';
 
@@ -391,6 +392,8 @@
   }
 
   function getTooltip() {
+    if (!browser) return d3.select(null as any);
+
     let tooltip = d3.select('body').select('.time-chart-tooltip');
     if (tooltip.empty()) {
       tooltip = d3.select('body').append('div')
@@ -424,7 +427,9 @@
       resizeObserver.disconnect();
     }
     // Clean up tooltip
-    d3.select('body').selectAll('.time-chart-tooltip').remove();
+    if (browser) {
+      d3.select('body').selectAll('.time-chart-tooltip').remove();
+    }
   });
 </script>
 

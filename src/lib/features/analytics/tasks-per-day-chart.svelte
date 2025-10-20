@@ -7,6 +7,7 @@
 
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
   import * as d3 from 'd3';
   import WeekNavigator from '$lib/components/analytics/week-navigator.svelte';
 
@@ -250,6 +251,8 @@
   }
 
   function getTooltip() {
+    if (!browser) return d3.select(null as any);
+
     let tooltip = d3.select('body').select('.tasks-chart-tooltip');
     if (tooltip.empty()) {
       tooltip = d3.select('body').append('div')
@@ -282,7 +285,9 @@
     if (resizeObserver) {
       resizeObserver.disconnect();
     }
-    d3.select('body').selectAll('.tasks-chart-tooltip').remove();
+    if (browser) {
+      d3.select('body').selectAll('.tasks-chart-tooltip').remove();
+    }
   });
 </script>
 

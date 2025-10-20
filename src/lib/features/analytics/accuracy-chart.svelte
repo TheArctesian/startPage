@@ -7,6 +7,7 @@
 
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
   import * as d3 from 'd3';
   import type { TaskWithDetails } from '$lib/types/database';
 
@@ -331,7 +332,9 @@
       resizeObserver.disconnect();
     }
     // Clean up tooltip
-    d3.select('body').selectAll('.chart-tooltip').remove();
+    if (browser) {
+      d3.select('body').selectAll('.chart-tooltip').remove();
+    }
   });
 </script>
 
