@@ -1,12 +1,13 @@
-import { 
-  pgTable, 
-  serial, 
-  integer, 
-  varchar, 
-  text, 
-  timestamp, 
+import {
+  pgTable,
+  serial,
+  integer,
+  varchar,
+  text,
+  timestamp,
   boolean,
-  pgEnum
+  pgEnum,
+  unique
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -104,7 +105,10 @@ export const projectUsers = pgTable('project_users', {
   permissionLevel: permissionLevelEnum('permission_level').default('view_only').notNull(),
   grantedBy: integer('granted_by').references(() => users.id, { onDelete: 'set null' }),
   grantedAt: timestamp('granted_at').defaultNow().notNull()
-});
+}, (table) => ({
+  // Composite unique constraint for onConflictDoUpdate
+  userProjectUnique: unique().on(table.userId, table.projectId)
+}));
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
