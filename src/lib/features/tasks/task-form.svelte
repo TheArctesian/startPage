@@ -1,22 +1,28 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import IntensityPicker from '$lib/ui/intensity-picker.svelte';
   import { activeProject, projects, createTask, updateTask } from '$lib/stores';
-  import type { TaskFormData, Task, Project, IntensityLevel, Priority } from '$lib/types/database';
+  import type { TaskFormData, Task, IntensityLevel, Priority } from '$lib/types/database';
 
-  // Props
-  export let task: Task | null = null; // null for new task, Task for editing
-  export let isOpen: boolean = false;
-  export let autoFocus: boolean = true;
+  interface Props {
+    task?: Task | null;
+    isOpen?: boolean;
+    autoFocus?: boolean;
+    onsubmit?: (event: { task: Task }) => void;
+    oncancel?: () => void;
+    onclose?: () => void;
+  }
 
-  const dispatch = createEventDispatcher<{
-    submit: { task: Task };
-    cancel: void;
-    close: void;
-  }>();
+  let {
+    task = null,
+    isOpen = false,
+    autoFocus = true,
+    onsubmit,
+    oncancel,
+    onclose
+  }: Props = $props();
 
   // Form state
-  let formData: TaskFormData = {
+  let formData = $state<TaskFormData>({
     title: '',
     description: '',
     linkUrl: '',
@@ -26,16 +32,16 @@
     priority: 'medium' as Priority,
     dueDate: undefined,
     tags: []
-  };
+  });
 
-  let errors: Partial<Record<keyof TaskFormData, string>> = {};
-  let isSubmitting = false;
+  let errors = $state<Partial<Record<keyof TaskFormData, string>>>({});
+  let isSubmitting = $state(false);
 
   // Reactive values
-  $: currentProject = $activeProject;
-  $: availableProjects = $projects;
-  $: isEditing = task !== null;
-  $: submitLabel = isEditing ? 'Update Task' : 'Create Task';
+  let currentProject = $derived($activeProject);
+  let availableProjects = $derived($projects ?? []);
+  let isEditing = $derived(task !== null);
+  let submitLabel = $derived(isEditing ? 'Update Task' : 'Create Task');
 
   // Time estimation presets
   const timePresets = [
@@ -78,9 +84,12 @@
   }
 
   // Watch for changes to task or current project
-  $: if (isOpen) {
+  $effect(() => {
+    if (!isOpen) {
+      return;
+    }
     initializeForm();
-  }
+  });
 
   // Form validation
   function validateForm(): boolean {
@@ -137,7 +146,7 @@
         resultTask = await createTask(taskData);
       }
 
-      dispatch('submit', { task: resultTask });
+      onsubmit?.({ task: resultTask });
       handleCancel();
     } catch (error) {
       console.error('Failed to save task:', error);
@@ -150,14 +159,12 @@
   // Handle cancel
   function handleCancel() {
     initializeForm();
-    dispatch('cancel');
-    isOpen = false;
+    oncancel?.();
   }
 
   // Handle close (ESC key)
   function handleClose() {
-    dispatch('close');
-    isOpen = false;
+    onclose?.();
   }
 
   // Handle keyboard shortcuts
@@ -173,14 +180,21 @@
 
   // Set time preset
   function setTimePreset(minutes: number) {
-    formData.estimatedMinutes = minutes;
+    formData = {
+      ...formData,
+      estimatedMinutes: minutes
+    };
   }
 
   // Focus first input when form opens
-  let titleInput: HTMLInputElement;
-  $: if (isOpen && autoFocus && titleInput) {
-    setTimeout(() => titleInput?.focus(), 100);
-  }
+  let titleInput = $state<HTMLInputElement | undefined>();
+  $effect(() => {
+    if (!(isOpen && autoFocus && titleInput)) {
+      return;
+    }
+    const focusTimeout = setTimeout(() => titleInput?.focus(), 100);
+    return () => clearTimeout(focusTimeout);
+  });
 </script>
 
 <!-- Modal backdrop -->
@@ -520,7 +534,6 @@
   }
 
   .form-input.error,
-  .form-textarea.error,
   .form-select.error {
     border-color: var(--nord11);
   }

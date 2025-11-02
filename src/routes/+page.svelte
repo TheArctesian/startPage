@@ -31,25 +31,25 @@
 	let taskToDelete: TaskWithDetails | null = $state(null);
 
 	// Handle task selection from board
-	function handleTaskSelect(event: CustomEvent<{ task: TaskWithDetails }>) {
-		setSelectedTask(event.detail.task);
+	function handleTaskSelect(event: { task: TaskWithDetails }) {
+		setSelectedTask(event.task);
 	}
 
 	// Handle task completion - will show intensity rating modal
-	function handleTaskComplete(event: CustomEvent<{ task: TaskWithDetails }>) {
-		taskToComplete = event.detail.task;
+	function handleTaskComplete(event: { task: TaskWithDetails }) {
+		taskToComplete = event.task;
 		showCompletionModal = true;
 		setKeyboardContext('modal');
 	}
 
 	// Handle task editing
-	function handleTaskEdit(event: CustomEvent<{ task: TaskWithDetails }>) {
-		console.log('Edit task:', event.detail.task);
+	function handleTaskEdit(event: { task: TaskWithDetails }) {
+		console.log('Edit task:', event.task);
 	}
 
 	// Handle task deletion
-	function handleTaskDelete(event: CustomEvent<{ task: TaskWithDetails }>) {
-		taskToDelete = event.detail.task;
+	function handleTaskDelete(event: { task: TaskWithDetails }) {
+		taskToDelete = event.task;
 		showDeleteConfirmation = true;
 		setKeyboardContext('modal');
 	}
@@ -77,13 +77,13 @@
 
 	// Handle task completion submission
 	async function handleTaskCompleted(
-		event: CustomEvent<{
+		event: {
 			task: TaskWithDetails;
 			actualIntensity: number;
 			timeSpent?: number;
-		}>
+		}
 	) {
-		const { task, actualIntensity, timeSpent } = event.detail;
+		const { task, actualIntensity, timeSpent } = event;
 
 		try {
 			// Update task with actual values
@@ -265,14 +265,14 @@
 	</div>
 
 	<!-- Keyboard Shortcuts Help Modal -->
-	<ShortcutsHelp bind:isOpen={showShortcutsHelp} on:close={() => (showShortcutsHelp = false)} />
+	<ShortcutsHelp bind:isOpen={showShortcutsHelp} onclose={() => (showShortcutsHelp = false)} />
 
 	<!-- Task Completion Modal -->
 	<TaskCompletionModal
 		bind:isOpen={showCompletionModal}
 		task={taskToComplete}
-		on:complete={handleTaskCompleted}
-		on:cancel={handleCompletionCancel}
+		oncomplete={handleTaskCompleted}
+		oncancel={handleCompletionCancel}
 	/>
 
 	<!-- Delete Confirmation Modal -->
@@ -284,8 +284,8 @@
 		cancelText="Cancel"
 		confirmVariant="danger"
 		icon="🗑"
-		on:confirm={handleDeleteConfirm}
-		on:cancel={handleDeleteCancel}
+		onconfirm={handleDeleteConfirm}
+		oncancel={handleDeleteCancel}
 	/>
 
 	<!-- Analytics Dashboard -->
@@ -413,4 +413,3 @@
 		}
 	}
 </style>
-

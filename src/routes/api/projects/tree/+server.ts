@@ -3,7 +3,7 @@ import { db } from '$lib/server/db';
 import { projects } from '$lib/server/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
-import type { ProjectWithDetails } from '$lib/types/database';
+import type { Project, ProjectWithDetails } from '$lib/types/database';
 import { buildProjectTree } from '$lib/utils/projectTree';
 import { ProjectStatsService } from '$lib/server/projects/project-stats.service';
 
@@ -16,21 +16,25 @@ export const GET: RequestHandler = async ({ url }) => {
 
     // Fetch all projects ordered by depth then name for proper tree structure
     let query = db.select().from(projects);
-    
+
     if (activeOnly) {
-      query = query.where(eq(projects.isActive, true));
+      query = query.where(eq(projects.isActive, true)) as any;
     }
 
-    const projectList = await query.orderBy(projects.depth, projects.name);
+    const projectList = await query.orderBy(projects.depth, projects.name) as Project[];
 
     if (!includeStats) {
       // Build tree without stats
       const treeData = buildProjectTree(projectList);
-      return json(treeData);
+      // Only return serializable data (roots and maxDepth)
+      return json({
+        roots: treeData.roots,
+        maxDepth: treeData.maxDepth
+      });
     }
 
     // Get stats for each project
-    const statsMap = await projectStatsService.getDirectStats(projectList);
+    const statsMap = await projectStatsService.getDirectStats(projectList as { id: number }[]);
     const projectsWithStats: ProjectWithDetails[] = projectList.map((project) => {
       const stats = projectStatsService.getStatsForProject(project.id, statsMap);
       return {
@@ -44,8 +48,12 @@ export const GET: RequestHandler = async ({ url }) => {
 
     // Build tree structure with stats
     const treeData = buildProjectTree(projectsWithStats);
-    
-    return json(treeData);
+
+    // Only return serializable data (roots and maxDepth)
+    return json({
+      roots: treeData.roots,
+      maxDepth: treeData.maxDepth
+    });
   } catch (error) {
     console.error('Error fetching project tree:', error);
     return json({ error: 'Failed to fetch project tree' }, { status: 500 });

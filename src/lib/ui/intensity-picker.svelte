@@ -1,20 +1,32 @@
 <script lang="ts">
   import type { IntensityLevel } from '$lib/types/database';
 
-  export let value: IntensityLevel = 1;
-  export let label: string = 'Intensity';
-  export let description: string = '';
-  export let size: 'sm' | 'md' | 'lg' = 'md';
-  export let variant: 'dots' | 'buttons' | 'slider' = 'dots';
-  export let showLabels: boolean = false;
-  export let disabled: boolean = false;
-  export let required: boolean = false;
-  export let name: string = 'intensity';
+  let {
+    value = $bindable(1),
+    label = 'Intensity',
+    description = '',
+    size = 'md',
+    variant = 'dots',
+    showLabels = false,
+    disabled = false,
+    required = false,
+    name = 'intensity'
+  } = $props<{
+    value?: IntensityLevel;
+    label?: string;
+    description?: string;
+    size?: 'sm' | 'md' | 'lg';
+    variant?: 'dots' | 'buttons' | 'slider';
+    showLabels?: boolean;
+    disabled?: boolean;
+    required?: boolean;
+    name?: string;
+  }>();
 
   // Intensity level descriptions
   const intensityLabels = {
     1: 'Very Easy',
-    2: 'Easy', 
+    2: 'Easy',
     3: 'Medium',
     4: 'Hard',
     5: 'Very Hard'
@@ -61,7 +73,7 @@
     }
   };
 
-  $: currentSize = sizeClasses[size];
+  let currentSize = $derived(sizeClasses[size]);
 </script>
 
 <div class="intensity-picker" class:disabled>

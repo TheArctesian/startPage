@@ -3,7 +3,9 @@
   import { projects, projectStats, setActiveProject, loadProjects } from '$lib/stores';
   import type { ProjectWithDetails } from '$lib/types/database';
 
-  export let onProjectSelect: (project: ProjectWithDetails) => void = () => {};
+  let { onProjectSelect = () => {} } = $props<{
+    onProjectSelect?: (project: ProjectWithDetails) => void;
+  }>();
 
   let isLoading = false;
 

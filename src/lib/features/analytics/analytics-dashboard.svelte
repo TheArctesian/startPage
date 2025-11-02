@@ -1,164 +1,86 @@
 <!--
   Analytics Dashboard
-  
+
   Main analytics interface combining multiple charts and metrics.
   Follows UNIX philosophy: orchestrates focused components.
 -->
 
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import AccuracyChart from './accuracy-chart.svelte';
-  import TimeChart from './time-chart.svelte';
-  import type { TaskWithDetails, Project } from '$lib/types/database';
+	import AccuracyChart from './accuracy-chart.svelte';
+	import TimeChart from './time-chart.svelte';
+	import MetricCard from './components/MetricCard.svelte';
+	import type { TaskWithDetails, Project } from '$lib/types/database';
+	import {
+		calculateAverageAccuracy,
+		calculateProductivityScore
+	} from '$lib/utils/analytics/calculations';
+	import { formatHours } from '$lib/utils/analytics/formatting';
+	import { getScoreColor, getScoreLabel } from '$lib/utils/analytics/styles';
+	import { fetchTasks } from '$lib/api/tasks';
+	import { fetchProjects } from '$lib/api/projects';
 
-  export let isOpen = false;
+	interface Props {
+		isOpen?: boolean;
+	}
 
-  let tasks: TaskWithDetails[] = [];
-  let projects: Project[] = [];
-  let loading = true;
-  let error: string | null = null;
+	let { isOpen = $bindable(false) }: Props = $props();
 
-  // Chart controls
-  let timeRange: '7d' | '30d' | '90d' = '30d';
-  let accuracyType: 'time' | 'intensity' | 'both' = 'both';
-  let timeChartType: 'daily' | 'weekly' | 'project' = 'daily';
+	let tasks = $state<TaskWithDetails[]>([]);
+	let projects = $state<Project[]>([]);
+	let loading = $state(true);
+	let error = $state<string | null>(null);
 
-  // Summary metrics
-  $: completedTasks = tasks.filter(t => t.status === 'done' && t.actualMinutes !== null);
-  $: totalTimeSpent = completedTasks.reduce((sum, t) => sum + (t.actualMinutes || 0), 0);
-  $: averageAccuracy = calculateAverageAccuracy(completedTasks);
-  $: productivityScore = calculateProductivityScore(completedTasks);
+	// Chart controls
+	let timeRange = $state<'7d' | '30d' | '90d'>('30d');
+	let accuracyType = $state<'time' | 'intensity' | 'both'>('both');
+	let timeChartType = $state<'daily' | 'weekly' | 'project'>('daily');
 
-  interface SummaryMetrics {
-    totalTasks: number;
-    totalHours: number;
-    avgTimeAccuracy: number;
-    avgIntensityAccuracy: number;
-    productivityScore: number;
-  }
+	// Summary metrics using utilities
+	let completedTasks = $derived(
+		tasks.filter((t) => t.status === 'done' && t.actualMinutes !== null)
+	);
+	let totalTimeSpent = $derived(
+		completedTasks.reduce((sum, t) => sum + (t.actualMinutes || 0), 0)
+	);
+	let averageAccuracy = $derived(calculateAverageAccuracy(completedTasks));
+	let productivityScore = $derived(calculateProductivityScore(completedTasks, tasks));
 
-  function calculateAverageAccuracy(tasks: TaskWithDetails[]): { time: number; intensity: number } {
-    const timeAccuracies = tasks
-      .filter(t => t.estimatedMinutes > 0 && t.actualMinutes! > 0)
-      .map(t => {
-        const timeDiff = Math.abs(t.actualMinutes! - t.estimatedMinutes);
-        return Math.max(0, (1 - timeDiff / t.estimatedMinutes) * 100);
-      });
+	// Load data when opened
+	$effect(() => {
+		if (isOpen) {
+			loadData();
+		}
+	});
 
-    const intensityAccuracies = tasks
-      .filter(t => t.estimatedIntensity > 0 && t.actualIntensity! > 0)
-      .map(t => {
-        const intensityDiff = Math.abs(t.actualIntensity! - t.estimatedIntensity);
-        return Math.max(0, (1 - intensityDiff / 4) * 100);
-      });
+	async function loadData() {
+		loading = true;
+		error = null;
 
-    return {
-      time: timeAccuracies.length > 0 ? timeAccuracies.reduce((sum, acc) => sum + acc, 0) / timeAccuracies.length : 0,
-      intensity: intensityAccuracies.length > 0 ? intensityAccuracies.reduce((sum, acc) => sum + acc, 0) / intensityAccuracies.length : 0
-    };
-  }
+		try {
+			[tasks, projects] = await Promise.all([fetchTasks(), fetchProjects(true)]);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Unknown error';
+			console.error('Error loading analytics data:', err);
+		} finally {
+			loading = false;
+		}
+	}
 
-  function calculateProductivityScore(tasks: TaskWithDetails[]): number {
-    if (tasks.length === 0) return 0;
+	function handleClose() {
+		isOpen = false;
+	}
 
-    const factors = {
-      completion: tasks.length / Math.max(1, tasks.length + tasks.filter(t => t.status !== 'done').length),
-      timeAccuracy: averageAccuracy.time / 100,
-      intensityAccuracy: averageAccuracy.intensity / 100,
-      consistency: calculateConsistency(tasks)
-    };
+	function handleBackdropClick(event: MouseEvent) {
+		if (event.target === event.currentTarget) {
+			handleClose();
+		}
+	}
 
-    return Math.round((factors.completion * 0.3 + factors.timeAccuracy * 0.3 + factors.intensityAccuracy * 0.2 + factors.consistency * 0.2) * 100);
-  }
-
-  function calculateConsistency(tasks: TaskWithDetails[]): number {
-    if (tasks.length < 7) return 0.5; // Default for insufficient data
-
-    // Calculate daily task completion consistency
-    const dailyCompletions = new Map<string, number>();
-    tasks.forEach(task => {
-      if (task.completedAt) {
-        const day = new Date(task.completedAt).toDateString();
-        dailyCompletions.set(day, (dailyCompletions.get(day) || 0) + 1);
-      }
-    });
-
-    const completionCounts = Array.from(dailyCompletions.values());
-    const avgDaily = completionCounts.reduce((sum, count) => sum + count, 0) / completionCounts.length;
-    const variance = completionCounts.reduce((sum, count) => sum + Math.pow(count - avgDaily, 2), 0) / completionCounts.length;
-    const stdDev = Math.sqrt(variance);
-    
-    // Higher consistency = lower relative standard deviation
-    return Math.max(0, 1 - (stdDev / Math.max(1, avgDaily)));
-  }
-
-  async function loadData() {
-    loading = true;
-    error = null;
-
-    try {
-      // Load tasks and projects in parallel
-      const [tasksResponse, projectsResponse] = await Promise.all([
-        fetch('/api/tasks'),
-        fetch('/api/projects')
-      ]);
-
-      if (!tasksResponse.ok || !projectsResponse.ok) {
-        throw new Error('Failed to load data');
-      }
-
-      tasks = await tasksResponse.json();
-      projects = await projectsResponse.json();
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Error loading analytics data:', err);
-    } finally {
-      loading = false;
-    }
-  }
-
-  function handleClose() {
-    isOpen = false;
-  }
-
-  function handleBackdropClick(event: MouseEvent) {
-    if (event.target === event.currentTarget) {
-      handleClose();
-    }
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      handleClose();
-    }
-  }
-
-  function formatHours(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours === 0) return `${mins}m`;
-    if (mins === 0) return `${hours}h`;
-    return `${hours}h ${mins}m`;
-  }
-
-  function getScoreColor(score: number): string {
-    if (score >= 80) return 'var(--color-success)';
-    if (score >= 60) return 'var(--color-info)';
-    if (score >= 40) return 'var(--color-warning)';
-    return 'var(--color-error)';
-  }
-
-  function getScoreLabel(score: number): string {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 40) return 'Fair';
-    return 'Needs Improvement';
-  }
-
-  // Load data when opened
-  $: if (isOpen) {
-    loadData();
-  }
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			handleClose();
+		}
+	}
 </script>
 
 {#if isOpen}
@@ -217,48 +139,38 @@
 
           <!-- Summary Metrics -->
           <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-icon">✓</div>
-              <div class="metric-content">
-                <div class="metric-value">{completedTasks.length}</div>
-                <div class="metric-label">Tasks Completed</div>
-              </div>
-            </div>
+            <MetricCard
+              icon="✓"
+              value={completedTasks.length}
+              label="Tasks Completed"
+            />
 
-            <div class="metric-card">
-              <div class="metric-icon">T</div>
-              <div class="metric-content">
-                <div class="metric-value">{formatHours(totalTimeSpent)}</div>
-                <div class="metric-label">Total Time</div>
-              </div>
-            </div>
+            <MetricCard
+              icon="⏱"
+              value={formatHours(totalTimeSpent)}
+              label="Total Time"
+            />
 
-            <div class="metric-card">
-              <div class="metric-icon">%</div>
-              <div class="metric-content">
-                <div class="metric-value">{Math.round(averageAccuracy.time)}%</div>
-                <div class="metric-label">Time Accuracy</div>
-              </div>
-            </div>
+            <MetricCard
+              icon="%"
+              value="{Math.round(averageAccuracy.time)}%"
+              label="Time Accuracy"
+            />
 
-            <div class="metric-card">
-              <div class="metric-icon">💪</div>
-              <div class="metric-content">
-                <div class="metric-value">{Math.round(averageAccuracy.intensity)}%</div>
-                <div class="metric-label">Intensity Accuracy</div>
-              </div>
-            </div>
+            <MetricCard
+              icon="💪"
+              value="{Math.round(averageAccuracy.intensity)}%"
+              label="Intensity Accuracy"
+            />
 
-            <div class="metric-card productivity-score">
-              <div class="metric-icon">📈</div>
-              <div class="metric-content">
-                <div class="metric-value" style="color: {getScoreColor(productivityScore)}">
-                  {productivityScore}
-                </div>
-                <div class="metric-label">{getScoreLabel(productivityScore)}</div>
-                <div class="metric-sublabel">Productivity Score</div>
-              </div>
-            </div>
+            <MetricCard
+              icon="📈"
+              value={productivityScore}
+              label={getScoreLabel(productivityScore)}
+              sublabel="Productivity Score"
+              valueColor={getScoreColor(productivityScore)}
+              class="productivity-score"
+            />
           </div>
 
           <!-- Charts Section -->
@@ -518,53 +430,9 @@
     margin-bottom: var(--space-xl);
   }
 
-  .metric-card {
-    background: var(--bg-elevated);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    border: 1px solid var(--border-default);
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    transition: all var(--transition-normal);
-  }
-
-  .metric-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-  }
-
-  .metric-card.productivity-score {
+  .metrics-grid :global(.productivity-score) {
     grid-column: span 1;
     background: linear-gradient(135deg, var(--bg-elevated) 0%, rgba(136, 192, 208, 0.1) 100%);
-  }
-
-  .metric-icon {
-    font-size: 1.5rem;
-    opacity: 0.8;
-  }
-
-  .metric-content {
-    flex: 1;
-  }
-
-  .metric-value {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
-    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
-  }
-
-  .metric-label {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    font-weight: var(--font-weight-medium);
-  }
-
-  .metric-sublabel {
-    font-size: var(--font-size-xs);
-    color: var(--text-muted);
-    margin-top: var(--space-xs);
   }
 
   .charts-section {
@@ -702,7 +570,6 @@
   /* High contrast mode */
   @media (prefers-contrast: high) {
     .analytics-content,
-    .metric-card,
     .chart-container,
     .insights-section {
       border-width: 2px;
@@ -715,7 +582,6 @@
       animation: none;
     }
 
-    .metric-card:hover,
     .btn-retry:hover {
       transform: none;
     }

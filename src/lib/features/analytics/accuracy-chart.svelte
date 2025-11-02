@@ -11,9 +11,15 @@
   import * as d3 from 'd3';
   import type { TaskWithDetails } from '$lib/types/database';
 
-  export let tasks: TaskWithDetails[] = [];
-  export let chartType: 'time' | 'intensity' | 'both' = 'both';
-  export let timeRange: '7d' | '30d' | '90d' | 'all' = '30d';
+  let {
+    tasks = [],
+    chartType = 'both',
+    timeRange = '30d'
+  } = $props<{
+    tasks?: TaskWithDetails[];
+    chartType?: 'time' | 'intensity' | 'both';
+    timeRange?: '7d' | '30d' | '90d' | 'all';
+  }>();
 
   let chartContainer: HTMLDivElement;
   let resizeObserver: ResizeObserver;
@@ -24,10 +30,13 @@
   let height = 400;
 
   // Process task data for accuracy metrics
-  $: accuracyData = processAccuracyData(tasks, timeRange);
-  $: if (chartContainer && accuracyData.length > 0) {
-    drawChart();
-  }
+  const accuracyData = $derived(processAccuracyData(tasks, timeRange));
+
+  $effect(() => {
+    if (chartContainer && accuracyData.length > 0) {
+      drawChart();
+    }
+  });
 
   interface AccuracyPoint {
     date: Date;

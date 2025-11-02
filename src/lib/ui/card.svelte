@@ -1,29 +1,49 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	export let variant: 'default' | 'elevated' | 'outlined' = 'default';
-	export let padding: 'none' | 'sm' | 'md' | 'lg' = 'md';
-	export let interactive = false;
-	export let selected = false;
-	export let draggable = false;
-	export let dragging = false;
-
-	const dispatch = createEventDispatcher();
+	let {
+		variant = 'default',
+		padding = 'md',
+		interactive = false,
+		selected = false,
+		draggable = false,
+		dragging = false,
+		onclick,
+		onkeydown,
+		onmouseenter,
+		onmouseleave,
+		onfocus,
+		onblur,
+		...restProps
+	} = $props<{
+		variant?: 'default' | 'elevated' | 'outlined';
+		padding?: 'none' | 'sm' | 'md' | 'lg';
+		interactive?: boolean;
+		selected?: boolean;
+		draggable?: boolean;
+		dragging?: boolean;
+		onclick?: (event: MouseEvent) => void;
+		onkeydown?: (event: KeyboardEvent) => void;
+		onmouseenter?: (event: MouseEvent) => void;
+		onmouseleave?: (event: MouseEvent) => void;
+		onfocus?: (event: FocusEvent) => void;
+		onblur?: (event: FocusEvent) => void;
+		[key: string]: any;
+	}>();
 
 	function handleClick(event: MouseEvent) {
 		if (interactive) {
-			dispatch('click', event);
+			onclick?.(event);
 		}
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
 		if (interactive && (event.key === 'Enter' || event.key === ' ')) {
 			event.preventDefault();
-			dispatch('click', event);
+			onclick?.(event as any);
 		}
+		onkeydown?.(event);
 	}
 
-	$: cardClass = [
+	let cardClass = $derived([
 		'card',
 		`card-${variant}`,
 		`card-padding-${padding}`,
@@ -33,20 +53,20 @@
 		dragging && 'card-dragging'
 	]
 		.filter(Boolean)
-		.join(' ');
+		.join(' '));
 </script>
 
 <div
 	class={cardClass}
 	role={interactive ? 'button' : 'article'}
 	tabindex={interactive ? 0 : undefined}
-	on:click={handleClick}
-	on:keydown={handleKeyDown}
-	on:mouseenter
-	on:mouseleave
-	on:focus
-	on:blur
-	{...$$restProps}
+	onclick={handleClick}
+	onkeydown={handleKeyDown}
+	{onmouseenter}
+	{onmouseleave}
+	{onfocus}
+	{onblur}
+	{...restProps}
 >
 	<slot />
 </div>

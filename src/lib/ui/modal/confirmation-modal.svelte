@@ -1,19 +1,29 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	interface Props {
+		isOpen?: boolean;
+		title?: string;
+		message?: string;
+		confirmText?: string;
+		cancelText?: string;
+		confirmVariant?: 'danger' | 'primary';
+		icon?: string;
+		onconfirm?: () => void;
+		oncancel?: () => void;
+		onclose?: () => void;
+	}
 
-	export let isOpen = false;
-	export let title = 'Confirm Action';
-	export let message = 'Are you sure you want to continue?';
-	export let confirmText = 'Confirm';
-	export let cancelText = 'Cancel';
-	export let confirmVariant: 'danger' | 'primary' = 'danger';
-	export let icon = '⚠';
-
-	const dispatch = createEventDispatcher<{
-		confirm: void;
-		cancel: void;
-		close: void;
-	}>();
+	let {
+		isOpen = $bindable(false),
+		title = 'Confirm Action',
+		message = 'Are you sure you want to continue?',
+		confirmText = 'Confirm',
+		cancelText = 'Cancel',
+		confirmVariant = 'danger',
+		icon = '⚠',
+		onconfirm,
+		oncancel,
+		onclose
+	}: Props = $props();
 
 	// Handle backdrop click
 	function handleBackdropClick(event: MouseEvent) {
@@ -24,14 +34,16 @@
 
 	// Handle confirm action
 	function handleConfirm() {
-		dispatch('confirm');
+		onconfirm?.();
 		isOpen = false;
+		onclose?.();
 	}
 
 	// Handle cancel action
 	function handleCancel() {
-		dispatch('cancel');
+		oncancel?.();
 		isOpen = false;
+		onclose?.();
 	}
 
 	// Handle keyboard events
@@ -48,13 +60,19 @@
 	}
 
 	// Focus management
-	let confirmButton: HTMLButtonElement;
-	$: if (isOpen && confirmButton) {
-		setTimeout(() => confirmButton?.focus(), 100);
-	}
+	let confirmButton = $state<HTMLButtonElement | undefined>();
+	$effect(() => {
+		if (isOpen && confirmButton) {
+			setTimeout(() => confirmButton?.focus(), 100);
+		}
+		if (isOpen && confirmButton) {
+			const timeout = setTimeout(() => confirmButton?.focus(), 100);
+			return () => clearTimeout(timeout);
+		}
+	});
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
 	<div
@@ -62,7 +80,7 @@
 		onclick={handleBackdropClick}
 		onkeydown={(e) => {
 			if (e.key === 'Escape') {
-				dispatch('cancel');
+				handleCancel();
 			}
 		}}
 		role="dialog"

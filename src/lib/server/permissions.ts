@@ -1,7 +1,7 @@
 import { db } from './db';
 import { projectUsers, projects, users } from './db/schema';
-import { eq, and } from 'drizzle-orm';
-import type { User, PermissionLevel } from '$lib/types/database';
+import { eq, and, or, isNotNull } from 'drizzle-orm';
+import type { User, PublicUser, PermissionLevel } from '$lib/types/database';
 
 /**
  * Check if a user has specific permission level for a project
@@ -81,19 +81,19 @@ export async function hasProjectPermission(
  * Check if user is admin or has project admin permissions
  */
 export async function isAdminOrProjectAdmin(
-  user: User | null,
+  user: PublicUser | null,
   projectId?: number
 ): Promise<boolean> {
   if (!user) return false;
-  
+
   // Global admin can do anything
   if (user.role === 'admin') return true;
-  
+
   // Check project admin permission if projectId provided
   if (projectId) {
     return await hasProjectPermission(user.id, projectId, 'project_admin');
   }
-  
+
   return false;
 }
 
@@ -161,14 +161,14 @@ export async function getUserVisibleProjects(userId: number | null) {
     )
     .where(
       // Either project is public OR user has explicit permission
-      // This will be filtered in the query logic
+      or(
+        eq(projects.isPublic, true),
+        isNotNull(projectUsers.permissionLevel)
+      )
     );
 
-  // Filter to only include accessible projects
+  // Map to include permission level
   return userProjects
-    .filter(({ project, permissionLevel }) => 
-      project.isPublic || permissionLevel !== null
-    )
     .map(({ project, permissionLevel }) => ({
       ...project,
       userPermission: permissionLevel

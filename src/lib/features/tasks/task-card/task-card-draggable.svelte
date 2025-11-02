@@ -1,43 +1,52 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { TaskWithDetails } from '$lib/types/database';
+  import type { Snippet } from 'svelte';
 
-  export let task: TaskWithDetails;
-  export let draggable: boolean = false;
-  export let selectable: boolean = false;
-
-  const dispatch = createEventDispatcher<{
-    select: { task: TaskWithDetails };
-    dragstart: { task: TaskWithDetails; event: DragEvent };
-    dragend: { task: TaskWithDetails; event: DragEvent };
-    click: { task: TaskWithDetails; event: MouseEvent };
+  let {
+    task,
+    draggable = false,
+    selectable = false,
+    onselect,
+    ondragstart,
+    ondragend,
+    onclick,
+    children
+  } = $props<{
+    task: TaskWithDetails;
+    draggable?: boolean;
+    selectable?: boolean;
+    onselect?: (event: { task: TaskWithDetails }) => void;
+    ondragstart?: (event: { task: TaskWithDetails; event: DragEvent }) => void;
+    ondragend?: (event: { task: TaskWithDetails; event: DragEvent }) => void;
+    onclick?: (event: { task: TaskWithDetails; event: MouseEvent }) => void;
+    children?: Snippet;
   }>();
 
   function handleClick(event: MouseEvent) {
     if (selectable) {
-      dispatch('select', { task });
+      onselect?.({ task });
     }
-    dispatch('click', { task, event });
+    onclick?.({ task, event });
   }
 
   function handleDragStart(event: DragEvent) {
     if (!draggable) return;
     
     event.dataTransfer?.setData('text/plain', task.id.toString());
-    dispatch('dragstart', { task, event });
+    ondragstart?.({ task, event });
   }
 
   function handleDragEnd(event: DragEvent) {
     if (!draggable) return;
     
-    dispatch('dragend', { task, event });
+    ondragend?.({ task, event });
   }
 
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       if (selectable) {
-        dispatch('select', { task });
+        onselect?.({ task });
       }
     }
   }
@@ -55,7 +64,7 @@
   ondragend={handleDragEnd}
   onkeydown={handleKeyDown}
 >
-  <slot />
+  {@render children?.()}
 </div>
 
 <style>

@@ -2,15 +2,26 @@
 	import type { TaskWithDetails } from '$lib/types/database';
 	import TaskCard from './task-card/task-card.svelte';
 
-	export let tasks: TaskWithDetails[] = [];
-	export let onEdit: ((task: TaskWithDetails) => void) | undefined = undefined;
-	export let onDelete: ((task: TaskWithDetails) => void) | undefined = undefined;
-	export let onStatusChange: ((task: TaskWithDetails, status: string) => void) | undefined = undefined;
-	export let canEdit = false;
-	export let isAuthenticated = false;
+	interface Props {
+		tasks?: TaskWithDetails[];
+		onEdit?: ((task: TaskWithDetails) => void) | undefined;
+		onDelete?: ((task: TaskWithDetails) => void) | undefined;
+		onStatusChange?: ((task: TaskWithDetails, status: string) => void) | undefined;
+		canEdit?: boolean;
+		isAuthenticated?: boolean;
+	}
+
+	let {
+		tasks = [],
+		onEdit = undefined,
+		onDelete = undefined,
+		onStatusChange = undefined,
+		canEdit = false,
+		isAuthenticated = false
+	}: Props = $props();
 
 	// Drag and drop state
-	let dragOverSection: string | null = null;
+	let dragOverSection = $state<string | null>(null);
 
 	function handleDragOver(event: DragEvent, section: string) {
 		if (!canEdit) return;
@@ -38,20 +49,22 @@
 	}
 
 	// Group tasks by status
-	$: todoTasks = tasks.filter(task => task.status === 'todo');
-	$: inProgressTasks = tasks.filter(task => task.status === 'in_progress');
-	$: doneTasks = tasks.filter(task => task.status === 'done');
+	let todoTasks = $derived(tasks.filter(task => task.status === 'todo'));
+	let inProgressTasks = $derived(tasks.filter(task => task.status === 'in_progress'));
+	let doneTasks = $derived(tasks.filter(task => task.status === 'done'));
 </script>
 
 <div class="grid-container">
 	<!-- Todo Section -->
 	{#if todoTasks.length > 0}
-		<div 
+		<div
 			class="status-section"
 			class:drag-over={dragOverSection === 'todo'}
 			ondragover={(e) => handleDragOver(e, 'todo')}
 			ondragleave={handleDragLeave}
 			ondrop={(e) => handleDrop(e, 'todo')}
+			role="region"
+			aria-label="To Do tasks section"
 		>
 			<h3 class="status-header">
 				<span class="status-title">To Do</span>
@@ -67,7 +80,7 @@
 						{canEdit}
 						{isAuthenticated}
 						draggable={canEdit}
-						variant="grid"
+						variant="detailed"
 					/>
 				{/each}
 			</div>
@@ -76,12 +89,14 @@
 
 	<!-- In Progress Section -->
 	{#if inProgressTasks.length > 0}
-		<div 
+		<div
 			class="status-section"
 			class:drag-over={dragOverSection === 'in_progress'}
 			ondragover={(e) => handleDragOver(e, 'in_progress')}
 			ondragleave={handleDragLeave}
 			ondrop={(e) => handleDrop(e, 'in_progress')}
+			role="region"
+			aria-label="In Progress tasks section"
 		>
 			<h3 class="status-header">
 				<span class="status-title">In Progress</span>
@@ -97,7 +112,7 @@
 						{canEdit}
 						{isAuthenticated}
 						draggable={canEdit}
-						variant="grid"
+						variant="detailed"
 					/>
 				{/each}
 			</div>
@@ -106,12 +121,14 @@
 
 	<!-- Done Section -->
 	{#if doneTasks.length > 0}
-		<div 
+		<div
 			class="status-section"
 			class:drag-over={dragOverSection === 'done'}
 			ondragover={(e) => handleDragOver(e, 'done')}
 			ondragleave={handleDragLeave}
 			ondrop={(e) => handleDrop(e, 'done')}
+			role="region"
+			aria-label="Done tasks section"
 		>
 			<h3 class="status-header">
 				<span class="status-title">Done</span>
@@ -127,7 +144,7 @@
 						{canEdit}
 						{isAuthenticated}
 						draggable={canEdit}
-						variant="grid"
+						variant="detailed"
 					/>
 				{/each}
 			</div>

@@ -1,29 +1,32 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import ProjectStatusBadge from './project-status-badge.svelte';
   import ProjectStatusDropdown from './project-status-dropdown.svelte';
   import type { ProjectWithDetails, ProjectStatus } from '$lib/types/database';
 
-  export let project: ProjectWithDetails;
-  export let subProjects: ProjectWithDetails[] = [];
-
-  const dispatch = createEventDispatcher<{
-    statusChange: { project: ProjectWithDetails; newStatus: ProjectStatus };
-    edit: { project: ProjectWithDetails };
+  let {
+    project,
+    subProjects = [],
+    onstatuschange,
+    onedit
+  } = $props<{
+    project: ProjectWithDetails;
+    subProjects?: ProjectWithDetails[];
+    onstatuschange?: (event: { project: ProjectWithDetails; newStatus: ProjectStatus }) => void;
+    onedit?: (event: { project: ProjectWithDetails }) => void;
   }>();
 
   let showStatusDropdown = false;
 
   // Group projects by status
-  $: allProjects = [project, ...subProjects];
-  $: projectsByStatus = {
+  const allProjects = $derived([project, ...subProjects]);
+  const projectsByStatus = $derived({
     active: allProjects.filter(p => p.status === 'active'),
     done: allProjects.filter(p => p.status === 'done'),
     archived: allProjects.filter(p => p.status === 'archived')
-  };
+  });
 
   // Calculate summary statistics
-  $: stats = {
+  const stats = $derived({
     totalProjects: allProjects.length,
     activeCount: projectsByStatus.active.length,
     doneCount: projectsByStatus.done.length,
@@ -31,27 +34,27 @@
     totalTasks: allProjects.reduce((sum, p) => sum + (p.totalTasks || 0), 0),
     completedTasks: allProjects.reduce((sum, p) => sum + (p.completedTasks || 0), 0),
     totalMinutes: allProjects.reduce((sum, p) => sum + (p.totalMinutes || 0), 0)
-  };
+  });
 
-  $: completionRate = stats.totalTasks > 0 
+  const completionRate = $derived(stats.totalTasks > 0
     ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
-    : 0;
+    : 0);
 
   function handleStatusChange(newStatus: ProjectStatus) {
-    dispatch('statusChange', { project, newStatus });
+    onstatuschange?.({ project, newStatus });
     showStatusDropdown = false;
   }
 
   function handleProjectEdit() {
-    dispatch('edit', { project });
+    onedit?.({ project });
   }
 
   function handleSubProjectStatusChange(subProject: ProjectWithDetails, newStatus: ProjectStatus) {
-    dispatch('statusChange', { project: subProject, newStatus });
+    onstatuschange?.({ project: subProject, newStatus });
   }
 
   function handleSubProjectEdit(subProject: ProjectWithDetails) {
-    dispatch('edit', { project: subProject });
+    onedit?.({ project: subProject });
   }
 
   function formatTime(minutes: number): string {
@@ -99,8 +102,8 @@
           {#if showStatusDropdown}
             <ProjectStatusDropdown
               currentStatus={project.status || 'active'}
-              on:change={(e) => handleStatusChange(e.detail.status)}
-              on:close={() => showStatusDropdown = false}
+              onchange={({ status }) => handleStatusChange(status)}
+              onclose={() => showStatusDropdown = false}
             />
           {/if}
         </div>

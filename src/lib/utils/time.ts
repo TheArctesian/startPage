@@ -21,10 +21,8 @@ export function formatSeconds(seconds: number): string {
 }
 
 export function calculateTimeSpent(task: TaskWithDetails): number {
-  if (!task.timeSessions) return 0;
-  return Math.round(
-    task.timeSessions.reduce((sum, session) => sum + (session.duration || 0), 0) / 60
-  );
+  // TimeSession feature not yet implemented - use actualMinutes if available
+  return task.actualMinutes || 0;
 }
 
 export function calculateTimeProgress(task: TaskWithDetails): number {

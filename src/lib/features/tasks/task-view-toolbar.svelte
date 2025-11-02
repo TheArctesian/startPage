@@ -8,8 +8,13 @@
     type TaskPriorityFilter
   } from '$lib/stores/taskFilters';
 
-  export let canEdit = false;
-  export let onNewTask: (() => void) | undefined = undefined;
+  let {
+    canEdit = false,
+    onNewTask
+  } = $props<{
+    canEdit?: boolean;
+    onNewTask?: () => void;
+  }>();
 
   const statusOptions: Array<{ label: string; value: TaskStatusFilter; icon: string }> = [
     { label: 'All', value: 'all', icon: 'layers' },
@@ -56,7 +61,7 @@
         class:active={$isKanbanView}
         data-tooltip="Column-based workflow"
         aria-pressed={$isKanbanView}
-        on:click={() => setView('kanban')}
+        onclick={() => setView('kanban')}
       >
         <Icon name="columns" size={16} />
         <span>Kanban</span>
@@ -67,7 +72,7 @@
         class:active={$isGridView}
         data-tooltip="Organize tasks in tiles"
         aria-pressed={$isGridView}
-        on:click={() => setView('grid')}
+        onclick={() => setView('grid')}
       >
         <Icon name="grid" size={16} />
         <span>Grid</span>
@@ -78,7 +83,7 @@
         class:active={$isListView}
         data-tooltip="Compact list view"
         aria-pressed={$isListView}
-        on:click={() => setView('list')}
+        onclick={() => setView('list')}
       >
         <Icon name="list" size={16} />
         <span>List</span>
@@ -94,7 +99,7 @@
           type="search"
           placeholder="Search tasks"
           value={$taskFilters.search}
-          on:input={handleSearch}
+          oninput={handleSearch}
         />
       </div>
     </div>
@@ -107,7 +112,7 @@
           type="button"
           class="status-chip"
           class:active={$taskFilters.status === option.value}
-          on:click={() => setStatusFilter(option.value)}
+          onclick={() => setStatusFilter(option.value)}
           aria-pressed={$taskFilters.status === option.value}
         >
           <Icon name={option.icon} size={14} />
@@ -121,7 +126,7 @@
       <select
         id="task-priority-filter"
         class="priority-select"
-        on:change={setPriorityFilter}
+        onchange={setPriorityFilter}
         bind:value={$taskFilters.priority}
       >
         {#each priorityOptions as option}
@@ -134,7 +139,7 @@
       <button
         type="button"
         class="clear-filters-btn"
-        on:click={resetFilters}
+        onclick={resetFilters}
       >
         Clear
       </button>
@@ -145,7 +150,7 @@
         type="button"
         class="add-task-btn tooltip-trigger"
         data-tooltip="Create a task"
-        on:click={onNewTask}
+        onclick={onNewTask}
       >
         <span class="plus-icon">+</span>
         <span>Add Task</span>

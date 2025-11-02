@@ -1,25 +1,33 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
   import Icon from '../icon.svelte';
 
-  export let isOpen: boolean = false;
-  export let title: string = '';
-  export let size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'md';
-  export let closable: boolean = true;
-  export let closeOnBackdrop: boolean = true;
-  export let closeOnEscape: boolean = true;
-
-  const dispatch = createEventDispatcher<{
-    close: void;
-    open: void;
+  let {
+    isOpen = $bindable(false),
+    title = '',
+    size = 'md',
+    closable = true,
+    closeOnBackdrop = true,
+    closeOnEscape = true,
+    onclose,
+    onopen
+  } = $props<{
+    isOpen?: boolean;
+    title?: string;
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    closable?: boolean;
+    closeOnBackdrop?: boolean;
+    closeOnEscape?: boolean;
+    onclose?: () => void;
+    onopen?: () => void;
   }>();
 
   function close() {
     if (closable) {
       isOpen = false;
-      dispatch('close');
+      onclose?.();
     }
   }
 
@@ -37,26 +45,29 @@
 
   onMount(() => {
     if (isOpen) {
-      dispatch('open');
+      onopen?.();
     }
   });
 
-  $: if (isOpen) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
+  $effect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  });
 
-  $: modalSizeClass = {
+  const sizeMap: Record<'sm' | 'md' | 'lg' | 'xl' | 'full', string> = {
     sm: 'max-w-md',
     md: 'max-w-lg',
-    lg: 'max-w-2xl', 
+    lg: 'max-w-2xl',
     xl: 'max-w-4xl',
     full: 'max-w-7xl'
-  }[size];
+  };
+  let modalSizeClass = $derived(sizeMap[size as 'sm' | 'md' | 'lg' | 'xl' | 'full']);
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
   <div 

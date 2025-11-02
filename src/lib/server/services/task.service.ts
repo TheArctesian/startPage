@@ -100,7 +100,7 @@ export class TaskService {
 
     // Check due date (warning only)
     if (existing.dueDate) {
-      const dueDateCheck = TaskBusinessRules.validateDueDate(existing.dueDate);
+      const dueDateCheck = TaskBusinessRules.validateDueDate(existing.dueDate.toISOString());
       if (!dueDateCheck.valid) {
         console.warn('Task overdue:', dueDateCheck.errors);
       }

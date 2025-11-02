@@ -1,22 +1,28 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { ProjectNode } from '$lib/types/database';
   
-  export let node: ProjectNode;
-  export let isActive = false;
-  export let isCollapsed = false;
-  export let showStats = true;
-
-  const dispatch = createEventDispatcher<{
-    select: { project: ProjectNode };
-    toggle: { project: ProjectNode };
-    contextMenu: { project: ProjectNode; event: MouseEvent };
+  let {
+    node,
+    isActive = false,
+    isCollapsed = false,
+    showStats = true,
+    onselect,
+    ontoggle,
+    oncontextmenu
+  } = $props<{
+    node: ProjectNode;
+    isActive?: boolean;
+    isCollapsed?: boolean;
+    showStats?: boolean;
+    onselect?: (event: { project: ProjectNode }) => void;
+    ontoggle?: (event: { project: ProjectNode }) => void;
+    oncontextmenu?: (event: { project: ProjectNode; event: MouseEvent }) => void;
   }>();
 
   // Calculate aggregated stats for display
-  $: stats = calculateDisplayStats(node);
-  $: indentLevel = (node.depth || 0);
-  $: hasChildren = node.hasChildren && node.children && node.children.length > 0;
+  const stats = $derived(calculateDisplayStats(node));
+  const indentLevel = $derived(node.depth || 0);
+  const hasChildren = $derived(Boolean(node.hasChildren && node.children && node.children.length > 0));
 
   function calculateDisplayStats(project: ProjectNode) {
     const completionRate = project.totalTasks && project.totalTasks > 0 
@@ -34,17 +40,17 @@
   }
 
   function handleClick() {
-    dispatch('select', { project: node });
+    onselect?.({ project: node });
   }
 
   function handleToggle(event: Event) {
     event.stopPropagation();
-    dispatch('toggle', { project: node });
+    ontoggle?.({ project: node });
   }
 
   function handleRightClick(event: MouseEvent) {
     event.preventDefault();
-    dispatch('contextMenu', { project: node, event });
+    oncontextmenu?.({ project: node, event });
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -195,11 +201,6 @@
     color: var(--nord0);
     position: relative;
     z-index: 1;
-  }
-
-  .indent-spacer {
-    width: 0; /* We're using margin-left instead */
-    flex-shrink: 0;
   }
 
   .expand-toggle {

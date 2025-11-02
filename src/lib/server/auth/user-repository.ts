@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import type { PublicUser } from '$lib/types/database';
 
 export interface CreateUserData {
   username: string;
@@ -16,14 +17,6 @@ export interface UserWithPassword {
   status: string;
   projectAccess: string;
   email: string | null;
-}
-
-export interface PublicUser {
-  id: number;
-  username: string;
-  role: string;
-  status: string;
-  projectAccess: string;
 }
 
 export interface UserRepository {
@@ -61,7 +54,11 @@ export class DbUserRepository implements UserRepository {
         username: users.username,
         role: users.role,
         status: users.status,
-        projectAccess: users.projectAccess
+        projectAccess: users.projectAccess,
+        email: users.email,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
       })
       .from(users)
       .where(eq(users.id, userId))
@@ -83,7 +80,11 @@ export class DbUserRepository implements UserRepository {
         username: users.username,
         role: users.role,
         status: users.status,
-        projectAccess: users.projectAccess
+        projectAccess: users.projectAccess,
+        email: users.email,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
       });
 
     return user;

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import IntensityDisplay from '$lib/ui/intensity-display.svelte';
   import Icon from '$lib/ui/icon.svelte';
   import { formatDueDate, formatRelativeTime } from '$lib/utils/date';
@@ -7,26 +6,30 @@
   import { statusConfig, priorityConfig } from '$lib/utils/task';
   import type { TaskWithDetails } from '$lib/types/database';
 
-  export let tasks: TaskWithDetails[] = [];
-  export let onEdit: ((task: TaskWithDetails) => void) | undefined = undefined;
-  export let onDelete: ((task: TaskWithDetails) => void) | undefined = undefined;
-  export let onStatusChange: ((task: TaskWithDetails, status: string) => void) | undefined = undefined;
-  export let canEdit = true;
-  export let isAuthenticated = true;
-  export let showCompleted = true;
+  interface Props {
+    tasks?: TaskWithDetails[];
+    onEdit?: ((task: TaskWithDetails) => void) | undefined;
+    onDelete?: ((task: TaskWithDetails) => void) | undefined;
+    onStatusChange?: ((task: TaskWithDetails, status: string) => void) | undefined;
+    canEdit?: boolean;
+    isAuthenticated?: boolean;
+    showCompleted?: boolean;
+  }
+
+  let {
+    tasks = [],
+    onEdit = undefined,
+    onDelete = undefined,
+    onStatusChange = undefined,
+    canEdit = true,
+    isAuthenticated = true,
+    showCompleted = true
+  }: Props = $props();
 
   // Group tasks by status
-  $: todoTasks = tasks.filter(task => task.status === 'todo');
-  $: inProgressTasks = tasks.filter(task => task.status === 'in_progress'); 
-  $: doneTasks = tasks.filter(task => task.status === 'done');
-
-  const dispatch = createEventDispatcher<{
-    taskSelect: { task: TaskWithDetails };
-    taskEdit: { task: TaskWithDetails };
-    taskComplete: { task: TaskWithDetails };
-    taskDelete: { task: TaskWithDetails };
-    taskMove: { task: TaskWithDetails; newStatus: 'todo' | 'in_progress' | 'done' };
-  }>();
+  let todoTasks = $derived(tasks.filter(task => task.status === 'todo'));
+  let inProgressTasks = $derived(tasks.filter(task => task.status === 'in_progress'));
+  let doneTasks = $derived(tasks.filter(task => task.status === 'done'));
 
   // Sorting state
   let sortColumn: 'title' | 'status' | 'priority' | 'due' | 'estimated' | 'created' = 'created';
@@ -34,21 +37,21 @@
   let selectedTasks = new Set<number>();
 
   // Combine all tasks
-  $: allTasks = [
+  let allTasks = $derived([
     ...todoTasks.map(t => ({ ...t, _status: 'todo' as const })),
     ...inProgressTasks.map(t => ({ ...t, _status: 'in_progress' as const })),
     ...(showCompleted ? doneTasks.map(t => ({ ...t, _status: 'done' as const })) : [])
-  ];
+  ]);
 
   // Sort tasks
-  $: sortedTasks = [...allTasks].sort((a, b) => {
+  let sortedTasks = $derived([...allTasks].sort((a, b) => {
     const direction = sortDirection === 'asc' ? 1 : -1;
     
     switch (sortColumn) {
       case 'title':
         return a.title.localeCompare(b.title) * direction;
       case 'status':
-        const statusOrder = { todo: 0, in_progress: 1, done: 2 };
+        const statusOrder = { todo: 0, in_progress: 1, done: 2, archived: 3 };
         return (statusOrder[a.status] - statusOrder[b.status]) * direction;
       case 'priority':
         const priorityOrder = { low: 0, medium: 1, high: 2 };
@@ -64,7 +67,7 @@
       default:
         return 0;
     }
-  });
+  }));
 
   // Use imported configs
 
@@ -147,8 +150,8 @@
     }
   }
 
-  $: hasSelection = selectedTasks.size > 0;
-  $: allSelected = sortedTasks.length > 0 && selectedTasks.size === sortedTasks.length;
+  let hasSelection = $derived(selectedTasks.size > 0);
+  let allSelected = $derived(sortedTasks.length > 0 && selectedTasks.size === sortedTasks.length);
 </script>
 
 <div class="task-list-view">
@@ -296,11 +299,11 @@
       {@const priority = priorityConfig[task.priority]}
       {@const isSelected = selectedTasks.has(task.id)}
       
-      <div 
+      <div
         class="task-row"
         class:selected={isSelected}
         class:completed={task.status === 'done'}
-        class:overdue={dueInfo?.class === 'overdue'}
+        class:overdue={typeof dueInfo === 'object' && dueInfo.class === 'overdue'}
         onclick={(e) => handleTaskClick(task, e)}
         role="button"
         tabindex="0"
@@ -363,7 +366,7 @@
         </div>
         
         <div class="task-cell due-cell">
-          {#if dueInfo}
+          {#if dueInfo && typeof dueInfo === 'object'}
             <span class="due-date {dueInfo.class}">{dueInfo.text}</span>
           {:else}
             <span class="no-due">—</span>
@@ -381,9 +384,9 @@
         </div>
         
         <div class="task-cell intensity-cell">
-          <IntensityDisplay 
-            intensity={task.estimatedIntensity} 
-            variant="dots" 
+          <IntensityDisplay
+            intensity={task.estimatedIntensity as 1 | 2 | 3 | 4 | 5}
+            variant="dots"
             size="xs"
           />
         </div>

@@ -11,7 +11,7 @@
  */
 
 import { eq, and, or, desc, asc, ilike, gte, lte, ne, count as drizzleCount } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type {
   ITaskRepository,
   TaskFilters,
@@ -22,7 +22,7 @@ import type { Task, NewTask, TaskStatus } from '$lib/types/database';
 import { tasks } from '$lib/server/db/schema';
 
 export class DrizzleTaskRepository implements ITaskRepository {
-  constructor(private db: NodePgDatabase<any>) {}
+  constructor(private db: NeonHttpDatabase<any>) {}
 
   /**
    * Find all tasks matching filters
@@ -33,7 +33,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
     let query = this.db.select().from(tasks);
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     // Default ordering: most recent first
@@ -128,7 +128,7 @@ export class DrizzleTaskRepository implements ITaskRepository {
       .from(tasks);
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query;

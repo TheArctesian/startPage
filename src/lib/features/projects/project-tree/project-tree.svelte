@@ -1,129 +1,105 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
+  import { quintOut } from 'svelte/easing';
   import ProjectTreeNode from './project-tree-node.svelte';
   import type { ProjectNode, ProjectTreeData } from '$lib/types/database';
   import { flattenTree } from '$lib/utils/projectTree';
-  import { setProjectExpansion } from '$lib/features/projects/services/project-expansion';
+  import { toggleProjectExpanded } from '$lib/stores';
 
-  export let treeData: ProjectTreeData | null = null;
-  export let activeProjectId: number | null = null;
-  export let isCollapsed = false;
-  export let showStats = true;
-  export let loading = false;
-
-  const dispatch = createEventDispatcher<{
-    projectSelect: { project: ProjectNode };
-    projectToggle: { project: ProjectNode };
-    expandAll: void;
-    collapseAll: void;
-    refresh: void;
+  let {
+    treeData = null,
+    activeProjectId = null,
+    isCollapsed = false,
+    showStats = true,
+    loading = false,
+    onprojectselect,
+    onprojecttoggle,
+    onexpandall,
+    oncollapseall,
+    onrefresh
+  } = $props<{
+    treeData?: ProjectTreeData | null;
+    activeProjectId?: number | null;
+    isCollapsed?: boolean;
+    showStats?: boolean;
+    loading?: boolean;
+    onprojectselect?: (event: { project: ProjectNode }) => void;
+    onprojecttoggle?: (event: { project: ProjectNode }) => void;
+    onexpandall?: () => void;
+    oncollapseall?: () => void;
+    onrefresh?: () => void;
   }>();
 
   // Flattened tree for rendering (respects expanded/collapsed state)
-  $: flatProjects = treeData ? flattenTree(treeData.roots, true) : [];
-  $: hasProjects = flatProjects.length > 0;
+  const flatProjects = $derived(treeData ? flattenTree(treeData.roots, true) : []);
+  const hasProjects = $derived(flatProjects.length > 0);
 
-  function handleProjectSelect(event: CustomEvent<{ project: ProjectNode }>) {
-    dispatch('projectSelect', event.detail);
+  function handleProjectSelect(event: { project: ProjectNode }) {
+    onprojectselect?.(event);
   }
 
-  async function handleProjectToggle(event: CustomEvent<{ project: ProjectNode }>) {
-    const { project } = event.detail;
-    const currentExpanded = project.isExpanded ?? false;
-    const newExpanded = !currentExpanded;
-    
+  async function handleProjectToggle(event: { project: ProjectNode }) {
     try {
-      // Update local state immediately for responsive UI
-      if (treeData) {
-        const node = treeData.flatMap.get(project.id);
-        if (node) {
-          node.isExpanded = newExpanded;
-          // Force reactivity update
-          treeData = { ...treeData };
-        }
-      }
-
-      // Persist state to backend
-      await setProjectExpansion(project.id, newExpanded);
-
-      dispatch('projectToggle', event.detail);
+      // Store action handles optimistic update, backend persistence, and error rollback
+      await toggleProjectExpanded(event.project.id);
+      onprojecttoggle?.(event);
     } catch (error) {
-      console.error('Error toggling project:', error);
-      // Revert local state on error
-      if (treeData) {
-        const node = treeData.flatMap.get(project.id);
-        if (node) {
-          node.isExpanded = currentExpanded;
-          treeData = { ...treeData };
-        }
-      }
+      console.error('Failed to toggle project:', error);
+      // Error already handled by store action with rollback
     }
   }
 
-  function handleContextMenu(event: CustomEvent<{ project: ProjectNode; event: MouseEvent }>) {
+  function handleContextMenu(event: { project: ProjectNode; event: MouseEvent }) {
     // Context menu functionality not implemented
-    console.log('Context menu for project:', event.detail.project.name);
+    console.log('Context menu for project:', event.project.name);
   }
 
   async function handleExpandAll() {
     if (!treeData) {
-      dispatch('expandAll');
+      onexpandall?.();
       return;
     }
 
-    const previousStates = new Map<number, boolean>();
-    for (const [id, node] of treeData.flatMap.entries()) {
-      previousStates.set(id, node.isExpanded ?? false);
-      node.isExpanded = true;
-    }
-    treeData = { ...treeData };
-
     try {
-      await setProjectExpansion(Array.from(previousStates.keys()), true);
-      dispatch('expandAll');
-    } catch (error) {
-      console.error('Error expanding all projects:', error);
-      for (const [id, wasExpanded] of previousStates.entries()) {
-        const node = treeData.flatMap.get(id);
-        if (node) {
-          node.isExpanded = wasExpanded;
+      // Toggle each project that isn't already expanded - store handles mutations
+      const togglePromises = Array.from(treeData.flatMap.entries()).map(([id, node]) => {
+        if (!node.isExpanded) {
+          return toggleProjectExpanded(id);
         }
-      }
-      treeData = { ...treeData };
+        return Promise.resolve();
+      });
+
+      await Promise.all(togglePromises);
+      onexpandall?.();
+    } catch (error) {
+      console.error('Failed to expand all projects:', error);
     }
   }
 
   async function handleCollapseAll() {
     if (!treeData) {
-      dispatch('collapseAll');
+      oncollapseall?.();
       return;
     }
 
-    const previousStates = new Map<number, boolean>();
-    for (const [id, node] of treeData.flatMap.entries()) {
-      previousStates.set(id, node.isExpanded ?? false);
-      node.isExpanded = false;
-    }
-    treeData = { ...treeData };
-
     try {
-      await setProjectExpansion(Array.from(previousStates.keys()), false);
-      dispatch('collapseAll');
-    } catch (error) {
-      console.error('Error collapsing all projects:', error);
-      for (const [id, wasExpanded] of previousStates.entries()) {
-        const node = treeData.flatMap.get(id);
-        if (node) {
-          node.isExpanded = wasExpanded;
+      // Toggle each project that is currently expanded - store handles mutations
+      const togglePromises = Array.from(treeData.flatMap.entries()).map(([id, node]) => {
+        if (node.isExpanded) {
+          return toggleProjectExpanded(id);
         }
-      }
-      treeData = { ...treeData };
+        return Promise.resolve();
+      });
+
+      await Promise.all(togglePromises);
+      oncollapseall?.();
+    } catch (error) {
+      console.error('Failed to collapse all projects:', error);
     }
   }
 
   function handleRefresh() {
-    dispatch('refresh');
+    onrefresh?.();
   }
 
   // Keyboard navigation
@@ -235,15 +211,20 @@
     {:else}
       <div class="tree-list" transition:fade={{ duration: 200 }}>
         {#each flatProjects as project (project.id)}
-          <ProjectTreeNode
-            node={project}
-            isActive={activeProjectId === project.id}
-            {isCollapsed}
-            {showStats}
-            on:select={handleProjectSelect}
-            on:toggle={handleProjectToggle}
-            on:contextMenu={handleContextMenu}
-          />
+          <div
+            in:slide={{ duration: 250, easing: quintOut, axis: 'y' }}
+            out:slide={{ duration: 200, easing: quintOut, axis: 'y' }}
+          >
+            <ProjectTreeNode
+              node={project}
+              isActive={activeProjectId === project.id}
+              {isCollapsed}
+              {showStats}
+              onselect={handleProjectSelect}
+              ontoggle={handleProjectToggle}
+              oncontextmenu={handleContextMenu}
+            />
+          </div>
         {/each}
       </div>
     {/if}

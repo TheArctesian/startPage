@@ -7,16 +7,16 @@
 
 <script lang="ts">
   import { shortcutCategories, formatKeyCombo, isMac } from '$lib/stores/keyboard';
-  import { createEventDispatcher } from 'svelte';
 
-  export let isOpen = false;
+  interface Props {
+    isOpen?: boolean;
+    onclose?: () => void;
+  }
 
-  const dispatch = createEventDispatcher<{
-    close: void;
-  }>();
+  let { isOpen = $bindable(false), onclose }: Props = $props();
 
   function handleClose() {
-    dispatch('close');
+    onclose?.();
   }
 
   function handleBackdropClick(event: MouseEvent) {
@@ -32,7 +32,7 @@
   }
 
   // Get platform-specific modifier name
-  $: modifierKey = isMac ? '⌘' : 'Ctrl';
+  let modifierKey = $derived(isMac ? '⌘' : 'Ctrl');
 </script>
 
 <!-- Modal backdrop -->

@@ -29,15 +29,16 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
       // If user has specific project access, include those private projects too
       if (accessibleProjectIds.length > 0) {
+        const projectVisibility = or(
+          eq(projects.isPublic, true), // Public projects
+          and(
+            eq(projects.isPublic, false), // Private projects
+            inArray(projects.id, accessibleProjectIds) // User has access
+          )
+        );
         projectConditions = [
           eq(projects.status, 'active'),
-          or(
-            eq(projects.isPublic, true), // Public projects
-            and(
-              eq(projects.isPublic, false), // Private projects
-              inArray(projects.id, accessibleProjectIds) // User has access
-            )
-          )
+          projectVisibility!
         ];
       }
     }
@@ -49,6 +50,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
         id: tasks.id,
         title: tasks.title,
         description: tasks.description,
+        linkUrl: tasks.linkUrl,
         status: tasks.status,
         priority: tasks.priority,
         estimatedMinutes: tasks.estimatedMinutes,
@@ -60,6 +62,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
         projectId: tasks.projectId,
+        boardColumn: tasks.boardColumn,
+        position: tasks.position,
         // Project fields (flattened)
         projectName: projects.name,
         projectDescription: projects.description,
@@ -86,6 +90,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
         id: taskData.id,
         title: taskData.title,
         description: taskData.description,
+        linkUrl: taskData.linkUrl,
         status: taskData.status,
         priority: taskData.priority,
         estimatedMinutes: taskData.estimatedMinutes,
@@ -97,6 +102,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
         createdAt: taskData.createdAt,
         updatedAt: taskData.updatedAt,
         projectId: taskData.projectId,
+        boardColumn: taskData.boardColumn,
+        position: taskData.position,
         project: {
           id: taskData.projectId,
           name: taskData.projectName,

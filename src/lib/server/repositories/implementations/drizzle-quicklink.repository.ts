@@ -5,7 +5,7 @@
  */
 
 import { eq, and, or, desc, ilike, inArray } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type {
   IQuickLinkRepository,
   QuickLinkFilters,
@@ -16,7 +16,7 @@ import type { QuickLink, NewQuickLink, LinkCategory } from '$lib/types/database'
 import { quickLinks } from '$lib/server/db/schema';
 
 export class DrizzleQuickLinkRepository implements IQuickLinkRepository {
-  constructor(private db: NodePgDatabase<any>) {}
+  constructor(private db: NeonHttpDatabase<any>) {}
 
   /**
    * Find all quick links matching filters
@@ -27,7 +27,7 @@ export class DrizzleQuickLinkRepository implements IQuickLinkRepository {
     let query = this.db.select().from(quickLinks);
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query.orderBy(desc(quickLinks.createdAt));
@@ -84,10 +84,7 @@ export class DrizzleQuickLinkRepository implements IQuickLinkRepository {
   async update(id: number, data: UpdateQuickLinkDTO): Promise<QuickLink> {
     const results = await this.db
       .update(quickLinks)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString()
-      })
+      .set(data)
       .where(eq(quickLinks.id, id))
       .returning();
 
@@ -119,7 +116,7 @@ export class DrizzleQuickLinkRepository implements IQuickLinkRepository {
     let query = this.db.select({ count: quickLinks.id }).from(quickLinks);
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query;
@@ -229,10 +226,8 @@ export class DrizzleQuickLinkRepository implements IQuickLinkRepository {
     const newLink: NewQuickLink = {
       title: original.title,
       url: original.url,
-      icon: original.icon,
       category: original.category,
-      projectId: targetProjectId,
-      createdBy: original.createdBy
+      projectId: targetProjectId
     };
 
     return this.create(newLink);
@@ -294,10 +289,6 @@ export class DrizzleQuickLinkRepository implements IQuickLinkRepository {
           ilike(quickLinks.url, `%${filters.search}%`)
         )
       );
-    }
-
-    if (filters.createdBy !== undefined) {
-      conditions.push(eq(quickLinks.createdBy, filters.createdBy));
     }
 
     return conditions;

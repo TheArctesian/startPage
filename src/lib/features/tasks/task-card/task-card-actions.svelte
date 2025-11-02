@@ -1,34 +1,43 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import Icon from '$lib/ui/icon.svelte';
   import { isAuthenticated as isAuthenticatedStore, canEdit as canEditStore } from '$lib/stores/user-state';
   import type { TaskWithDetails } from '$lib/types/database';
 
-  export let task: TaskWithDetails;
-  export let canEdit: boolean = false;
-  export let isAuthenticated: boolean = false;
+  interface Props {
+    task: TaskWithDetails;
+    canEdit?: boolean;
+    isAuthenticated?: boolean;
+    isMobile?: boolean;
+    onEdit?: ((task: TaskWithDetails) => void) | undefined;
+    onDelete?: ((task: TaskWithDetails) => void) | undefined;
+    onStatusChange?: ((task: TaskWithDetails, status: string) => void) | undefined;
+    onedit?: (event: { task: TaskWithDetails }) => void;
+    ondelete?: (event: { task: TaskWithDetails }) => void;
+    onmove?: (event: { task: TaskWithDetails; newStatus: 'todo' | 'in_progress' | 'done' }) => void;
+  }
+
+  let {
+    task,
+    canEdit = false,
+    isAuthenticated = false,
+    isMobile = false,
+    onEdit = undefined,
+    onDelete = undefined,
+    onStatusChange = undefined,
+    onedit,
+    ondelete,
+    onmove
+  }: Props = $props();
 
   // Use centralized state if props not explicitly set
-  $: actualCanEdit = canEdit || $canEditStore;
-  $: actualIsAuthenticated = isAuthenticated || $isAuthenticatedStore;
-  export let isMobile: boolean = false;
-
-  export let onEdit: ((task: TaskWithDetails) => void) | undefined = undefined;
-  export let onDelete: ((task: TaskWithDetails) => void) | undefined = undefined;
-  export let onStatusChange: ((task: TaskWithDetails, status: string) => void) | undefined = undefined;
-
-  const dispatch = createEventDispatcher<{
-    edit: { task: TaskWithDetails };
-    delete: { task: TaskWithDetails };
-    complete: { task: TaskWithDetails };
-    move: { task: TaskWithDetails; newStatus: 'todo' | 'in_progress' | 'done' };
-  }>();
+  let actualCanEdit = $derived(canEdit || $canEditStore);
+  let actualIsAuthenticated = $derived(isAuthenticated || $isAuthenticatedStore);
 
   function handleEdit() {
     if (onEdit) {
       onEdit(task);
     } else {
-      dispatch('edit', { task });
+      onedit?.({ task });
     }
   }
 
@@ -36,7 +45,7 @@
     if (onDelete) {
       onDelete(task);
     } else {
-      dispatch('delete', { task });
+      ondelete?.({ task });
     }
   }
 
@@ -44,7 +53,7 @@
     if (onStatusChange) {
       onStatusChange(task, newStatus);
     } else {
-      dispatch('move', { task, newStatus });
+      onmove?.({ task, newStatus });
     }
   }
 
@@ -82,41 +91,41 @@
   .task-actions {
     display: flex !important;
     align-items: center !important;
-    gap: 0.5rem !important;
-    margin-top: 0.5rem !important;
+    justify-content: flex-end !important;
+    gap: 0.35rem !important;
+    margin-top: 0.75rem !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
 
   .task-actions.mobile {
     flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
   }
 
   .edit-actions {
     display: flex !important;
-    gap: 0.25rem !important;
-    margin-left: auto !important;
+    gap: 0.35rem !important;
     flex-shrink: 0 !important;
   }
 
   .task-actions.mobile .edit-actions {
-    margin-left: 0;
-    justify-content: center;
+    justify-content: center !important;
+    width: 100% !important;
   }
 
   .action-btn {
     display: flex !important;
     align-items: center !important;
     gap: 0.5rem !important;
-    padding: 0.5rem !important;
-    border: 1px solid var(--nord3, #4c566a) !important;
-    border-radius: 4px !important;
-    background: var(--nord2, #434c5e) !important;
-    color: var(--nord6, #eceff4) !important;
+    padding: 0.4rem !important;
+    border: 1px solid transparent !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: var(--nord5, #e5e9f0) !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease !important;
     appearance: none !important;
     text-decoration: none !important;
     outline: none !important;
@@ -142,17 +151,35 @@
     min-height: 2.5rem !important;
     font-size: 0.875rem !important;
     font-weight: 500 !important;
+    border-radius: 10px !important;
+    border-color: rgba(136, 192, 208, 0.18) !important;
+    background: rgba(67, 76, 94, 0.55) !important;
+    color: var(--nord6, #eceff4) !important;
   }
 
   .action-btn:hover {
-    background: var(--nord3, #4c566a);
-    color: var(--nord6, #eceff4);
-    border-color: var(--nord8, #88c0d0);
+    background: rgba(136, 192, 208, 0.16) !important;
+    border-color: rgba(136, 192, 208, 0.35) !important;
+    color: var(--nord6, #eceff4) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .action-btn:focus-visible {
+    border-color: var(--nord8, #88c0d0) !important;
+    box-shadow: 0 0 0 2px rgba(136, 192, 208, 0.25) !important;
+  }
+
+  .edit-btn {
+    color: var(--nord6, #eceff4) !important;
+  }
+
+  .delete-btn {
+    color: var(--nord11, #bf616a) !important;
   }
 
   .delete-btn:hover {
-    background: var(--nord11, #bf616a);
-    color: var(--nord6, #eceff4);
-    border-color: var(--nord11, #bf616a);
+    background: rgba(191, 97, 106, 0.18) !important;
+    border-color: rgba(191, 97, 106, 0.45) !important;
+    color: var(--nord6, #eceff4) !important;
   }
 </style>

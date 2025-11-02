@@ -1,13 +1,20 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 
-	export let size: 'sm' | 'md' | 'lg' | 'full' = 'md';
-	export let overlay = false;
-	export let message = '';
-	export let color = 'var(--nord8)';
+	let {
+		size = 'md',
+		overlay = false,
+		message = '',
+		color = 'var(--nord8)'
+	} = $props<{
+		size?: 'sm' | 'md' | 'lg' | 'full';
+		overlay?: boolean;
+		message?: string;
+		color?: string;
+	}>();
 
-	$: spinnerClass = ['spinner', `spinner-${size}`].join(' ');
-	$: containerClass = ['loading-container', overlay && 'loading-overlay'].filter(Boolean).join(' ');
+	let spinnerClass = $derived(['spinner', `spinner-${size}`].join(' '));
+	let containerClass = $derived(['loading-container', overlay && 'loading-overlay'].filter(Boolean).join(' '));
 </script>
 
 {#if overlay}

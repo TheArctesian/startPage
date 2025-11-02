@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { formatTime } from '$lib/utils/time';
 	import KanbanColumn from './kanban-column.svelte';
 	import KanbanMobileNav from './kanban-mobile-nav.svelte';
@@ -9,25 +9,31 @@
 	import type { TaskWithDetails, TaskStatus } from '$lib/types/database';
 
 	// Permission props passed from parent
-	export let canEdit = false;
-	export let isAuthenticated = false;
-
-	const dispatch = createEventDispatcher<{
-		taskSelect: { task: TaskWithDetails };
-		taskEdit: { task: TaskWithDetails };
-		taskComplete: { task: TaskWithDetails };
-		taskDelete: { task: TaskWithDetails };
+	let {
+		canEdit = false,
+		isAuthenticated = false,
+		ontaskselect,
+		ontaskedit,
+		ontaskcomplete,
+		ontaskdelete
+	} = $props<{
+		canEdit?: boolean;
+		isAuthenticated?: boolean;
+		ontaskselect?: (event: { task: TaskWithDetails }) => void;
+		ontaskedit?: (event: { task: TaskWithDetails }) => void;
+		ontaskcomplete?: (event: { task: TaskWithDetails }) => void;
+		ontaskdelete?: (event: { task: TaskWithDetails }) => void;
 	}>();
 
 	// Subscribe to all task stores at top level
-	$: allTodoTasks = $todoTasks;
-	$: allInProgressTasks = $inProgressTasks;
-	$: allDoneTasks = $doneTasks;
+	const allTodoTasks = $derived($todoTasks);
+	const allInProgressTasks = $derived($inProgressTasks);
+	const allDoneTasks = $derived($doneTasks);
 
 	// Mobile and tablet detection
-	let isMobile = false;
-	let isTablet = false;
-	let currentColumnIndex = 0;
+	let isMobile = $state(false);
+	let isTablet = $state(false);
+	let currentColumnIndex = $state(0);
 
 	onMount(() => {
 		const updateBreakpoints = () => {
@@ -77,16 +83,13 @@
 		}
 	}
 
-	// Drag and drop state
-	let draggedTask: TaskWithDetails | null = null;
-
-	// Form state
-	let isFormOpen = false;
-	let editingTask: TaskWithDetails | null = null;
+// Form state
+let isFormOpen = $state(false);
+let editingTask = $state<TaskWithDetails | null>(null);
 
 	// Task operation handlers
-	async function handleTaskDrop(event: CustomEvent<{ task: TaskWithDetails; newStatus: TaskStatus }>) {
-		const { task, newStatus } = event.detail;
+async function handleTaskDrop(detail: { task: TaskWithDetails; newStatus: TaskStatus }) {
+	const { task, newStatus } = detail;
 		
 		if (task.status === newStatus) return;
 
@@ -100,43 +103,43 @@
 		}
 	}
 
-	function handleTaskCreate(event: CustomEvent<{ status: TaskStatus }>) {
-		editingTask = null;
-		isFormOpen = true;
-	}
+function handleTaskCreate(detail: { status: TaskStatus }) {
+	editingTask = null;
+	isFormOpen = true;
+}
 
-	function handleTaskSelect(event: CustomEvent<{ task: TaskWithDetails }>) {
-		dispatch('taskSelect', event.detail);
-	}
+function handleTaskSelect(detail: { task: TaskWithDetails }) {
+	ontaskselect?.(detail);
+}
 
-	function handleTaskEdit(event: CustomEvent<{ task: TaskWithDetails }>) {
-		editingTask = event.detail.task;
-		isFormOpen = true;
-		dispatch('taskEdit', event.detail);
-	}
+function handleTaskEdit(detail: { task: TaskWithDetails }) {
+	editingTask = detail.task;
+	isFormOpen = true;
+	ontaskedit?.(detail);
+}
 
-	function handleTaskComplete(event: CustomEvent<{ task: TaskWithDetails }>) {
-		dispatch('taskComplete', event.detail);
-	}
+function handleTaskComplete(detail: { task: TaskWithDetails }) {
+	ontaskcomplete?.(detail);
+}
 
-	function handleTaskDelete(event: CustomEvent<{ task: TaskWithDetails }>) {
-		dispatch('taskDelete', event.detail);
-	}
+function handleTaskDelete(detail: { task: TaskWithDetails }) {
+	ontaskdelete?.(detail);
+}
 
 	// Task form handlers
-	function handleTaskFormSubmit(event: CustomEvent<{ task: TaskWithDetails }>) {
-		isFormOpen = false;
-		editingTask = null;
-	}
+function handleTaskFormSubmit(detail: { task: TaskWithDetails }) {
+	isFormOpen = false;
+	editingTask = null;
+}
 
-	function handleTaskFormCancel() {
+function handleTaskFormCancel() {
 		isFormOpen = false;
 		editingTask = null;
 	}
 
 	// Mobile navigation handlers
-	function handleMobileNavigate(event: CustomEvent<{ index: number }>) {
-		currentColumnIndex = event.detail.index;
+	function handleMobileNavigate(event: { index: number }) {
+		currentColumnIndex = event.index;
 	}
 
 	// Calculate column statistics
@@ -160,7 +163,7 @@
 			{#if canEdit}
 				<button
 					class="btn btn-primary"
-					onclick={() => handleTaskCreate({ detail: { status: 'todo' } })}
+					onclick={() => handleTaskCreate({ status: 'todo' })}
 					title="Add new task (Cmd+N)"
 				>
 					+ New Task
@@ -175,7 +178,7 @@
 			currentIndex={currentColumnIndex}
 			totalColumns={columns.length}
 			columnTitles={columns.map(col => col.title)}
-			on:navigate={handleMobileNavigate}
+			onnavigate={handleMobileNavigate}
 		/>
 	{/if}
 
@@ -203,12 +206,12 @@
 							{isAuthenticated}
 							isLoading={$loadingTasks}
 							showAddButton={column.addButtonText !== null}
-							on:taskSelect={handleTaskSelect}
-							on:taskEdit={handleTaskEdit}
-							on:taskComplete={handleTaskComplete}
-							on:taskDelete={handleTaskDelete}
-							on:taskDrop={handleTaskDrop}
-							on:taskCreate={handleTaskCreate}
+							ontaskselect={handleTaskSelect}
+							ontaskedit={handleTaskEdit}
+							ontaskcomplete={handleTaskComplete}
+							ontaskdelete={handleTaskDelete}
+							ontaskdrop={handleTaskDrop}
+							ontaskcreate={handleTaskCreate}
 						/>
 					</div>
 				{/if}
@@ -219,11 +222,11 @@
 
 <!-- Task Form Modal -->
 <TaskForm
-	bind:isOpen={isFormOpen}
+	isOpen={isFormOpen}
 	task={editingTask}
-	on:submit={handleTaskFormSubmit}
-	on:cancel={handleTaskFormCancel}
-	on:close={handleTaskFormCancel}
+	onsubmit={handleTaskFormSubmit}
+	oncancel={handleTaskFormCancel}
+	onclose={handleTaskFormCancel}
 />
 
 <style>

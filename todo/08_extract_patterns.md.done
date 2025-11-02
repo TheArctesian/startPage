@@ -1,0 +1,315 @@
+# TODO 08 — Extract Common Patterns (If Needed) ✓ COMPLETE
+
+## Goal
+After splitting files, look for duplication. Extract shared patterns **only if they actually exist**.
+
+## When To Do This
+**After TODOs 01-07 are complete.** You need to see the actual duplication before extracting.
+
+## What To Look For
+
+### 1. Modal Patterns
+After splitting modals, check if they all:
+- Have similar overlay/backdrop markup
+- Handle ESC key the same way
+- Manage focus trapping
+- Have similar open/close transitions
+
+**If yes**, create shared modal component:
+
+**`src/lib/components/ui/BaseModal.svelte`** (~150 lines)
+```svelte
+<script lang="ts">
+  let {
+    open = false,
+    title,
+    size = 'medium',
+    onClose,
+    children
+  } = $props();
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') onClose?.();
+  }
+
+  function handleBackdropClick(e: MouseEvent) {
+    if (e.target === e.currentTarget) onClose?.();
+  }
+
+  $effect(() => {
+    if (open) {
+      document.addEventListener('keydown', handleKeydown);
+      return () => document.removeEventListener('keydown', handleKeydown);
+    }
+  });
+</script>
+
+{#if open}
+  <div class="modal-backdrop" onclick={handleBackdropClick}>
+    <div class="modal" class:size-{size} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title">{title}</h2>
+        <button onclick={onClose} aria-label="Close">×</button>
+      </div>
+      <div class="modal-content">
+        {@render children()}
+      </div>
+    </div>
+  </div>
+{/if}
+```
+
+Then update modals to use it:
+```svelte
+<BaseModal open={isOpen} title="Edit Project" onClose={handleClose}>
+  <ProjectEditForm {project} onSave={handleSave} />
+</BaseModal>
+```
+
+**If no duplication**, keep modals as-is. Don't create BaseModal just because it sounds good.
+
+### 2. Form Validation Patterns
+Check if multiple forms have similar validation:
+- Required field checks
+- Email validation
+- URL validation
+- Length limits
+
+**If yes**, create shared validators:
+
+**`src/lib/utils/validation.ts`** (~100 lines)
+```typescript
+export interface ValidationResult {
+  valid: boolean;
+  errors: Record<string, string>;
+}
+
+export function validateRequired(value: string, fieldName: string): string | null {
+  if (!value || !value.trim()) {
+    return `${fieldName} is required`;
+  }
+  return null;
+}
+
+export function validateEmail(email: string): string | null {
+  if (!email.includes('@')) {
+    return 'Invalid email address';
+  }
+  return null;
+}
+
+export function validateUrl(url: string): string | null {
+  try {
+    new URL(url);
+    return null;
+  } catch {
+    return 'Invalid URL';
+  }
+}
+
+export function validateLength(value: string, min: number, max: number): string | null {
+  if (value.length < min) return `Must be at least ${min} characters`;
+  if (value.length > max) return `Must be at most ${max} characters`;
+  return null;
+}
+
+// Compose validators
+export function validate(
+  value: any,
+  validators: Array<(val: any) => string | null>
+): string | null {
+  for (const validator of validators) {
+    const error = validator(value);
+    if (error) return error;
+  }
+  return null;
+}
+```
+
+Use in forms:
+```typescript
+import { validateRequired, validateUrl, validate } from '$lib/utils/validation';
+
+function validateForm() {
+  errors = {};
+
+  const titleError = validate(form.title, [
+    (v) => validateRequired(v, 'Title'),
+    (v) => validateLength(v, 1, 100)
+  ]);
+  if (titleError) errors.title = titleError;
+
+  const urlError = validateUrl(form.url);
+  if (urlError) errors.url = urlError;
+
+  return Object.keys(errors).length === 0;
+}
+```
+
+**If forms don't have similar validation**, keep validation inline.
+
+### 3. Toast/Error Handling Patterns
+Check if error handling is duplicated:
+```typescript
+try {
+  await api.something();
+  addToast('Success', 'success');
+} catch (err) {
+  addToast('Failed', 'error');
+}
+```
+
+**If yes**, create error helper:
+
+**`src/lib/utils/errorHandling.ts`** (~50 lines)
+```typescript
+import { addToast } from '$lib/stores/toasts';
+import { logger } from '$lib/utils/logger';
+
+export async function withErrorHandling<T>(
+  operation: () => Promise<T>,
+  options: {
+    successMessage?: string;
+    errorMessage: string;
+    logContext?: string;
+  }
+): Promise<T | null> {
+  try {
+    const result = await operation();
+    if (options.successMessage) {
+      addToast(options.successMessage, 'success');
+    }
+    return result;
+  } catch (err) {
+    logger.error(options.logContext || 'Operation failed', err);
+    addToast(options.errorMessage, 'error');
+    return null;
+  }
+}
+```
+
+Use it:
+```typescript
+const project = await withErrorHandling(
+  () => createProject(data),
+  {
+    successMessage: 'Project created',
+    errorMessage: 'Failed to create project',
+    logContext: 'createProject'
+  }
+);
+```
+
+**But only if this pattern appears 5+ times.** Don't abstract two occurrences.
+
+### 4. Loading State Patterns
+If many components have:
+```typescript
+let loading = $state(true);
+let data = $state(null);
+
+onMount(async () => {
+  try {
+    data = await fetchSomething();
+  } finally {
+    loading = false;
+  }
+});
+```
+
+**Maybe** create a helper, but this is probably fine as-is.
+
+## What NOT To Do
+- Don't create abstractions before seeing duplication
+- Don't extract patterns that only appear twice
+- Don't create "base classes" or "abstract components"
+- Don't make it more complicated
+
+## Acceptance Criteria
+- Only create shared utilities if the same pattern appears 3+ times
+- Shared code is simpler than duplicated code
+- Components that use shared utilities are shorter and clearer
+- No over-abstraction
+
+## Decision Tree
+```
+1. Do I see the same code in 3+ files?
+   NO → Don't extract, move on
+   YES → Continue
+
+2. Would extracting make those files simpler?
+   NO → Keep it duplicated
+   YES → Continue
+
+3. Is the extracted code < 200 lines?
+   NO → Reconsider, might be too much
+   YES → Extract it
+
+4. Can someone understand the abstraction in < 2 minutes?
+   NO → Keep it duplicated
+   YES → Extract it
+```
+
+## Test It
+After extracting:
+- All features still work
+- Components using shared code are actually simpler
+- No new bugs introduced
+- Code is more maintainable, not less
+
+If any of these fail, revert the extraction.
+
+---
+
+## Completion Summary
+
+**Analysis Performed:**
+- ✓ Modal patterns - Already have base-modal.svelte and form-modal.svelte in src/lib/ui/modal/ (no extraction needed)
+- ✓ Form validation patterns - URL validation exists in quickLinks/utils.ts; other validation is simple/unique (no extraction needed)
+- ✓ Error handling patterns - Found identical `handleError()` and `clearError()` functions duplicated in 3 store action files
+
+**Pattern Extracted:**
+Only one pattern met the extraction criteria (appears 3+ times, identical code, would simplify files):
+
+**Error Handling in Store Actions**
+
+**File Created:**
+- `src/lib/stores/storeErrorHandling.ts` (22 lines)
+  - `handleStoreError(err, message)` - Logs error, updates error store, resets loading state
+  - `clearStoreError()` - Clears error store
+
+**Files Updated:**
+- `src/lib/stores/projectActions.ts` (255 → 246 lines, -9)
+  - Removed duplicate handleError/clearError functions
+  - Imported and uses shared error handling
+  - Exports `clearStoreError as clearError` for backward compatibility
+
+- `src/lib/stores/taskActions.ts` (190 → 178 lines, -12)
+  - Removed duplicate handleError/clearError functions
+  - Imported and uses shared error handling
+
+- `src/lib/stores/quickLinkActions.ts` (133 → 121 lines, -12)
+  - Removed duplicate handleError/clearError functions
+  - Imported and uses shared error handling
+
+**Results:**
+- Original files: 578 lines total
+- After extraction: 567 lines total (-11 lines net, -1.9%)
+- More importantly: DRY principle applied - error handling logic now in one place ✓
+- All action files simpler and easier to maintain ✓
+- No new type errors introduced ✓
+- Backward compatibility maintained ✓
+- Code is more maintainable - future changes to error handling only need to be made in one place ✓
+
+**Patterns NOT Extracted (Correctly):**
+- Modal patterns - Already have shared components, no duplication
+- Form validation - Only 2-3 instances, too simple to warrant extraction
+- Loading states - Each slightly different, extraction would add complexity
+
+**Decision Process Followed:**
+1. ✓ Pattern appears 3+ times? YES - error handling in 3 files
+2. ✓ Would extracting make files simpler? YES - removes duplication
+3. ✓ Is extracted code < 200 lines? YES - only 22 lines
+4. ✓ Understandable in < 2 minutes? YES - very simple utility
+
+This extraction follows the UNIX philosophy: don't abstract until you see the pattern, then extract it to a focused, single-responsibility module.

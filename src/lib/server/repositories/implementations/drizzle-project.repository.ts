@@ -6,7 +6,7 @@
  */
 
 import { eq, and, or, desc, asc, isNull, ilike, inArray } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type {
   IProjectRepository,
   ProjectFilters,
@@ -17,7 +17,7 @@ import type { Project, NewProject, ProjectWithDetails } from '$lib/types/databas
 import { projects, tasks } from '$lib/server/db/schema';
 
 export class DrizzleProjectRepository implements IProjectRepository {
-  constructor(private db: NodePgDatabase<any>) {}
+  constructor(private db: NeonHttpDatabase<any>) {}
 
   /**
    * Find all projects matching filters
@@ -28,7 +28,7 @@ export class DrizzleProjectRepository implements IProjectRepository {
     let query = this.db.select().from(projects);
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query.orderBy(projects.depth, projects.name);
@@ -143,7 +143,7 @@ export class DrizzleProjectRepository implements IProjectRepository {
     let query = this.db.select({ count: projects.id }).from(projects);
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      query = query.where(and(...conditions)) as any;
     }
 
     const results = await query;

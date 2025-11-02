@@ -42,8 +42,8 @@
 	}
 
 	// Handle sidebar collapse
-	function handleSidebarCollapse(event: CustomEvent<{ isCollapsed: boolean }>) {
-		sidebarActions.setCollapsed(event.detail.isCollapsed);
+	function handleSidebarCollapse(event: { isCollapsed: boolean }) {
+		sidebarActions.setCollapsed(event.isCollapsed);
 	}
 
 	// Close mobile sidebar when clicking outside
@@ -95,7 +95,7 @@
 			class:collapsed={$isCollapsed}
 			class:mobile-open={$isMobileOpen}
 		>
-			<ProjectSidebar user={$currentUser} isAuthenticated={$isAuthenticated} on:collapse={handleSidebarCollapse} />
+			<ProjectSidebar user={$currentUser} isAuthenticated={$isAuthenticated} oncollapse={handleSidebarCollapse} />
 		</aside>
 
 		<!-- Main Content Area -->

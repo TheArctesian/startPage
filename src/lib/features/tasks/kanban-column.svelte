@@ -7,7 +7,6 @@
 -->
 
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { fly, scale, fade } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { quintOut, backOut } from 'svelte/easing';
@@ -18,26 +17,38 @@
 	import type { TaskWithDetails, TaskStatus } from '$lib/types/database';
 
 	// Props
-	export let status: TaskStatus;
-	export let title: string;
-	export let tasks: TaskWithDetails[] = [];
-	export let canEdit = false;
-	export let isAuthenticated = false;
-	export let isLoading = false;
-	export let showAddButton = false;
+	let {
+		status,
+		title,
+		tasks = [],
+		canEdit = false,
+		isAuthenticated = false,
+		isLoading = false,
+		showAddButton = false,
+		ontaskselect,
+		ontaskedit,
+		ontaskcomplete,
+		ontaskdelete,
+		ontaskdrop,
+		ontaskcreate
+	} = $props<{
+		status: TaskStatus;
+		title: string;
+		tasks?: TaskWithDetails[];
+		canEdit?: boolean;
+		isAuthenticated?: boolean;
+		isLoading?: boolean;
+		showAddButton?: boolean;
+		ontaskselect?: (event: { task: TaskWithDetails }) => void;
+		ontaskedit?: (event: { task: TaskWithDetails }) => void;
+		ontaskcomplete?: (event: { task: TaskWithDetails }) => void;
+		ontaskdelete?: (event: { task: TaskWithDetails }) => void;
+		ontaskdrop?: (event: { task: TaskWithDetails; newStatus: TaskStatus }) => void;
+		ontaskcreate?: (event: { status: TaskStatus }) => void;
+	}>();
 
 	// State
-	let isShowingForm = false;
-	let isDragOver = false;
-
-	const dispatch = createEventDispatcher<{
-		taskSelect: { task: TaskWithDetails };
-		taskEdit: { task: TaskWithDetails };
-		taskComplete: { task: TaskWithDetails };
-		taskDelete: { task: TaskWithDetails };
-		taskDrop: { task: TaskWithDetails; newStatus: TaskStatus };
-		taskCreate: { status: TaskStatus };
-	}>();
+	let isDragOver = $state(false);
 
 	// Drag and drop handlers
 	function handleDragOver(event: DragEvent) {
@@ -58,37 +69,60 @@
 
 		const task = findTaskById(taskId);
 		if (task && task.status !== status) {
-			dispatch('taskDrop', { task, newStatus: status });
+			ontaskdrop?.({ task, newStatus: status });
 		}
+	}
+
+	function handleTaskSelect(task: TaskWithDetails) {
+		ontaskselect?.({ task });
+	}
+
+	function handleTaskEdit(task: TaskWithDetails) {
+		ontaskedit?.({ task });
+	}
+
+	function handleTaskDelete(task: TaskWithDetails) {
+		ontaskdelete?.({ task });
+	}
+
+	function handleTaskMove(detail: { task: TaskWithDetails; newStatus: TaskStatus }) {
+		ontaskdrop?.(detail);
+		if (detail.newStatus === 'done') {
+			ontaskcomplete?.({ task: detail.task });
+		}
+	}
+
+	function handleTaskCreateClick() {
+		ontaskcreate?.({ status });
 	}
 
 	function findTaskById(id: string): TaskWithDetails | null {
 		// Find task in current column's tasks
-		return tasks.find(task => task.id.toString() === id) || null;
+		return tasks.find((task: TaskWithDetails) => task.id.toString() === id) || null;
 	}
 
 	// Column stats
-	$: totalTime = tasks.reduce((sum, task) => {
-		const timeSpent = task.timeSessions?.reduce((acc, session) => acc + session.duration, 0) || 0;
+	const totalTime = $derived(tasks.reduce((sum: number, task: TaskWithDetails) => {
+		const timeSpent = task.timeSessions?.reduce((acc: number, session: any) => acc + session.duration, 0) || 0;
 		return sum + timeSpent;
-	}, 0);
+	}, 0));
 
-	$: taskCount = tasks.length;
+	const taskCount = $derived(tasks.length);
 
 	// Column styling based on status
-	$: columnClass = {
+	const columnClass = $derived(({
 		'todo': 'border-nord-blue-500',
-		'in_progress': 'border-nord-yellow-500', 
+		'in_progress': 'border-nord-yellow-500',
 		'done': 'border-nord-green-500',
 		'archived': 'border-nord-comment'
-	}[status] || 'border-nord-comment';
+	} as Record<TaskStatus, string>)[status] || 'border-nord-comment');
 
-	$: headerClass = {
+	const headerClass = $derived(({
 		'todo': 'text-nord-blue-500',
 		'in_progress': 'text-nord-yellow-500',
-		'done': 'text-nord-green-500', 
+		'done': 'text-nord-green-500',
 		'archived': 'text-nord-comment'
-	}[status] || 'text-nord-comment';
+	} as Record<TaskStatus, string>)[status] || 'text-nord-comment');
 
 	function getColumnIcon(status: TaskStatus) {
 		switch (status) {
@@ -107,9 +141,9 @@
 <div 
 	class="kanban-column column-{status}"
 	class:drag-over={isDragOver}
-	on:dragover={handleDragOver}
-	on:dragleave={handleDragLeave}
-	on:drop={handleDrop}
+	ondragover={handleDragOver}
+	ondragleave={handleDragLeave}
+	ondrop={handleDrop}
 	role="region"
 	aria-label="{title} tasks"
 >
@@ -162,10 +196,10 @@
 						selectable={true}
 						draggable={canEdit}
 						showTimer={status !== 'done'}
-						on:select={() => dispatch('taskSelect', { task })}
-						on:edit={() => dispatch('taskEdit', { task })}
-						on:complete={() => dispatch('taskComplete', { task })}
-						on:delete={() => dispatch('taskDelete', { task })}
+						onselect={() => handleTaskSelect(task)}
+						onedit={() => handleTaskEdit(task)}
+						ondelete={() => handleTaskDelete(task)}
+						onmove={handleTaskMove}
 					/>
 				</div>
 			{/each}
@@ -184,7 +218,7 @@
 					{#if canEdit && showAddButton}
 						<button
 							class="btn btn-ghost btn-sm hover-scale active-press transition-all"
-							on:click={() => dispatch('taskCreate', { status })}
+							onclick={handleTaskCreateClick}
 						>
 							Add Task
 						</button>
@@ -197,7 +231,7 @@
 		{#if canEdit && showAddButton && tasks.length > 0}
 			<button
 				class="add-task-btn hover-scale active-press transition-all"
-				on:click={() => dispatch('taskCreate', { status })}
+				onclick={handleTaskCreateClick}
 				title="Add task to {title}"
 			>
 				+ Add Task

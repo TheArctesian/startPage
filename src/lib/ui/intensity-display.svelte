@@ -1,11 +1,19 @@
 <script lang="ts">
   import type { IntensityLevel } from '$lib/types/database';
 
-  export let intensity: IntensityLevel;
-  export let size: 'xs' | 'sm' | 'md' | 'lg' = 'sm';
-  export let variant: 'dots' | 'text' | 'badge' = 'dots';
-  export let showLabel: boolean = false;
-  export let showValue: boolean = false;
+  let {
+    intensity,
+    size = 'sm',
+    variant = 'dots',
+    showLabel = false,
+    showValue = false
+  } = $props<{
+    intensity: IntensityLevel;
+    size?: 'xs' | 'sm' | 'md' | 'lg';
+    variant?: 'dots' | 'text' | 'badge';
+    showLabel?: boolean;
+    showValue?: boolean;
+  }>();
 
   // Intensity level descriptions
   const intensityLabels = {
@@ -53,9 +61,9 @@
     }
   };
 
-  $: currentSize = sizeClasses[size];
-  $: currentColor = intensityColors[intensity];
-  $: currentLabel = intensityLabels[intensity];
+  let currentSize = $derived(sizeClasses[size]);
+  let currentColor = $derived(intensityColors[intensity]);
+  let currentLabel = $derived(intensityLabels[intensity]);
 </script>
 
 <div class="intensity-display" class:with-label={showLabel}>

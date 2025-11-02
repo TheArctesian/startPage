@@ -3,33 +3,33 @@
   import { enhance } from '$app/forms';
   import type { PageData } from './$types';
 
-  export let data: PageData;
+  let { data } = $props<{ data: PageData }>();
 
-  let selectedTab = 'users';
-  let isLoading = false;
-  let showUserModal = false;
-  let selectedUser: any = null;
+  let selectedTab = $state('users');
+  let isLoading = $state(false);
+  let showUserModal = $state(false);
+  let selectedUser = $state<any>(null);
 
   // Calculate user stats
-  $: userStatsMap = data.stats.users.reduce((acc, stat) => {
+  const userStatsMap = $derived(data.stats.users.reduce((acc: Record<string, number>, stat: any) => {
     acc[stat.status] = stat.total;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>));
 
-  $: totalUsers = data.stats.users.reduce((sum, stat) => sum + stat.total, 0);
-  $: approvedUsers = userStatsMap.approved || 0;
-  $: pendingUsers = userStatsMap.pending || 0;
-  $: rejectedUsers = userStatsMap.rejected || 0;
+  const totalUsers = $derived(data.stats.users.reduce((sum: number, stat: any) => sum + stat.total, 0));
+  const approvedUsers = $derived(userStatsMap.approved || 0);
+  const pendingUsers = $derived(userStatsMap.pending || 0);
+  const rejectedUsers = $derived(userStatsMap.rejected || 0);
 
   // Calculate project stats
-  $: projectStatsMap = data.stats.projects.reduce((acc, stat) => {
+  const projectStatsMap = $derived(data.stats.projects.reduce((acc: Record<string, number>, stat: any) => {
     acc[stat.isPublic ? 'public' : 'private'] = stat.total;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>));
 
-  $: totalProjects = data.stats.projects.reduce((sum, stat) => sum + stat.total, 0);
-  $: publicProjects = projectStatsMap.public || 0;
-  $: privateProjects = projectStatsMap.private || 0;
+  const totalProjects = $derived(data.stats.projects.reduce((sum: number, stat: any) => sum + stat.total, 0));
+  const publicProjects = $derived(projectStatsMap.public || 0);
+  const privateProjects = $derived(projectStatsMap.private || 0);
 
   // User actions
   async function updateUserStatus(userId: number, newStatus: 'approved' | 'rejected') {

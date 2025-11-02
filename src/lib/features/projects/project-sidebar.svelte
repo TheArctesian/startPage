@@ -1,51 +1,47 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import {
-		projects,
 		activeProject,
-		projectStats,
+		projectTreeData,
 		setActiveProject,
-		loadProjects
+		loadProjectTree
 	} from '$lib/stores';
 	import ProjectTree from './project-tree/project-tree.svelte';
 	import ProjectCreateModal from './modals/project-create-modal.svelte';
 	import type {
 		Project,
 		ProjectWithDetails,
-		ProjectTreeData,
 		ProjectNode
 	} from '$lib/types/database';
-	import { buildProjectTree } from '$lib/utils/projectTree';
 	import { navigateToProject, navigateToHome } from '$lib/utils/navigation';
 	import type { User } from '$lib/types/database';
 
-	export let user: User | null = null;
-	export let isAuthenticated: boolean = false;
-
-	const dispatch = createEventDispatcher<{
-		projectSelect: { project: Project };
-		projectCreate: { project: Project };
-		projectEdit: { project: Project };
-		collapse: { isCollapsed: boolean };
+	let {
+		user = null,
+		isAuthenticated = false,
+		onprojectselect,
+		onprojectcreate,
+		onprojectedit,
+		oncollapse
+	} = $props<{
+		user?: User | null;
+		isAuthenticated?: boolean;
+		onprojectselect?: (event: { project: Project }) => void;
+		onprojectcreate?: (event: { project: Project }) => void;
+		onprojectedit?: (event: { project: Project }) => void;
+		oncollapse?: (event: { isCollapsed: boolean }) => void;
 	}>();
 
 	// Check if user can create projects (authenticated users only)
-	$: canCreateProjects = isAuthenticated && user && user.status === 'approved';
+	const canCreateProjects = $derived(Boolean(isAuthenticated && user && user.status === 'approved'));
 
 	// Component state
-	let isCollapsed = false;
-	let showCreateModal = false;
-	let isLoadingTree = false;
-	let treeData: ProjectTreeData | null = null;
+	let isCollapsed = $state(false);
+	let showCreateModal = $state(false);
 
-
-	// Reactive values
-	$: currentProject = $activeProject;
-
-	// Build tree structure when project stats change
-	$: if ($projectStats && $projectStats.length > 0) {
-		treeData = buildProjectTree($projectStats);
-	}
+	// Reactive values from stores
+	const currentProject = $derived($activeProject);
+	const treeData = $derived($projectTreeData);
 
 
 	// Handle project selection
@@ -54,28 +50,35 @@
 		await setActiveProject(project);
 		// Navigate to project route
 		await navigateToProject(project);
-		dispatch('projectSelect', { project });
+		onprojectselect?.({ project });
 	}
 
 	// Handle tree project selection
-	async function handleTreeProjectSelect(event: CustomEvent<{ project: ProjectNode }>) {
-		await selectProject(event.detail.project);
+	async function handleTreeProjectSelect(event: { project: ProjectNode }) {
+		await selectProject(event.project);
 	}
 
 	// Handle tree refresh
 	async function handleTreeRefresh() {
-		await loadProjectsWithStats();
+		await loadProjectTree(true);
 	}
 
-	// Handle tree bulk expand/collapse events by refreshing shared data
-	async function handleTreeBulkChange() {
-		await loadProjectsWithStats();
+	// Handle tree bulk expand/collapse events
+	function handleTreeBulkChange() {
+		// Tree component already updated store via toggleProjectExpanded
+		// No action needed here
+	}
+
+	// Handle individual project toggle (expand/collapse)
+	function handleTreeProjectToggle() {
+		// Tree component already updated store via toggleProjectExpanded
+		// No action needed here
 	}
 
 	// Toggle sidebar collapse
 	function toggleCollapse() {
 		isCollapsed = !isCollapsed;
-		dispatch('collapse', { isCollapsed });
+		oncollapse?.({ isCollapsed });
 	}
 
 	// Show create project modal
@@ -84,11 +87,11 @@
 	}
 
 	// Handle project created
-	function handleProjectCreated(event: CustomEvent<{ project: ProjectWithDetails }>) {
+	async function handleProjectCreated(event: { project: ProjectWithDetails }) {
 		showCreateModal = false;
-		// Reload projects with stats to ensure sidebar updates
-		loadProjectsWithStats();
-		dispatch('projectCreate', { project: event.detail.project });
+		// Reload tree to reflect new project
+		await loadProjectTree(true);
+		onprojectcreate?.({ project: event.project });
 	}
 
 	// Handle modal close
@@ -96,36 +99,9 @@
 		showCreateModal = false;
 	}
 
-	// Format project stats
-	function formatStats(project: ProjectWithDetails) {
-		const completionRate =
-			project.totalTasks > 0 ? Math.round((project.completedTasks / project.totalTasks) * 100) : 0;
-
-		const totalHours = Math.round((project.totalMinutes / 60) * 10) / 10;
-
-		return {
-			completion: completionRate,
-			hours: totalHours,
-			tasks: project.totalTasks
-		};
-	}
-
-
-	// Helper function to load projects with stats
-	async function loadProjectsWithStats() {
-		isLoadingTree = true;
-		try {
-			await loadProjects(true); // Load with stats
-		} catch (error) {
-			console.error('Failed to load projects in sidebar:', error);
-		} finally {
-			isLoadingTree = false;
-		}
-	}
-
 	// Load projects on mount
 	onMount(async () => {
-		await loadProjectsWithStats();
+		await loadProjectTree(true); // Load tree with stats into projectTreeData store
 	});
 </script>
 
@@ -192,11 +168,11 @@
 			activeProjectId={currentProject?.id || null}
 			{isCollapsed}
 			showStats={true}
-			loading={isLoadingTree}
-			on:projectSelect={handleTreeProjectSelect}
-			on:refresh={handleTreeRefresh}
-			on:expandAll={handleTreeBulkChange}
-			on:collapseAll={handleTreeBulkChange}
+			onprojectselect={handleTreeProjectSelect}
+			onprojecttoggle={handleTreeProjectToggle}
+			onrefresh={handleTreeRefresh}
+			onexpandall={handleTreeBulkChange}
+			oncollapseall={handleTreeBulkChange}
 		/>
 	</div>
 
@@ -239,8 +215,8 @@
 <ProjectCreateModal
 	bind:isOpen={showCreateModal}
 	defaultParentId={currentProject?.id || null}
-	on:created={handleProjectCreated}
-	on:close={handleModalClose}
+	oncreated={handleProjectCreated}
+	onclose={handleModalClose}
 />
 
 <style>

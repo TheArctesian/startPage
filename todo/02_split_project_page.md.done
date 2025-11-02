@@ -1,0 +1,179 @@
+# TODO 02 — Split Project Page
+
+## Goal
+`src/routes/project/[id]/+page.svelte` is 1,275 lines. Make it < 400 lines.
+
+## Current Problems
+- Data fetching mixed with UI
+- 12+ boolean flags for modal state
+- Keyboard shortcuts inline
+- Toast logic duplicated everywhere
+- Can't test anything
+
+## What To Do
+Split into smaller components. That's it.
+
+### Create These Components
+
+**`src/lib/features/projects/ProjectHeader.svelte`** (~100 lines)
+- Project title, description, status badge
+- Edit/delete buttons (if user has permission)
+- Breadcrumb navigation
+- Props: `{ project, canEdit, onEdit, onDelete }`
+
+**`src/lib/features/projects/ProjectStats.svelte`** (~80 lines)
+- Task counts, time tracked, completion percentage
+- Props: `{ stats }`
+
+**`src/lib/features/tasks/TaskSection.svelte`** (~300 lines)
+- Task list/board/grid view
+- "New Task" button
+- Filter toolbar
+- Props: `{ tasks, projectId, onNewTask, onEditTask }`
+
+**`src/lib/features/analytics/AnalyticsSection.svelte`** (~150 lines)
+- Charts and reports buttons
+- Recent activity
+- Props: `{ projectId, onOpenAnalytics, onOpenReports }`
+
+**`src/lib/features/projects/ProjectModals.svelte`** (~200 lines)
+- All modal components in one place
+- Handles which modal is open
+- Props: `{ currentModal, modalData, onClose, onSuccess }`
+
+### Update the Main Page
+
+`src/routes/project/[id]/+page.svelte` becomes:
+```svelte
+<script lang="ts">
+  import { fetchProject, fetchTasks } from '$lib/api';
+  import ProjectHeader from '$lib/features/projects/ProjectHeader.svelte';
+  import ProjectStats from '$lib/features/projects/ProjectStats.svelte';
+  import TaskSection from '$lib/features/tasks/TaskSection.svelte';
+  import AnalyticsSection from '$lib/features/analytics/AnalyticsSection.svelte';
+  import ProjectModals from '$lib/features/projects/ProjectModals.svelte';
+  import { addToast } from '$lib/stores/toasts';
+
+  let { data } = $props();
+  let project = $state(data.project);
+  let tasks = $state(data.tasks);
+
+  // Single modal state instead of 12 booleans
+  let modalState = $state<{
+    type: 'none' | 'newTask' | 'editTask' | 'analytics' | 'reports' | 'editProject';
+    data?: any;
+  }>({ type: 'none' });
+
+  function openModal(type: string, data?: any) {
+    modalState = { type, data };
+  }
+
+  function closeModal() {
+    modalState = { type: 'none' };
+  }
+
+  async function handleDeleteProject() {
+    if (!confirm('Delete this project?')) return;
+    try {
+      await deleteProject(project.id);
+      addToast('Project deleted', 'success');
+      goto('/');
+    } catch (err) {
+      addToast('Failed to delete project', 'error');
+    }
+  }
+
+  async function handleTaskCreated() {
+    tasks = await fetchTasks(project.id);
+    closeModal();
+    addToast('Task created', 'success');
+  }
+</script>
+
+<ProjectHeader
+  {project}
+  canEdit={data.canEdit}
+  onEdit={() => openModal('editProject')}
+  onDelete={handleDeleteProject}
+/>
+
+<ProjectStats stats={data.stats} />
+
+<TaskSection
+  {tasks}
+  projectId={project.id}
+  onNewTask={() => openModal('newTask')}
+  onEditTask={(task) => openModal('editTask', task)}
+/>
+
+<AnalyticsSection
+  projectId={project.id}
+  onOpenAnalytics={() => openModal('analytics')}
+  onOpenReports={() => openModal('reports')}
+/>
+
+<ProjectModals
+  currentModal={modalState.type}
+  modalData={modalState.data}
+  {project}
+  onClose={closeModal}
+  onSuccess={handleTaskCreated}
+/>
+```
+
+### Move Keyboard Shortcuts
+
+Create `src/lib/utils/shortcuts/projectShortcuts.ts`:
+```typescript
+export function setupProjectShortcuts(handlers: {
+  onNewTask: () => void;
+  onToggleTimer: () => void;
+  onOpenAnalytics: () => void;
+}) {
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.ctrlKey && e.key === 'n') {
+      e.preventDefault();
+      handlers.onNewTask();
+    }
+    // ... other shortcuts
+  }
+
+  document.addEventListener('keydown', handleKeydown);
+  return () => document.removeEventListener('keydown', handleKeydown);
+}
+```
+
+Use it in the page:
+```svelte
+import { setupProjectShortcuts } from '$lib/utils/shortcuts/projectShortcuts';
+
+$effect(() => {
+  return setupProjectShortcuts({
+    onNewTask: () => openModal('newTask'),
+    onToggleTimer: () => { /* ... */ },
+    onOpenAnalytics: () => openModal('analytics')
+  });
+});
+```
+
+## What NOT To Do
+- Don't create a "projectWorkspaceStore"
+- Don't create a "ProjectWorkspaceService"
+- Don't make it more complicated
+- Just split the file
+
+## Acceptance Criteria
+- Main page file < 400 lines
+- All components < 300 lines each
+- Fetch calls use API wrappers from TODO 01
+- All existing features still work
+- Modal state is one object, not 12 booleans
+
+## Test It
+- Navigate to a project page
+- Create a task
+- Edit a task
+- Delete a task
+- Open analytics
+- Try keyboard shortcuts
+- Everything should work exactly the same

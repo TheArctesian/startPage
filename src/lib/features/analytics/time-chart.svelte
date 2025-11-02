@@ -11,10 +11,17 @@
   import * as d3 from 'd3';
   import type { TaskWithDetails, Project } from '$lib/types/database';
 
-  export let tasks: TaskWithDetails[] = [];
-  export let projects: Project[] = [];
-  export let chartType: 'daily' | 'weekly' | 'project' = 'daily';
-  export let timeRange: '7d' | '30d' | '90d' = '30d';
+  let {
+    tasks = [],
+    projects = [],
+    chartType = 'daily',
+    timeRange = '30d'
+  } = $props<{
+    tasks?: TaskWithDetails[];
+    projects?: Project[];
+    chartType?: 'daily' | 'weekly' | 'project';
+    timeRange?: '7d' | '30d' | '90d';
+  }>();
 
   let chartContainer: HTMLDivElement;
   let resizeObserver: ResizeObserver;
@@ -25,10 +32,13 @@
   let height = 400;
 
   // Process time data
-  $: timeData = processTimeData(tasks, projects, chartType, timeRange);
-  $: if (chartContainer && timeData.length > 0) {
-    drawChart();
-  }
+  const timeData = $derived(processTimeData(tasks, projects, chartType, timeRange));
+
+  $effect(() => {
+    if (chartContainer && timeData.length > 0) {
+      drawChart();
+    }
+  });
 
   interface TimePoint {
     date: Date;

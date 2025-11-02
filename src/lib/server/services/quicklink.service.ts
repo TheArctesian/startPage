@@ -93,7 +93,21 @@ export class QuickLinkService {
 	async getQuickLinksGroupedByCategory(projectId: number): Promise<
 		Record<LinkCategory, QuickLink[]>
 	> {
-		return this.quickLinkRepository.findGroupedByCategory(projectId);
+		const links = await this.quickLinkRepository.findByProject(projectId);
+		const grouped: Record<LinkCategory, QuickLink[]> = {
+			docs: [],
+			tools: [],
+			resources: [],
+			other: []
+		};
+
+		for (const link of links) {
+			if (link.category) {
+				grouped[link.category].push(link);
+			}
+		}
+
+		return grouped;
 	}
 
 	/**
@@ -107,20 +121,20 @@ export class QuickLinkService {
 	}
 
 	/**
-	 * Reorder quick links within a category
+	 * Reorder quick links within a project
 	 */
-	async reorderQuickLinks(linkIds: number[], category: LinkCategory): Promise<boolean> {
-		// Validate all links exist and belong to same category
+	async reorderQuickLinks(linkIds: number[], projectId: number): Promise<boolean> {
+		// Validate all links exist and belong to same project
 		const links = await Promise.all(
 			linkIds.map((id) => this.quickLinkRepository.findById(id))
 		);
 
-		const invalidLinks = links.filter((link) => !link || link.category !== category);
+		const invalidLinks = links.filter((link) => !link || link.projectId !== projectId);
 		if (invalidLinks.length > 0) {
-			throw new Error('All links must exist and belong to the same category');
+			throw new Error('All links must exist and belong to the same project');
 		}
 
-		return this.quickLinkRepository.reorder(linkIds, category);
+		return this.quickLinkRepository.reorder(linkIds, projectId);
 	}
 
 	/**
@@ -205,7 +219,7 @@ export class QuickLinkService {
 		projectId?: number
 	): Promise<Record<LinkCategory, number>> {
 		const grouped = projectId
-			? await this.quickLinkRepository.findGroupedByCategory(projectId)
+			? await this.getQuickLinksGroupedByCategory(projectId)
 			: {
 					docs: await this.quickLinkRepository.findByCategory('docs'),
 					tools: await this.quickLinkRepository.findByCategory('tools'),
@@ -251,10 +265,7 @@ export class QuickLinkService {
 			title: newTitle || `${existing.title} (Copy)`,
 			url: existing.url,
 			category: existing.category,
-			projectId: existing.projectId,
-			description: existing.description,
-			icon: existing.icon,
-			displayOrder: existing.displayOrder
+			projectId: existing.projectId
 		};
 
 		return this.createQuickLink(duplicateData);
@@ -271,7 +282,7 @@ export class QuickLinkService {
 		const sourceLinks = await this.quickLinkRepository.findByProject(sourceProjectId);
 
 		const linksToCopy = categories
-			? sourceLinks.filter((link) => categories.includes(link.category))
+			? sourceLinks.filter((link) => link.category && categories.includes(link.category))
 			: sourceLinks;
 
 		const copiedLinks: QuickLink[] = [];
@@ -282,10 +293,7 @@ export class QuickLinkService {
 					title: link.title,
 					url: link.url,
 					category: link.category,
-					projectId: targetProjectId,
-					description: link.description,
-					icon: link.icon,
-					displayOrder: link.displayOrder
+					projectId: targetProjectId
 				});
 				copiedLinks.push(newLink);
 			} catch (error) {
@@ -302,10 +310,9 @@ export class QuickLinkService {
 	 */
 	async getAllQuickLinks(page = 1, pageSize = 50) {
 		const offset = (page - 1) * pageSize;
-		const [items, total] = await Promise.all([
-			this.quickLinkRepository.findAll({ limit: pageSize, offset }),
-			this.quickLinkRepository.count()
-		]);
+		const allItems = await this.quickLinkRepository.findAll();
+		const total = await this.quickLinkRepository.count();
+		const items = allItems.slice(offset, offset + pageSize);
 
 		return {
 			items,

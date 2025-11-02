@@ -1,40 +1,50 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import ProjectStatusBadge from './project-status-badge.svelte';
   import ProjectStatusDropdown from './project-status-dropdown.svelte';
+  import ProjectRow from './project-row.svelte';
   import type { ProjectWithDetails, ProjectStatus } from '$lib/types/database';
-  import { setProjectExpansion } from '$lib/features/projects/services/project-expansion';
+  import { toggleProjectExpanded } from '$lib/stores';
 
-  export let project: ProjectWithDetails & { children?: ProjectWithDetails[] };
-  export let depth = 0;
-  export let canEdit: boolean = false;
-  export let isAuthenticated: boolean = false;
-
-  const dispatch = createEventDispatcher<{
-    click: void;
-    statusChange: { project: ProjectWithDetails; newStatus: ProjectStatus };
-    edit: { project: ProjectWithDetails };
+  let {
+    project,
+    depth = 0,
+    canEdit = false,
+    isAuthenticated = false,
+    onclick,
+    onstatuschange,
+    onedit
+  } = $props<{
+    project: ProjectWithDetails & { children?: ProjectWithDetails[] };
+    depth?: number;
+    canEdit?: boolean;
+    isAuthenticated?: boolean;
+    onclick?: () => void;
+    onstatuschange?: (event: { project: ProjectWithDetails; newStatus: ProjectStatus }) => void;
+    onedit?: (event: { project: ProjectWithDetails }) => void;
   }>();
 
-  let isExpanded = project.isExpanded ?? false;
-  let showStatusDropdown = false;
+  let isExpanded = $state(project.isExpanded ?? false);
+  let showStatusDropdown = $state(false);
 
   // Calculate project statistics based on expansion state
-  $: stats = (() => {
+  const hasChildren = $derived(project.children && project.children.length > 0);
+  const indentStyle = $derived(`margin-left: ${depth * 1.5}rem`);
+
+  const stats = $derived.by(() => {
     // When collapsed or has no children, show aggregated stats (includes subprojects)
     // When expanded and has children, show direct stats (only this project)
     const shouldShowDirect = isExpanded && hasChildren;
-    
-    const tasks = shouldShowDirect 
+
+    const tasks = shouldShowDirect
       ? (project.directTasks || 0)
       : (project.totalTasks || 0);
-    const completed = shouldShowDirect 
-      ? (project.directCompletedTasks || 0) 
+    const completed = shouldShowDirect
+      ? (project.directCompletedTasks || 0)
       : (project.completedTasks || 0);
-    const minutes = shouldShowDirect 
+    const minutes = shouldShowDirect
       ? (project.directMinutes || 0)
       : (project.totalMinutes || 0);
-    
+
     return {
       completion: tasks > 0 ? Math.round((completed / tasks) * 100) : 0,
       tasks,
@@ -42,10 +52,7 @@
       timeFormatted: formatTime(minutes),
       isAggregated: !shouldShowDirect && hasChildren
     };
-  })();
-
-  $: hasChildren = project.children && project.children.length > 0;
-  $: indentStyle = `margin-left: ${depth * 1.5}rem`;
+  });
 
   function formatTime(minutes: number): string {
     if (minutes < 60) return `${minutes}m`;
@@ -56,29 +63,29 @@
 
   async function toggleExpanded() {
     if (hasChildren) {
-      const nextExpanded = !isExpanded;
-      isExpanded = nextExpanded;
+      const previousExpanded = isExpanded;
+      isExpanded = !isExpanded;
 
       try {
-        await setProjectExpansion(project.id, nextExpanded);
+        await toggleProjectExpanded(project.id);
       } catch (error) {
         console.error('Failed to update project expansion state:', error);
-        isExpanded = !nextExpanded;
+        isExpanded = previousExpanded;
       }
     }
   }
 
   function handleRowClick() {
-    dispatch('click');
+    onclick?.();
   }
 
   function handleStatusChange(newStatus: ProjectStatus) {
-    dispatch('statusChange', { project, newStatus });
+    onstatuschange?.({ project, newStatus });
     showStatusDropdown = false;
   }
 
   function handleEdit() {
-    dispatch('edit', { project });
+    onedit?.({ project });
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -152,8 +159,8 @@
       {#if showStatusDropdown}
         <ProjectStatusDropdown
           currentStatus={project.status || 'active'}
-          on:change={(e) => handleStatusChange(e.detail.status)}
-          on:close={() => showStatusDropdown = false}
+          onchange={({ status }) => handleStatusChange(status)}
+          onclose={() => showStatusDropdown = false}
         />
       {/if}
     </div>
@@ -193,14 +200,14 @@
 <!-- Child Projects (if expanded) -->
 {#if hasChildren && isExpanded}
   {#each project.children as child (child.id)}
-    <svelte:self 
+    <ProjectRow
       project={child}
       depth={depth + 1}
       {canEdit}
       {isAuthenticated}
-      on:click
-      on:statusChange
-      on:edit
+      onclick={onclick}
+      onstatuschange={onstatuschange}
+      onedit={onedit}
     />
   {/each}
 {/if}

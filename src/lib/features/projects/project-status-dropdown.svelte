@@ -1,12 +1,15 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import type { ProjectStatus } from '$lib/types/database';
 
-  export let currentStatus: ProjectStatus;
-
-  const dispatch = createEventDispatcher<{
-    change: { status: ProjectStatus };
-    close: void;
+  let {
+    currentStatus,
+    onchange,
+    onclose
+  } = $props<{
+    currentStatus: ProjectStatus;
+    onchange?: (event: { status: ProjectStatus }) => void;
+    onclose?: () => void;
   }>();
 
   let dropdownElement: HTMLDivElement;
@@ -34,20 +37,20 @@
 
   function handleStatusSelect(status: ProjectStatus) {
     if (status !== currentStatus) {
-      dispatch('change', { status });
+      onchange?.({ status });
     }
-    dispatch('close');
+    onclose?.();
   }
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
-      dispatch('close');
+      onclose?.();
     }
   }
 
   function handleClickOutside(event: MouseEvent) {
     if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
-      dispatch('close');
+      onclose?.();
     }
   }
 

@@ -1,30 +1,35 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 
-	interface $$Props extends HTMLButtonAttributes {
+	let {
+		variant = 'primary',
+		size = 'md',
+		disabled = false,
+		loading = false,
+		fullWidth = false,
+		type = 'button',
+		onclick,
+		onkeydown,
+		onkeyup,
+		onmouseenter,
+		onmouseleave,
+		onfocus,
+		onblur,
+		...restProps
+	} = $props<HTMLButtonAttributes & {
 		variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
 		size?: 'sm' | 'md' | 'lg';
 		loading?: boolean;
 		fullWidth?: boolean;
-	}
-
-	export let variant: 'primary' | 'secondary' | 'ghost' | 'danger' = 'primary';
-	export let size: 'sm' | 'md' | 'lg' = 'md';
-	export let disabled = false;
-	export let loading = false;
-	export let fullWidth = false;
-	export let type: HTMLButtonAttributes['type'] = 'button';
-
-	const dispatch = createEventDispatcher();
+	}>();
 
 	function handleClick(event: MouseEvent) {
 		if (!disabled && !loading) {
-			dispatch('click', event);
+			onclick?.(event);
 		}
 	}
 
-	$: buttonClass = [
+	let buttonClass = $derived([
 		'btn',
 		`btn-${variant}`,
 		`btn-${size}`,
@@ -33,21 +38,21 @@
 		disabled && 'btn-disabled'
 	]
 		.filter(Boolean)
-		.join(' ');
+		.join(' '));
 </script>
 
 <button
 	{type}
 	class={buttonClass}
 	{disabled}
-	on:click={handleClick}
-	on:keydown
-	on:keyup
-	on:mouseenter
-	on:mouseleave
-	on:focus
-	on:blur
-	{...$$restProps}
+	onclick={handleClick}
+	{onkeydown}
+	{onkeyup}
+	{onmouseenter}
+	{onmouseleave}
+	{onfocus}
+	{onblur}
+	{...restProps}
 >
 	{#if loading}
 		<span class="btn-spinner" aria-hidden="true" />

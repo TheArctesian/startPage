@@ -1,37 +1,47 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import BaseModal from './base-modal.svelte';
 
-  export let isOpen: boolean = false;
-  export let title: string = '';
-  export let size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'md';
-  export let submitText: string = 'Save';
-  export let cancelText: string = 'Cancel';
-  export let submitDisabled: boolean = false;
-  export let loading: boolean = false;
-  export let closable: boolean = true;
-
-  const dispatch = createEventDispatcher<{
-    submit: void;
-    cancel: void;
-    close: void;
+  let {
+    isOpen = $bindable(false),
+    title = '',
+    size = 'md',
+    submitText = 'Save',
+    cancelText = 'Cancel',
+    submitDisabled = false,
+    loading = false,
+    closable = true,
+    onsubmit,
+    oncancel,
+    onclose
+  } = $props<{
+    isOpen?: boolean;
+    title?: string;
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    submitText?: string;
+    cancelText?: string;
+    submitDisabled?: boolean;
+    loading?: boolean;
+    closable?: boolean;
+    onsubmit?: () => void;
+    oncancel?: () => void;
+    onclose?: () => void;
   }>();
 
-  function handleSubmit(event: Event) {
-    event.preventDefault();
+  function handleSubmit(event?: Event) {
+    event?.preventDefault();
     if (!submitDisabled && !loading) {
-      dispatch('submit');
+      onsubmit?.();
     }
   }
 
   function handleCancel() {
-    dispatch('cancel');
+    oncancel?.();
     close();
   }
 
   function close() {
     isOpen = false;
-    dispatch('close');
+    onclose?.();
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -42,14 +52,14 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 <BaseModal
   {isOpen}
   {title}
   {size}
   {closable}
-  on:close={close}
+  onclose={close}
 >
   <form onsubmit={handleSubmit}>
     <div class="form-content">

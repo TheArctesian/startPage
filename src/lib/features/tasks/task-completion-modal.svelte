@@ -6,48 +6,59 @@
 -->
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import IntensityPicker from '$lib/ui/intensity-picker.svelte';
   import type { TaskWithDetails } from '$lib/types/database';
 
-  export let isOpen = false;
-  export let task: TaskWithDetails | null = null;
+  interface Props {
+    isOpen?: boolean;
+    task?: TaskWithDetails | null;
+    oncomplete?: (event: { task: TaskWithDetails; actualIntensity: number; timeSpent?: number }) => void;
+    oncancel?: () => void;
+  }
 
-  const dispatch = createEventDispatcher<{
-    complete: { task: TaskWithDetails; actualIntensity: number; timeSpent?: number };
-    cancel: void;
-  }>();
+  let {
+    isOpen = $bindable(false),
+    task = null,
+    oncomplete,
+    oncancel
+  }: Props = $props();
 
-  let actualIntensity = 3; // Default to medium intensity
-  let timeSpent: number | null = null;
-  let reflection = '';
-  let isSubmitting = false;
+  let actualIntensity = $state(3); // Default to medium intensity
+  let timeSpent = $state<number | null>(null);
+  let reflection = $state('');
+  let isSubmitting = $state(false);
 
-  // Reset form when task changes
-  $: if (task) {
+  // Reset form when task/modal changes
+  $effect(() => {
+    if (!task || !isOpen) {
+      return;
+    }
+
     actualIntensity = task.estimatedIntensity || 3;
     timeSpent = null;
     reflection = '';
     isSubmitting = false;
-  }
+  });
 
   function handleSubmit() {
     if (!task) return;
     
     isSubmitting = true;
     
-    dispatch('complete', {
+    oncomplete?.({
       task,
       actualIntensity,
       timeSpent: timeSpent || undefined
     });
     
-    handleClose();
+    handleClose(false);
   }
 
-  function handleClose() {
+  function handleClose(triggerCancel: boolean = true) {
     isSubmitting = false;
-    dispatch('cancel');
+    if (triggerCancel) {
+      oncancel?.();
+    }
   }
 
   function handleBackdropClick(event: MouseEvent) {
@@ -65,16 +76,18 @@
     }
   }
 
-  // Calculate time difference if task has start time
-  $: estimatedMinutes = task?.estimatedMinutes || 0;
-  $: actualMinutesDisplay = timeSpent || 0;
-  $: timeDifference = actualMinutesDisplay - estimatedMinutes;
-  $: timeAccuracy = estimatedMinutes > 0 ? 
-    Math.round((1 - Math.abs(timeDifference) / estimatedMinutes) * 100) : 0;
+  // Derived metrics
+  let estimatedMinutes = $derived(task?.estimatedMinutes || 0);
+  let actualMinutesDisplay = $derived(timeSpent || 0);
+  let timeDifference = $derived(actualMinutesDisplay - estimatedMinutes);
+  let timeAccuracy = $derived(
+    estimatedMinutes > 0
+      ? Math.round((1 - Math.abs(timeDifference) / estimatedMinutes) * 100)
+      : 0
+  );
 
-  // Calculate intensity accuracy
-  $: intensityDifference = Math.abs(actualIntensity - (task?.estimatedIntensity || 3));
-  $: intensityAccuracy = Math.round((1 - intensityDifference / 4) * 100);
+  let intensityDifference = $derived(Math.abs(actualIntensity - (task?.estimatedIntensity || 3)));
+  let intensityAccuracy = $derived(Math.round((1 - intensityDifference / 4) * 100));
 </script>
 
 {#if isOpen && task}
@@ -95,7 +108,7 @@
         </h2>
         <button 
           class="close-btn"
-          onclick={handleClose}
+          onclick={() => handleClose()}
           disabled={isSubmitting}
           aria-label="Cancel completion"
         >
@@ -223,7 +236,7 @@
       <div class="completion-footer">
         <button 
           class="btn-cancel"
-          onclick={handleClose}
+          onclick={() => handleClose()}
           disabled={isSubmitting}
         >
           Cancel

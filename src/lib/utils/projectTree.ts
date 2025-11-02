@@ -33,13 +33,26 @@ export function compareProjectsByUpdatedAtDesc<T extends { name?: string; update
 }
 
 /**
+ * Removes circular references (parent properties) from the tree for JSON serialization
+ */
+function removeCircularReferences(nodes: ProjectNode[]): ProjectNode[] {
+  return nodes.map(node => {
+    const { parent, ...nodeWithoutParent } = node;
+    return {
+      ...nodeWithoutParent,
+      children: node.children ? removeCircularReferences(node.children) : []
+    };
+  });
+}
+
+/**
  * Builds a hierarchical tree structure from a flat array of projects
  */
 export function buildProjectTree(projects: ProjectWithDetails[]): ProjectTreeData {
   const flatMap = new Map<number, ProjectNode>();
   const roots: ProjectNode[] = [];
   const pathMap = new Map<string, ProjectNode>();
-  
+
   // First pass: Create all nodes
   for (const project of projects) {
     const node: ProjectNode = {
@@ -51,18 +64,18 @@ export function buildProjectTree(projects: ProjectWithDetails[]): ProjectTreeDat
     };
     flatMap.set(project.id, node);
   }
-  
+
   // Second pass: Build relationships and calculate paths
   for (const project of projects) {
     const node = flatMap.get(project.id)!;
-    
+
     if (project.parentId) {
       const parent = flatMap.get(project.parentId);
       if (parent) {
         parent.children!.push(node);
         parent.hasChildren = true;
         node.parent = parent;
-        
+
         // Build path array and breadcrumb
         node.pathArray = [...parent.pathArray, project.name];
         node.breadcrumb = node.pathArray.join(' > ');
@@ -73,29 +86,32 @@ export function buildProjectTree(projects: ProjectWithDetails[]): ProjectTreeDat
       node.breadcrumb = project.name;
       roots.push(node);
     }
-    
+
     // Add to path map
     pathMap.set(node.breadcrumb, node);
   }
-  
+
   // Sort children within each parent by most recent update
   function sortChildren(nodes: ProjectNode[]) {
     for (const node of nodes) {
       if (node.children && node.children.length > 0) {
-        node.children.sort(compareProjectsByUpdatedAtDesc);
+        node.children.sort(compareProjectsByUpdatedAtDesc as (a: ProjectNode, b: ProjectNode) => number);
         sortChildren(node.children);
       }
     }
   }
-  
+
   // Sort roots and all children
-  roots.sort(compareProjectsByUpdatedAtDesc);
+  roots.sort(compareProjectsByUpdatedAtDesc as (a: ProjectNode, b: ProjectNode) => number);
   sortChildren(roots);
-  
+
   const maxDepth = Math.max(...Array.from(flatMap.values()).map(node => node.depth || 0));
-  
+
+  // Remove circular references from roots for serialization
+  const serializableRoots = removeCircularReferences(roots);
+
   return {
-    roots,
+    roots: serializableRoots,
     flatMap,
     pathMap,
     maxDepth
@@ -301,7 +317,7 @@ export function updatePathsAfterMove(
   
   const updatedNode: ProjectNode = {
     ...node,
-    parent: newParent,
+    parent: newParent || undefined,
     parentId: newParent?.id || null,
     pathArray: newPathArray,
     breadcrumb: newPathArray.join(' > '),

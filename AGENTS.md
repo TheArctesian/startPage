@@ -1,33 +1,32 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `src/routes` contains SvelteKit pages and API endpoints. Page components live alongside their `+page.server.ts` loaders, while REST-style handlers sit under `src/routes/api`.
-- `src/lib` holds reusable code: domain features (`src/lib/features`), UI primitives (`src/lib/ui`), state stores (`src/lib/stores`), server utilities (`src/lib/server`), and shared types (`src/lib/types`). Favor extending these modules before adding new top-level folders.
-- Persistent assets belong in `static/`; database migrations live in `migrations/` and are managed via `drizzle.config.ts`.
+- SvelteKit app keeps pages, `+page.ts`, and request handlers together in `src/routes`, with RESTful endpoints in `src/routes/api`.
+- Share reusable logic under `src/lib`, grouping features, UI primitives, stores, server helpers, and shared types; mirror feature folders for tests (e.g. `src/lib/features/search/search.test.ts`).
+- Persist static assets in `static/`, database migrations in `migrations/`, and manage schema via `drizzle.config.ts`.
+- Update `src/lib/types/database.ts` whenever migrations shift table definitions.
 
 ## Build, Test, and Development Commands
-- `yarn dev` — starts the Vite dev server with hot module reloading.
-- `yarn build` and `yarn preview` — produce and inspect the production bundle.
-- `yarn check` or `yarn check:watch` — run SvelteKit sync plus `svelte-check` for type and template validation.
-- `yarn format` / `yarn lint` — apply or verify Prettier formatting (includes Svelte and Tailwind plugins).
-- `yarn db:generate`, `yarn db:push`, `yarn db:migrate`, `yarn db:studio` — manage Drizzle ORM schema and migrations.
+- `yarn dev` – run the Vite dev server with hot reloading mirroring production routes.
+- `yarn build` then `yarn preview` – compile the production bundle and sanity-check locally.
+- `yarn check` / `yarn check:watch` – run SvelteKit sync plus `svelte-check` for type and template validation.
+- `yarn lint` and `yarn format` – verify or apply Prettier formatting with Svelte and Tailwind plugins.
+- Database routines: `yarn db:generate`, `yarn db:push`, `yarn db:migrate`, `yarn db:studio`.
 
 ## Coding Style & Naming Conventions
-- Prettier enforces 2-space indentation and ordering rules; run `yarn format` before pushing.
-- Svelte components use PascalCase filenames, stores/utilities favor camelCase, and constants stay SCREAMING_SNAKE_CASE.
-- Co-locate component-specific styles in the Svelte file; shared styles belong in `src/lib/styles`.
-- Keep server-only logic inside `src/lib/server` to avoid bundling secrets in the client build.
+- Prettier enforces two-space indentation, import ordering, and Tailwind class sorting; run `yarn format` before pushing.
+- Use PascalCase for Svelte components, camelCase for stores/utilities, and SCREAMING_SNAKE_CASE for constants.
+- Co-locate component styles in the `.svelte` file; put shared tokens in `src/lib/styles`. Keep server-only code inside `src/lib/server`.
 
 ## Testing Guidelines
-- Automated UI tests are not in place yet; rely on `yarn check` and targeted unit tests for utilities when adding coverage.
-- When contributing tests, mirror the feature’s folder (e.g., `src/lib/utils/time.test.ts`) and use descriptive `it('handles paused timers')` phrasing.
-- Document manual verification steps in your PR when touching critical routes (`src/routes/project`, `src/routes/api`).
+- Lean on `yarn check` for type safety until UI automation arrives; add co-located tests as `*.test.ts` beside source files.
+- Favor descriptive test names such as `it('handles paused timers')`; document manual verification for sensitive flows (`src/routes/project`, `src/routes/api`).
 
 ## Commit & Pull Request Guidelines
-- Prefer concise, imperative commit subjects (`Add timer pause guard`) over conversational notes seen in legacy history.
-- Each PR should outline the intent, highlight migrations or breaking changes, and link the relevant issue. Include screenshots or GIFs for UI changes and note any new environment variables.
-- Ensure CI prerequisites (`yarn check`, `yarn lint`, required DB migrations) succeed locally before requesting review.
+- Prefer imperative commit messages (`Add timer pause guard`) and keep them concise.
+- PRs should state intent, note migrations or breaking changes, link issues, and include screenshots or GIFs for UI updates.
+- Confirm `yarn check`, `yarn lint`, and relevant database commands succeed before requesting review.
 
-## Database & Configuration Tips
-- Configure environment secrets via `.env` (mirrored in `.env.example` when you add new keys). Never commit real credentials.
-- Evolving the schema? Update `src/lib/types/database.ts` alongside Drizzle migrations to keep type inference current.
+## Security & Configuration Tips
+- Store secrets in `.env` and mirror placeholders in `.env.example`; never commit real credentials.
+- Centralize server integrations in `src/lib/server` to avoid leaking sensitive logic into the client bundle.

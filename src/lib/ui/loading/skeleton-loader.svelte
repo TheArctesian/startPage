@@ -1,21 +1,30 @@
 <script lang="ts">
-	export let variant: 'text' | 'card' | 'button' | 'avatar' | 'custom' = 'text';
-	export let width = '100%';
-	export let height = 'auto';
-	export let count = 1;
-	export let animate = true;
-	export let rounded = false;
+	let {
+		variant = 'text',
+		width = '100%',
+		height = 'auto',
+		count = 1,
+		animate = true,
+		rounded = false
+	} = $props<{
+		variant?: 'text' | 'card' | 'button' | 'avatar' | 'custom';
+		width?: string;
+		height?: string;
+		count?: number;
+		animate?: boolean;
+		rounded?: boolean;
+	}>();
 
-	$: skeletonClass = [
+	let skeletonClass = $derived([
 		'skeleton',
 		`skeleton-${variant}`,
 		animate && 'skeleton-animate',
 		rounded && 'skeleton-rounded'
 	]
 		.filter(Boolean)
-		.join(' ');
+		.join(' '));
 
-	$: customStyle = variant === 'custom' ? `width: ${width}; height: ${height};` : '';
+	let customStyle = $derived(variant === 'custom' ? `width: ${width}; height: ${height};` : '');
 </script>
 
 <div class="skeleton-container">
@@ -114,17 +123,6 @@
 		border: 1px solid var(--nord3);
 		border-radius: var(--radius-lg);
 		margin-bottom: 0.75rem;
-	}
-
-	.skeleton-task-card .skeleton-text:first-child {
-		height: 1.25rem;
-		width: 70%;
-	}
-
-	.skeleton-task-card .skeleton-text:nth-child(2) {
-		height: 0.875rem;
-		width: 40%;
-		opacity: 0.7;
 	}
 
 	/* Column skeleton */

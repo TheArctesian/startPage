@@ -1,30 +1,35 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import ProjectRow from './project-row.svelte';
   import type { ProjectWithDetails, ProjectStatus } from '$lib/types/database';
   import { navigateToProject } from '$lib/utils/navigation';
   import { compareProjectsByUpdatedAtDesc } from '$lib/utils/projectTree';
 
-  export let projects: ProjectWithDetails[] = [];
-  export let isLoading = false;
-  export let canEdit: boolean = false;
-  export let isAuthenticated: boolean = false;
-
-  const dispatch = createEventDispatcher<{
-    statusChange: { project: ProjectWithDetails; newStatus: ProjectStatus };
-    projectEdit: { project: ProjectWithDetails };
+  let {
+    projects = [],
+    isLoading = false,
+    canEdit = false,
+    isAuthenticated = false,
+    onstatuschange,
+    onprojectedit
+  } = $props<{
+    projects?: ProjectWithDetails[];
+    isLoading?: boolean;
+    canEdit?: boolean;
+    isAuthenticated?: boolean;
+    onstatuschange?: (event: { project: ProjectWithDetails; newStatus: ProjectStatus }) => void;
+    onprojectedit?: (event: { project: ProjectWithDetails }) => void;
   }>();
 
-  // Group projects by status for organized display
-  $: projectsByStatus = projects.reduce((acc, project) => {
-    const status = project.status || 'active';
-    if (!acc[status]) acc[status] = [];
-    acc[status].push(project);
-    return acc;
-  }, {} as Record<ProjectStatus, ProjectWithDetails[]>);
+  const projectsByStatus = $derived(
+    projects.reduce((acc, project) => {
+      const status = project.status || 'active';
+      if (!acc[status]) acc[status] = [];
+      acc[status].push(project);
+      return acc;
+    }, {} as Record<ProjectStatus, ProjectWithDetails[]>)
+  );
 
-  // Build hierarchical structure for each status group
-  $: hierarchicalProjects = buildHierarchy(projects);
+  const hierarchicalProjects = $derived(buildHierarchy(projects));
 
   function buildHierarchy(allProjects: ProjectWithDetails[]) {
     const projectMap = new Map<number, ProjectWithDetails & { children: ProjectWithDetails[] }>();
@@ -67,12 +72,12 @@
     await navigateToProject(project);
   }
 
-  function handleStatusChange(event: CustomEvent<{ project: ProjectWithDetails; newStatus: ProjectStatus }>) {
-    dispatch('statusChange', event.detail);
+  function handleStatusChange(event: { project: ProjectWithDetails; newStatus: ProjectStatus }) {
+    onstatuschange?.(event);
   }
 
-  function handleProjectEdit(event: CustomEvent<{ project: ProjectWithDetails }>) {
-    dispatch('projectEdit', event.detail);
+  function handleProjectEdit(event: { project: ProjectWithDetails }) {
+    onprojectedit?.(event);
   }
 </script>
 
@@ -120,9 +125,9 @@
           depth={0}
           {canEdit}
           {isAuthenticated}
-          on:click={() => handleProjectClick(project)}
-          on:statusChange={handleStatusChange}
-          on:edit={handleProjectEdit}
+          onclick={() => handleProjectClick(project)}
+          onstatuschange={(detail) => handleStatusChange(detail)}
+          onedit={(detail) => handleProjectEdit(detail)}
         />
       {/each}
     {/if}

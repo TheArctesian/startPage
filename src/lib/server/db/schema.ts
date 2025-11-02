@@ -7,7 +7,8 @@ import {
   timestamp,
   boolean,
   pgEnum,
-  unique
+  unique,
+  type PgTableWithColumns
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -33,7 +34,7 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-export const projects = pgTable('projects', {
+export const projects: PgTableWithColumns<any> = pgTable('projects', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),

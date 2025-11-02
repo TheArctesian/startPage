@@ -7,73 +7,82 @@
 -->
 
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	import Icon from '$lib/ui/icon.svelte';
+  import Icon from '$lib/ui/icon.svelte';
 
-	// Props
-	export let currentIndex = 0;
-	export let totalColumns = 3;
-	export let columnTitles: string[] = ['Todo', 'In Progress', 'Done'];
+  // Props
+  let {
+    currentIndex: currentIndexProp = 0,
+    totalColumns = 3,
+    columnTitles = ['Todo', 'In Progress', 'Done'],
+    onnavigate
+  } = $props<{
+    currentIndex?: number;
+    totalColumns?: number;
+    columnTitles?: string[];
+    onnavigate?: (event: { index: number }) => void;
+  }>();
 
-	const dispatch = createEventDispatcher<{
-		navigate: { index: number };
-	}>();
+  let currentIndex = $state(currentIndexProp);
 
-	// Touch/swipe state
-	let touchStartX = 0;
-	let touchEndX = 0;
-	let isSwiping = false;
-	let swipeOffset = 0;
+  $effect(() => {
+    currentIndex = currentIndexProp;
+  });
 
-	// Navigation handlers
-	function goToColumn(index: number) {
-		if (index >= 0 && index < totalColumns) {
-			currentIndex = index;
-			dispatch('navigate', { index });
-		}
-	}
+  // Touch/swipe state
+  let touchStartX = 0;
+  let touchEndX = 0;
+  let isSwiping = false;
+  let swipeOffset = 0;
 
-	function goToPrevious() {
-		goToColumn(currentIndex - 1);
-	}
+  // Navigation handlers
+  function goToColumn(index: number) {
+    if (index >= 0 && index < totalColumns) {
+      currentIndex = index;
+      onnavigate?.({ index });
+    }
+  }
 
-	function goToNext() {
-		goToColumn(currentIndex + 1);
-	}
+  function goToPrevious() {
+    goToColumn(currentIndex - 1);
+  }
 
-	// Touch handlers
-	function handleTouchStart(event: TouchEvent) {
-		touchStartX = event.touches[0].clientX;
-		isSwiping = true;
-		swipeOffset = 0;
-	}
+  function goToNext() {
+    goToColumn(currentIndex + 1);
+  }
 
-	function handleTouchMove(event: TouchEvent) {
-		if (!isSwiping) return;
-		
-		touchEndX = event.touches[0].clientX;
-		swipeOffset = touchEndX - touchStartX;
-		
-		// Prevent default scrolling during swipe
-		if (Math.abs(swipeOffset) > 10) {
-			event.preventDefault();
-		}
-	}
+  // Touch handlers
+  function handleTouchStart(event: TouchEvent) {
+    touchStartX = event.touches[0].clientX;
+    isSwiping = true;
+    swipeOffset = 0;
+  }
 
-	function handleTouchEnd() {
-		if (!isSwiping) return;
-		
-		isSwiping = false;
-		const swipeThreshold = 50;
-		
-		if (swipeOffset > swipeThreshold) {
-			goToPrevious();
-		} else if (swipeOffset < -swipeThreshold) {
-			goToNext();
-		}
-		
-		swipeOffset = 0;
-	}
+  function handleTouchMove(event: TouchEvent) {
+    if (!isSwiping) return;
+
+    touchEndX = event.touches[0].clientX;
+    swipeOffset = touchEndX - touchStartX;
+
+    // Prevent default scrolling during swipe
+    if (Math.abs(swipeOffset) > 10) {
+      event.preventDefault();
+    }
+  }
+
+  function handleTouchEnd() {
+    if (!isSwiping) return;
+
+    isSwiping = false;
+    const swipeThreshold = 50;
+
+    if (swipeOffset > swipeThreshold) {
+      goToPrevious();
+    } else if (swipeOffset < -swipeThreshold) {
+      goToNext();
+    }
+
+    swipeOffset = 0;
+  }
 </script>
 
 <!-- Mobile Column Navigation -->
@@ -81,9 +90,9 @@
 	<!-- Swipe Area -->
 	<div 
 		class="relative touch-pan-y"
-		on:touchstart={handleTouchStart}
-		on:touchmove={handleTouchMove}
-		on:touchend={handleTouchEnd}
+		ontouchstart={handleTouchStart}
+		ontouchmove={handleTouchMove}
+		ontouchend={handleTouchEnd}
 		role="tablist"
 		aria-label="Kanban columns"
 	>
@@ -93,7 +102,7 @@
 			<button
 				class="p-2 rounded-lg border border-nord-comment hover:border-nord-frost-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				disabled={currentIndex === 0}
-				on:click={goToPrevious}
+				onclick={goToPrevious}
 				aria-label="Previous column"
 			>
 				<Icon name="chevron-left" size="sm" />
@@ -110,7 +119,7 @@
 							class="w-2 h-2 rounded-full transition-all duration-200"
 							class:bg-nord-frost-500={index === currentIndex}
 							class:bg-nord-comment={index !== currentIndex}
-							on:click={() => goToColumn(index)}
+							onclick={() => goToColumn(index)}
 							aria-label="Go to {columnTitles[index] || `column ${index + 1}`}"
 							role="tab"
 							aria-selected={index === currentIndex}
@@ -123,7 +132,7 @@
 			<button
 				class="p-2 rounded-lg border border-nord-comment hover:border-nord-frost-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				disabled={currentIndex === totalColumns - 1}
-				on:click={goToNext}
+				onclick={goToNext}
 				aria-label="Next column"
 			>
 				<Icon name="chevron-right" size="sm" />

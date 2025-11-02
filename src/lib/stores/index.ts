@@ -2,7 +2,6 @@ import { writable, derived } from 'svelte/store';
 import type {
   Project,
   Task,
-  TimeSession,
   QuickLink,
   ProjectWithDetails,
   TaskWithDetails,
@@ -12,7 +11,8 @@ import type {
 // Core data stores
 export const projects = writable<Project[]>([]);
 export const tasks = writable<Task[]>([]);
-export const timeSessions = writable<TimeSession[]>([]);
+// timeSessions feature not yet implemented in schema
+// export const timeSessions = writable<TimeSession[]>([]);
 export const quickLinks = writable<QuickLink[]>([]);
 
 // Active selections
@@ -97,5 +97,7 @@ export const projectStats = derived(
 );
 
 // Export store actions for external use
-export * from './actions';
+export * from './projectActions';
+export * from './taskActions';
+export * from './quickLinkActions';
 export * from './persistence';

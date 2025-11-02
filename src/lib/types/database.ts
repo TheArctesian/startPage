@@ -82,7 +82,9 @@ export interface ProjectWithDetails extends Project {
 }
 
 // Auth-related extended types
-export interface UserWithDetails extends User {
+export type PublicUser = Omit<User, 'passwordHash'>;
+
+export interface UserWithDetails extends Omit<User, 'projectAccess'> {
   projectAccess?: ProjectUserWithDetails[];
   authSessions?: AuthSession[];
   userActivities?: UserActivity[];

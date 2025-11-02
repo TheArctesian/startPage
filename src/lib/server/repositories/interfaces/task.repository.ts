@@ -49,10 +49,10 @@ export interface UpdateTaskDTO {
   estimatedIntensity?: number;
   actualMinutes?: number | null;
   actualIntensity?: number | null;
-  dueDate?: string | null;
+  dueDate?: Date | null;
   boardColumn?: string;
   position?: number;
-  completedAt?: string | null;
+  completedAt?: Date | null;
 }
 
 /**

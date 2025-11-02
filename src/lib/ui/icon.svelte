@@ -1,18 +1,20 @@
 <script lang="ts">
-	export let name: string;
-	export let size: number | string = 16;
-	export let color = 'currentColor';
-	export let strokeWidth = 2;
+	let { name, size = 16, color = 'currentColor', strokeWidth = 2 } = $props<{
+		name: string;
+		size?: number | string;
+		color?: string;
+		strokeWidth?: number;
+	}>();
 
 	// Convert size prop to number for consistent handling
-	$: iconSize = typeof size === 'string' 
-		? size === 'xs' ? 12 
-		: size === 'sm' ? 16 
-		: size === 'md' ? 20 
-		: size === 'lg' ? 24 
-		: size === 'xl' ? 32 
-		: 16 
-		: size;
+	let iconSize = $derived(typeof size === 'string'
+		? size === 'xs' ? 12
+		: size === 'sm' ? 16
+		: size === 'md' ? 20
+		: size === 'lg' ? 24
+		: size === 'xl' ? 32
+		: 16
+		: size);
 </script>
 
 {#if name === 'edit'}

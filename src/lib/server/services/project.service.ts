@@ -228,7 +228,7 @@ export class ProjectService {
 	 * Get project statistics
 	 */
 	async getProjectStats(projectId: number) {
-		return this.projectRepository.getStatsByProject(projectId);
+		return this.projectRepository.getStats(projectId, true);
 	}
 
 	/**
@@ -236,19 +236,19 @@ export class ProjectService {
 	 */
 	async getMultiProjectStats(projectIds: number[]) {
 		const stats = await Promise.all(
-			projectIds.map((id) => this.projectRepository.getStatsByProject(id))
+			projectIds.map((id) => this.projectRepository.getStats(id, true))
 		);
 
 		return {
 			totalProjects: projectIds.length,
-			totalTasks: stats.reduce((sum, s) => sum + s.totalTasks, 0),
-			totalCompleted: stats.reduce((sum, s) => sum + s.completedTasks, 0),
-			totalInProgress: stats.reduce((sum, s) => sum + s.inProgressTasks, 0),
-			totalTodo: stats.reduce((sum, s) => sum + s.todoTasks, 0),
-			totalTimeSpent: stats.reduce((sum, s) => sum + (s.totalTimeSpent || 0), 0),
+			totalTasks: stats.reduce((sum: number, s) => sum + s.totalTasks, 0),
+			totalCompleted: stats.reduce((sum: number, s) => sum + s.completedTasks, 0),
+			totalInProgress: stats.reduce((sum: number, s) => sum + s.inProgressTasks, 0),
+			totalTodo: stats.reduce((sum: number, s) => sum + (s.totalTasks - s.completedTasks - s.inProgressTasks), 0),
+			totalTimeSpent: stats.reduce((sum: number, s) => sum + s.totalMinutes, 0),
 			averageCompletion:
 				stats.length > 0
-					? stats.reduce((sum, s) => sum + (s.completionRate || 0), 0) / stats.length
+					? stats.reduce((sum: number, s) => sum + ((s.completedTasks / (s.totalTasks || 1)) * 100), 0) / stats.length
 					: 0
 		};
 	}
@@ -307,8 +307,9 @@ export class ProjectService {
 		const hasActiveSubprojects = children.some((c) => c.status === 'active');
 
 		// Check if has active tasks
-		const stats = await this.projectRepository.getStatsByProject(projectId);
-		const hasActiveTasks = stats.inProgressTasks > 0 || stats.todoTasks > 0;
+		const stats = await this.projectRepository.getStats(projectId, true);
+		const todoTasks = stats.totalTasks - stats.completedTasks - stats.inProgressTasks;
+		const hasActiveTasks = stats.inProgressTasks > 0 || todoTasks > 0;
 
 		return ProjectBusinessRules.canArchive(hasActiveSubprojects, hasActiveTasks);
 	}

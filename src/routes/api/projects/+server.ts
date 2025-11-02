@@ -44,7 +44,7 @@ export const GET: RequestHandler = async ({ url, locals, getClientAddress }) => 
 
       // Apply conditions
       if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        query = query.where(and(...conditions)) as any;
       }
 
       projectList = await query.orderBy(projects.depth, projects.name);

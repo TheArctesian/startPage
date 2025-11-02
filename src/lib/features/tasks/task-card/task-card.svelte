@@ -1,29 +1,52 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import TaskCardDisplay from './task-card-display.svelte';
   import TaskCardActions from './task-card-actions.svelte';
   import TaskCardDraggable from './task-card-draggable.svelte';
   import type { TaskWithDetails } from '$lib/types/database';
 
-  export let task: TaskWithDetails;
-  export let variant: 'compact' | 'detailed' | 'kanban' = 'detailed';
-  export let selectable: boolean = false;
-  export let selected: boolean = false;
-  export let showTimer: boolean = true;
-  export let showProject: boolean = false;
-  export let draggable: boolean = false;
-  
-  // Permission props
-  export let canEdit: boolean = false;
-  export let isAuthenticated: boolean = false;
-
-  // Callback props
-  export let onEdit: ((task: TaskWithDetails) => void) | undefined = undefined;
-  export let onDelete: ((task: TaskWithDetails) => void) | undefined = undefined;
-  export let onStatusChange: ((task: TaskWithDetails, status: string) => void) | undefined = undefined;
+  let {
+    task,
+    variant = 'detailed',
+    selectable = false,
+    selected = false,
+    showTimer = true,
+    showProject = false,
+    draggable = false,
+    canEdit = false,
+    isAuthenticated = false,
+    onEdit = undefined,
+    onDelete = undefined,
+    onStatusChange = undefined,
+    onselect,
+    onedit,
+    ondelete,
+    onmove,
+    ondragstart,
+    ondragend
+  } = $props<{
+    task: TaskWithDetails;
+    variant?: 'compact' | 'detailed' | 'kanban';
+    selectable?: boolean;
+    selected?: boolean;
+    showTimer?: boolean;
+    showProject?: boolean;
+    draggable?: boolean;
+    canEdit?: boolean;
+    isAuthenticated?: boolean;
+    onEdit?: (task: TaskWithDetails) => void;
+    onDelete?: (task: TaskWithDetails) => void;
+    onStatusChange?: (task: TaskWithDetails, status: string) => void;
+    onselect?: (event: { task: TaskWithDetails }) => void;
+    onedit?: (event: { task: TaskWithDetails }) => void;
+    ondelete?: (event: { task: TaskWithDetails }) => void;
+    onmove?: (event: { task: TaskWithDetails; newStatus: 'todo' | 'in_progress' | 'done' }) => void;
+    ondragstart?: (event: { task: TaskWithDetails; event: DragEvent }) => void;
+    ondragend?: (event: { task: TaskWithDetails; event: DragEvent }) => void;
+  }>();
 
   // Mobile detection
-  let isMobile = false;
+  let isMobile = $state(false);
 
   const MOBILE_BREAKPOINT = 640;
 
@@ -36,38 +59,28 @@
     return () => window.removeEventListener('resize', handleResize);
   });
 
-  const dispatch = createEventDispatcher<{
-    select: { task: TaskWithDetails };
-    edit: { task: TaskWithDetails };
-    complete: { task: TaskWithDetails };
-    delete: { task: TaskWithDetails };
-    move: { task: TaskWithDetails; newStatus: 'todo' | 'in_progress' | 'done' };
-    dragstart: { task: TaskWithDetails; event: DragEvent };
-    dragend: { task: TaskWithDetails; event: DragEvent };
-  }>();
-
-  function handleSelect(event: CustomEvent) {
-    dispatch('select', event.detail);
+  function handleSelect(detail: { task: TaskWithDetails }) {
+    onselect?.(detail);
   }
 
-  function handleEdit(event: CustomEvent) {
-    dispatch('edit', event.detail);
+  function handleEdit(detail: { task: TaskWithDetails }) {
+    onedit?.(detail);
   }
 
-  function handleDelete(event: CustomEvent) {
-    dispatch('delete', event.detail);
+  function handleDelete(detail: { task: TaskWithDetails }) {
+    ondelete?.(detail);
   }
 
-  function handleMove(event: CustomEvent) {
-    dispatch('move', event.detail);
+  function handleMove(detail: { task: TaskWithDetails; newStatus: 'todo' | 'in_progress' | 'done' }) {
+    onmove?.(detail);
   }
 
-  function handleDragStart(event: CustomEvent) {
-    dispatch('dragstart', event.detail);
+  function handleDragStart(detail: { task: TaskWithDetails; event: DragEvent }) {
+    ondragstart?.(detail);
   }
 
-  function handleDragEnd(event: CustomEvent) {
-    dispatch('dragend', event.detail);
+  function handleDragEnd(detail: { task: TaskWithDetails; event: DragEvent }) {
+    ondragend?.(detail);
   }
 </script>
 
@@ -75,9 +88,9 @@
   {task}
   {draggable}
   {selectable}
-  on:select={handleSelect}
-  on:dragstart={handleDragStart}
-  on:dragend={handleDragEnd}
+  onselect={handleSelect}
+  ondragstart={handleDragStart}
+  ondragend={handleDragEnd}
 >
   <div class="task-card" class:selected>
     <TaskCardDisplay 
@@ -96,9 +109,9 @@
       {onEdit}
       {onDelete}
       {onStatusChange}
-      on:edit={handleEdit}
-      on:delete={handleDelete}
-      on:move={handleMove}
+      onedit={handleEdit}
+      ondelete={handleDelete}
+      onmove={handleMove}
     />
   </div>
 </TaskCardDraggable>

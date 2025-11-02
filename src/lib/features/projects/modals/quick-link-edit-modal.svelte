@@ -1,24 +1,28 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { QuickLink, LinkCategory } from '$lib/types/database';
 
-	export let isOpen = false;
-	export let link: QuickLink | null = null;
-
-	const dispatch = createEventDispatcher<{
-		close: void;
-		updated: { link: QuickLink };
-		deleted: { linkId: number };
+	let {
+		isOpen = false,
+		link = null,
+		onclose,
+		onupdated,
+		ondeleted
+	} = $props<{
+		isOpen?: boolean;
+		link?: QuickLink | null;
+		onclose?: () => void;
+		onupdated?: (event: { link: QuickLink }) => void;
+		ondeleted?: (event: { linkId: number }) => void;
 	}>();
 
 	// Form state
-	let editTitle = '';
-	let editUrl = '';
-	let editIcon = '';
-	let editCategory: LinkCategory = 'docs';
-	let isUpdating = false;
-	let isDeleting = false;
-	let showDeleteConfirm = false;
+	let editTitle = $state('');
+	let editUrl = $state('');
+	let editIcon = $state('');
+	let editCategory = $state<LinkCategory>('docs');
+	let isUpdating = $state(false);
+	let isDeleting = $state(false);
+	let showDeleteConfirm = $state(false);
 
 	// Category definitions
 	const categories = [
@@ -37,13 +41,15 @@
 	};
 
 	// Initialize form when link changes
-	$: if (link && isOpen) {
-		editTitle = link.title;
-		editUrl = link.url;
-		editIcon = link.icon || '';
-		editCategory = link.category || 'docs';
-		showDeleteConfirm = false;
-	}
+	$effect(() => {
+		if (link && isOpen) {
+			editTitle = link.title;
+			editUrl = link.url;
+			editIcon = link.icon || '';
+			editCategory = link.category || 'docs';
+			showDeleteConfirm = false;
+		}
+	});
 
 	// Handle backdrop click
 	function handleBackdropClick(event: MouseEvent) {
@@ -56,7 +62,7 @@
 	function handleClose() {
 		if (isUpdating || isDeleting) return;
 		showDeleteConfirm = false;
-		dispatch('close');
+		onclose?.();
 	}
 
 	// Handle update submission
@@ -84,7 +90,7 @@
 			}
 
 			const updatedLink = await response.json();
-			dispatch('updated', { link: updatedLink });
+			onupdated?.({ link: updatedLink });
 		} catch (error) {
 			console.error('Error updating quick link:', error);
 			alert('Failed to update quick link. Please try again.');
@@ -113,7 +119,7 @@
 				throw new Error(error.error || 'Failed to delete quick link');
 			}
 
-			dispatch('deleted', { linkId: link.id });
+			ondeleted?.({ linkId: link.id });
 		} catch (error) {
 			console.error('Error deleting quick link:', error);
 			alert('Failed to delete quick link. Please try again.');
@@ -168,7 +174,9 @@
 	}
 
 	// Update URL as user types
-	$: editUrl = normalizeUrl(editUrl);
+	$effect(() => {
+		editUrl = normalizeUrl(editUrl);
+	});
 </script>
 
 {#if isOpen && link}

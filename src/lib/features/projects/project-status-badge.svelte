@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { ProjectStatus } from '$lib/types/database';
 
-  export let status: ProjectStatus;
+  let { status } = $props<{ status: ProjectStatus }>();
 
-  $: statusConfig = getStatusConfig(status);
+  const statusConfig = $derived(getStatusConfig(status));
 
   function getStatusConfig(status: ProjectStatus) {
     switch (status) {

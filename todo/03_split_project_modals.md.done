@@ -1,0 +1,211 @@
+# TODO 03 — Split Project Modals
+
+## Goal
+`src/lib/features/projects/modals/project-edit-modal.svelte` is 1,052 lines. Split it.
+
+## Current Problems
+- Form UI + validation + API calls + permission management all in one file
+- 300 lines just for listing/adding/removing users
+- Parent project lookup duplicated
+- Can't reuse anything
+
+## What To Do
+Split into smaller files.
+
+### Create These Components
+
+**`src/lib/features/projects/ProjectEditForm.svelte`** (~250 lines)
+- Name, description, status, parent project fields
+- Form validation
+- Save/cancel buttons
+- Props: `{ project, onSave, onCancel }`
+
+```svelte
+<script lang="ts">
+  import { updateProject } from '$lib/api/projects';
+  import { addToast } from '$lib/stores/toasts';
+
+  let { project, onSave, onCancel } = $props();
+
+  let form = $state({
+    name: project.name,
+    description: project.description || '',
+    status: project.status,
+    parentId: project.parentId || null
+  });
+
+  let errors = $state<Record<string, string>>({});
+
+  function validate() {
+    errors = {};
+    if (!form.name.trim()) errors.name = 'Name is required';
+    if (form.name.length > 100) errors.name = 'Name too long';
+    return Object.keys(errors).length === 0;
+  }
+
+  async function handleSubmit() {
+    if (!validate()) return;
+
+    try {
+      const updated = await updateProject(project.id, form);
+      addToast('Project updated', 'success');
+      onSave(updated);
+    } catch (err) {
+      addToast('Failed to update project', 'error');
+    }
+  }
+</script>
+
+<!-- Form UI here -->
+```
+
+**`src/lib/features/projects/ProjectPermissionsPanel.svelte`** (~250 lines)
+- List current users with permissions
+- Add new user by email
+- Remove user button
+- Props: `{ projectId }`
+
+```svelte
+<script lang="ts">
+  import { fetchProjectUsers, addProjectUser, removeProjectUser } from '$lib/api/projects';
+  import { addToast } from '$lib/stores/toasts';
+  import { onMount } from 'svelte';
+
+  let { projectId } = $props();
+
+  let users = $state<ProjectUser[]>([]);
+  let loading = $state(true);
+  let newUserEmail = $state('');
+  let newUserPermission = $state<PermissionLevel>('read');
+
+  onMount(async () => {
+    try {
+      users = await fetchProjectUsers(projectId);
+    } catch (err) {
+      addToast('Failed to load users', 'error');
+    } finally {
+      loading = false;
+    }
+  });
+
+  async function handleAddUser() {
+    try {
+      await addProjectUser(projectId, newUserEmail, newUserPermission);
+      users = await fetchProjectUsers(projectId);
+      newUserEmail = '';
+      addToast('User added', 'success');
+    } catch (err) {
+      addToast('Failed to add user', 'error');
+    }
+  }
+
+  async function handleRemoveUser(userId: number) {
+    if (!confirm('Remove this user?')) return;
+    try {
+      await removeProjectUser(projectId, userId);
+      users = users.filter(u => u.id !== userId);
+      addToast('User removed', 'success');
+    } catch (err) {
+      addToast('Failed to remove user', 'error');
+    }
+  }
+</script>
+
+<!-- Users list UI here -->
+```
+
+**`src/lib/features/projects/ParentProjectSelector.svelte`** (~100 lines)
+- Dropdown/combobox for selecting parent project
+- Loads projects, filters out current project and descendants
+- Props: `{ currentProjectId, value, onChange }`
+
+```svelte
+<script lang="ts">
+  import { fetchProjects } from '$lib/api/projects';
+  import { onMount } from 'svelte';
+
+  let { currentProjectId, value = $bindable(), onChange } = $props();
+
+  let projects = $state<Project[]>([]);
+
+  onMount(async () => {
+    const allProjects = await fetchProjects();
+    // Filter out current project and its descendants
+    projects = allProjects.filter(p =>
+      p.id !== currentProjectId &&
+      !isDescendantOf(p.id, currentProjectId, allProjects)
+    );
+  });
+
+  function isDescendantOf(projectId: number, ancestorId: number, allProjects: Project[]): boolean {
+    // Tree traversal logic from projectTree.ts
+    // ...
+  }
+</script>
+
+<select bind:value onchange={onChange}>
+  <option value={null}>No parent</option>
+  {#each projects as project}
+    <option value={project.id}>{project.name}</option>
+  {/each}
+</select>
+```
+
+**Update `project-edit-modal.svelte`** (~200 lines)
+- Now just a modal wrapper with tabs
+- Basic info tab → uses ProjectEditForm
+- Permissions tab → uses ProjectPermissionsPanel
+- No business logic, just composition
+
+```svelte
+<script lang="ts">
+  import ProjectEditForm from './ProjectEditForm.svelte';
+  import ProjectPermissionsPanel from './ProjectPermissionsPanel.svelte';
+
+  let { project, open, onClose } = $props();
+
+  let activeTab = $state<'info' | 'permissions'>('info');
+</script>
+
+{#if open}
+  <div class="modal">
+    <div class="tabs">
+      <button class:active={activeTab === 'info'} onclick={() => activeTab = 'info'}>
+        Info
+      </button>
+      <button class:active={activeTab === 'permissions'} onclick={() => activeTab = 'permissions'}>
+        Permissions
+      </button>
+    </div>
+
+    {#if activeTab === 'info'}
+      <ProjectEditForm {project} onSave={onClose} onCancel={onClose} />
+    {:else}
+      <ProjectPermissionsPanel projectId={project.id} />
+    {/if}
+  </div>
+{/if}
+```
+
+## What NOT To Do
+- Don't create a "projectAdminStore"
+- Don't extract validation to a shared schema yet (wait for TODO 08)
+- Don't create a "ProjectAdminService"
+- Just split the file
+
+## Acceptance Criteria
+- `project-edit-modal.svelte` < 300 lines
+- Each extracted component < 300 lines
+- All components use API wrappers from TODO 01
+- Editing project info still works
+- Managing permissions still works
+- Parent project selection still works
+
+## Test It
+- Open project edit modal
+- Edit name, description, status
+- Change parent project
+- Switch to permissions tab
+- Add a user
+- Remove a user
+- Everything should work

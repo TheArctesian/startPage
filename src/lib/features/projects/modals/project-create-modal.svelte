@@ -1,25 +1,28 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
 	import { createProject, loadProjects, projects } from '$lib/stores';
 	import { toasts } from '$lib/stores/toasts';
 	import type { NewProject, ProjectWithDetails } from '$lib/types/database';
 
-	export let isOpen = false;
-	export let defaultParentId: number | null = null;
-
-	const dispatch = createEventDispatcher<{
-		close: void;
-		created: { project: ProjectWithDetails };
+	let {
+		isOpen = $bindable(false),
+		defaultParentId = null,
+		onclose,
+		oncreated
+	} = $props<{
+		isOpen?: boolean;
+		defaultParentId?: number | null;
+		onclose?: () => void;
+		oncreated?: (event: { project: ProjectWithDetails }) => void;
 	}>();
 
 	// Form state
-	let projectName = '';
-	let projectDescription = '';
-	let projectColor = '--nord8';
-	let projectParentId: number | null = null;
-	let isPrivate = false;
-	let isCreating = false;
-	let errorMessage = '';
+	let projectName = $state('');
+	let projectDescription = $state('');
+	let projectColor = $state('--nord8');
+	let projectParentId = $state<number | null>(null);
+	let isPrivate = $state(false);
+	let isCreating = $state(false);
+	let errorMessage = $state('');
 
 	// Color options for projects
 	const colorOptions = [
@@ -35,17 +38,19 @@
 
 
 	// Get available parent projects
-	$: availableParents = $projects.filter(p => p.id !== defaultParentId);
+	const availableParents = $derived($projects.filter(p => p.id !== defaultParentId));
 
 	// Reset form when modal opens
-	$: if (isOpen) {
-		projectName = '';
-		projectDescription = '';
-		projectColor = '--nord8';
-		projectParentId = defaultParentId;
-		isPrivate = false;
-		errorMessage = '';
-	}
+	$effect(() => {
+		if (isOpen) {
+			projectName = '';
+			projectDescription = '';
+			projectColor = '--nord8';
+			projectParentId = defaultParentId;
+			isPrivate = false;
+			errorMessage = '';
+		}
+	});
 
 	// Handle backdrop click
 	function handleBackdropClick(event: MouseEvent) {
@@ -57,7 +62,7 @@
 	// Handle close
 	function handleClose() {
 		isOpen = false;
-		dispatch('close');
+		onclose?.();
 	}
 
 	// Handle create project form submission
@@ -102,7 +107,7 @@
 			// Reload projects to ensure proper hierarchy
 			await loadProjects(true);
 
-			dispatch('created', { project });
+			oncreated?.({ project });
 			handleClose();
 		} catch (error) {
 			console.error('Failed to create project:', error);
@@ -128,13 +133,16 @@
 
 
 	// Focus management
-	let nameInput: HTMLInputElement;
-	$: if (isOpen && nameInput) {
-		setTimeout(() => nameInput?.focus(), 100);
-	}
+	let nameInput = $state<HTMLInputElement>();
+	$effect(() => {
+		if (isOpen && nameInput) {
+			const timeoutId = setTimeout(() => nameInput?.focus(), 100);
+			return () => clearTimeout(timeoutId);
+		}
+	});
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
 	<div
@@ -142,7 +150,7 @@
 		onclick={handleBackdropClick}
 		onkeydown={(e) => {
 			if (e.key === 'Escape') {
-				dispatch('close');
+				handleClose();
 			}
 		}}
 		role="dialog"
@@ -258,7 +266,7 @@
 
 					<!-- Color Selection -->
 					<div class="form-group">
-						<label id="color-label" class="form-label">Color</label>
+						<div id="color-label" class="form-label">Color</div>
 						<div class="color-grid" role="radiogroup" aria-labelledby="color-label">
 							{#each colorOptions as color (color.value)}
 								<button

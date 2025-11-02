@@ -2,7 +2,8 @@ import type { PasswordHasher } from './password-hasher';
 import type { SessionRepository, SessionRecord } from './session-repository';
 import type { SessionIdGenerator } from './session-id-generator';
 import type { ActivityLogger } from './activity-logger';
-import type { UserRepository, PublicUser } from './user-repository';
+import type { UserRepository } from './user-repository';
+import type { PublicUser } from '$lib/types/database';
 
 export interface SessionValidationResult {
   userId?: number;
@@ -97,8 +98,8 @@ export class AuthService {
     return {
       id: user.id,
       username: user.username,
-      role: user.role,
-      status: user.status,
+      role: user.role as 'admin' | 'member',
+      status: user.status as 'pending' | 'approved' | 'suspended',
       projectAccess: user.projectAccess
     };
   }

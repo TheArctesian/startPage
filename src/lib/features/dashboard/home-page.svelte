@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { projects, projectStats, loadProjects } from '$lib/stores';
-	import { setSelectedTask } from '$lib/stores/actions';
+	import { projects, projectStats, loadProjects, setSelectedTask } from '$lib/stores';
 	import { navigateToProject } from '$lib/utils/navigation';
 	import { formatTime, calculateTimeSpent } from '$lib/utils/time';
 	import { getPriorityColor } from '$lib/utils/task';
@@ -13,17 +12,25 @@
 	import TasksPerDayChart from '$lib/features/analytics/tasks-per-day-chart.svelte';
 	import type { ProjectWithDetails, ProjectStatus, TaskWithDetails } from '$lib/types/database';
 
-	export let onProjectSelect: (project: ProjectWithDetails) => void = () => {};
-	export let user: any = null;
-	export let isAuthenticated: boolean = false;
-	export let canEdit: boolean = false;
-	export let isAnonymous: boolean = false;
+	let {
+		onProjectSelect = () => {},
+		user = null,
+		isAuthenticated = false,
+		canEdit = false,
+		isAnonymous = false
+	} = $props<{
+		onProjectSelect?: (project: ProjectWithDetails) => void;
+		user?: any;
+		isAuthenticated?: boolean;
+		canEdit?: boolean;
+		isAnonymous?: boolean;
+	}>();
 
-	let isLoadingProjects = false;
-	let isLoadingTasks = false;
-	let inProgressTasks: TaskWithDetails[] = [];
-	let showProjectEdit = false;
-	let projectToEdit: ProjectWithDetails | null = null;
+	let isLoadingProjects = $state(false);
+	let isLoadingTasks = $state(false);
+	let inProgressTasks = $state<TaskWithDetails[]>([]);
+	let showProjectEdit = $state(false);
+	let projectToEdit = $state<ProjectWithDetails | null>(null);
 
 	onMount(async () => {
 		await loadData();
@@ -66,9 +73,9 @@
 	}
 
 	async function handleStatusChange(
-		event: CustomEvent<{ project: ProjectWithDetails; newStatus: ProjectStatus }>
+		event: { project: ProjectWithDetails; newStatus: ProjectStatus }
 	) {
-		const { project, newStatus } = event.detail;
+		const { project, newStatus } = event;
 
 		try {
 			const response = await fetch(`/api/projects/${project.id}`, {
@@ -90,8 +97,8 @@
 		}
 	}
 
-	function handleProjectEdit(event: CustomEvent<{ project: ProjectWithDetails }>) {
-		const { project } = event.detail;
+	function handleProjectEdit(event: { project: ProjectWithDetails }) {
+		const { project } = event;
 		projectToEdit = project;
 		showProjectEdit = true;
 	}
@@ -132,8 +139,8 @@
 				isLoading={isLoadingProjects}
 				{canEdit}
 				{isAuthenticated}
-				on:statusChange={handleStatusChange}
-				on:projectEdit={handleProjectEdit}
+				onstatuschange={handleStatusChange}
+				onprojectedit={handleProjectEdit}
 			/>
 		</section>
 
@@ -521,4 +528,3 @@
 		}
 	}
 </style>
-

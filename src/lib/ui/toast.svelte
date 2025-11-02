@@ -3,7 +3,7 @@
 	import { fly } from 'svelte/transition';
 
 	// Subscribe to toast store
-	$: toastList = $toasts.toasts;
+	let toastList = $derived($toasts.toasts);
 
 	// Handle toast dismiss
 	function dismissToast(id: string) {

@@ -1,12 +1,23 @@
 <script lang="ts">
-	export let variant: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' = 'default';
-	export let size: 'xs' | 'sm' | 'md' = 'sm';
-	export let rounded = true;
-	export let icon = '';
-	export let color = '';
-	export let intensity: number | null = null;
+	let {
+		variant = 'default',
+		size = 'sm',
+		rounded = true,
+		icon = '',
+		color = '',
+		intensity = null,
+		...restProps
+	} = $props<{
+		variant?: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info';
+		size?: 'xs' | 'sm' | 'md';
+		rounded?: boolean;
+		icon?: string;
+		color?: string;
+		intensity?: number | null;
+		[key: string]: any;
+	}>();
 
-	$: badgeClass = [
+	let badgeClass = $derived([
 		'badge',
 		`badge-${variant}`,
 		`badge-${size}`,
@@ -14,12 +25,12 @@
 		intensity && `badge-intensity-${intensity}`
 	]
 		.filter(Boolean)
-		.join(' ');
+		.join(' '));
 
-	$: customStyle = color ? `background-color: ${color}; color: white;` : '';
+	let customStyle = $derived(color ? `background-color: ${color}; color: white;` : '');
 </script>
 
-<span class={badgeClass} style={customStyle} {...$$restProps}>
+<span class={badgeClass} style={customStyle} {...restProps}>
 	{#if icon}
 		<span class="badge-icon">{icon}</span>
 	{/if}
