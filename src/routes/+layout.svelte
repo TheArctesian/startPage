@@ -3,30 +3,18 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import ProjectSidebar from '$lib/features/projects/project-sidebar.svelte';
 	import Toast from '$lib/ui/toast.svelte';
-	import {
-		sidebarState,
-		sidebarActions,
-		isCollapsed,
-		isMobileOpen,
-		responsiveActions
-	} from '$lib/stores/sidebar';
-	import { userStateActions, userState, isAuthenticated, isAnonymous, currentUser } from '$lib/stores/user-state';
+	import { sidebarActions, isCollapsed, isMobileOpen, responsiveActions } from '$lib/stores/sidebar';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	
-	let { children, data } = $props();
+	let { children } = $props();
 
-	// Initialize user state from server data
-	$effect(() => {
-		userStateActions.initialize({
-			user: data.user,
-			isAuthenticated: data.isAuthenticated,
-			isAnonymous: data.isAnonymous,
-			canEdit: data.canEdit,
-			sessionId: data.sessionId
-		});
-	});
+	const currentUser = $derived($page.data.user ?? null);
+	const isUserAuthenticated = $derived(Boolean($page.data.isAuthenticated));
+	const isUserAnonymous = $derived(
+		$page.data.isAnonymous ?? !$page.data.isAuthenticated
+	);
 
 	const loginHref = $derived.by(() => {
 		const { pathname, search, hash } = $page.url;
@@ -70,7 +58,7 @@
 
 <div class="app-root">
 	<!-- Guest Banner -->
-	{#if $isAnonymous}
+	{#if isUserAnonymous}
 		<div class="guest-banner">
 			<div class="guest-banner-content">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -87,7 +75,7 @@
 	<div 
 		class="app-layout"
 		class:sidebar-collapsed={$isCollapsed}
-		class:has-guest-banner={$isAnonymous}
+		class:has-guest-banner={isUserAnonymous}
 	>
 		<!-- Persistent Sidebar -->
 		<aside 
@@ -95,7 +83,7 @@
 			class:collapsed={$isCollapsed}
 			class:mobile-open={$isMobileOpen}
 		>
-			<ProjectSidebar user={$currentUser} isAuthenticated={$isAuthenticated} oncollapse={handleSidebarCollapse} />
+			<ProjectSidebar user={currentUser} isAuthenticated={isUserAuthenticated} oncollapse={handleSidebarCollapse} />
 		</aside>
 
 		<!-- Main Content Area -->
@@ -115,10 +103,10 @@
 				
 				<!-- Auth Status -->
 				<div class="auth-status">
-					{#if $currentUser}
+					{#if currentUser}
 						<div class="user-info">
-							<span class="username">{$currentUser.username}</span>
-							{#if $currentUser.role === 'admin'}
+							<span class="username">{currentUser.username}</span>
+							{#if currentUser.role === 'admin'}
 								<span class="role-badge admin">Admin</span>
 							{/if}
 						</div>
@@ -130,7 +118,7 @@
 							</svg>
 							Logout
 						</a>
-					{:else if $isAnonymous}
+					{:else if isUserAnonymous}
 						<div class="guest-info">
 							<span class="guest-label">Viewing as Guest</span>
 						</div>

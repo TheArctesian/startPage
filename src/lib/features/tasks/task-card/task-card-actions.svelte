@@ -1,6 +1,5 @@
 <script lang="ts">
   import Icon from '$lib/ui/icon.svelte';
-  import { isAuthenticated as isAuthenticatedStore, canEdit as canEditStore } from '$lib/stores/user-state';
   import type { TaskWithDetails } from '$lib/types/database';
 
   interface Props {
@@ -28,10 +27,6 @@
     ondelete,
     onmove
   }: Props = $props();
-
-  // Use centralized state if props not explicitly set
-  let actualCanEdit = $derived(canEdit || $canEditStore);
-  let actualIsAuthenticated = $derived(isAuthenticated || $isAuthenticatedStore);
 
   function handleEdit() {
     if (onEdit) {
@@ -64,7 +59,7 @@
 
 <div class="task-actions" class:mobile={isMobile}>
   <!-- Edit/Delete buttons -->
-  {#if actualCanEdit && actualIsAuthenticated}
+  {#if canEdit && isAuthenticated}
     <div class="edit-actions">
       <button 
         class="action-btn edit-btn"

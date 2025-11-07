@@ -1,8 +1,11 @@
 <script lang="ts">
 	import HomePage from '$lib/features/dashboard/home-page.svelte';
-	import { currentUser, isAuthenticated, canEdit, isAnonymous } from '$lib/stores/user-state';
 	
 	let { data } = $props();
+	const pageUser = $derived(data.user ?? null);
+	const pageIsAuthenticated = $derived(Boolean(data.isAuthenticated));
+	const pageCanEdit = $derived(Boolean(data.canEdit));
+	const pageIsAnonymous = $derived(Boolean(data.isAnonymous));
 	import ShortcutsHelp from '$lib/features/keyboard/shortcuts-help.svelte';
 	import TaskCompletionModal from '$lib/features/tasks/task-completion-modal.svelte';
 	import AnalyticsDashboard from '$lib/features/analytics/analytics-dashboard.svelte';
@@ -253,10 +256,10 @@
 	<!-- Page Content -->
 	<div class="page-content">
 		<HomePage
-			user={$currentUser}
-			isAuthenticated={$isAuthenticated}
-			canEdit={$canEdit}
-			isAnonymous={$isAnonymous}
+			user={pageUser}
+			isAuthenticated={pageIsAuthenticated}
+			canEdit={pageCanEdit}
+			isAnonymous={pageIsAnonymous}
 			onProjectSelect={() => {
 				// Close mobile sidebar when project is selected
 				responsiveActions.handleNavigation();

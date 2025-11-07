@@ -1,7 +1,4 @@
-import { browser } from '$app/environment';
 import type { User } from '$lib/types/database';
-import { get } from 'svelte/store';
-import { userState } from '$lib/stores/user-state';
 
 /**
  * Auth utility functions for checking user permissions and status
@@ -11,92 +8,48 @@ import { userState } from '$lib/stores/user-state';
  * Check if user is authenticated (logged in with approved status)
  */
 export function isAuthenticated(user?: User | null): boolean {
-  if (user !== undefined) {
-    return user !== null && user.status === 'approved';
-  }
-  
-  // Use store if no user provided
-  if (!browser) {
-    return false;
-  }
-  const state = get(userState);
-  return state.isAuthenticated;
+  if (user === undefined) return false;
+  return user !== null && user.status === 'approved';
 }
 
 /**
  * Check if user is anonymous/lurking
  */
 export function isAnonymous(user?: User | null): boolean {
-  if (user !== undefined) {
-    return user === null;
-  }
-  
-  // Use store if no user provided
-  if (!browser) {
-    return true;
-  }
-  const state = get(userState);
-  return state.isAnonymous;
+  if (user === undefined) return true;
+  return user === null;
 }
 
 /**
  * Check if user is an admin
  */
 export function isAdmin(user?: User | null): boolean {
-  if (user !== undefined) {
-    return user !== null && user.role === 'admin';
-  }
-  
-  // Use store if no user provided
-  if (!browser) {
-    return false;
-  }
-  const state = get(userState);
-  return state.user !== null && state.user.role === 'admin';
+  if (user === undefined) return false;
+  return user !== null && user.role === 'admin';
 }
 
 /**
  * Check if user is a member (authenticated non-admin)
  */
 export function isMember(user?: User | null): boolean {
-  if (user !== undefined) {
-    return user !== null && user.status === 'approved' && user.role === 'member';
-  }
-  
-  // Use store if no user provided
-  if (!browser) {
-    return false;
-  }
-  const state = get(userState);
-  return state.user !== null && state.user.status === 'approved' && state.user.role === 'member';
+  if (user === undefined) return false;
+  return user !== null && user.status === 'approved' && user.role === 'member';
 }
 
 /**
  * Check if user can edit (authenticated user or has specific edit permissions)
  */
 export function canEdit(user?: User | null): boolean {
-  if (user !== undefined) {
-    return isAuthenticated(user);
-  }
-  
-  // Use store if no user provided
-  if (!browser) {
-    return false;
-  }
-  const state = get(userState);
-  return state.canEdit;
+  if (user === undefined) return false;
+  return isAuthenticated(user);
 }
 
 /**
  * Check if user has access to a project (based on projectAccess field)
  */
 export function hasProjectAccess(projectId: number, user?: User | null): boolean {
-  const currentUser = user !== undefined
-    ? user
-    : browser
-      ? get(userState).user
-      : null;
-  
+  const currentUser = user ?? null;
+
   if (!currentUser || !isAuthenticated(currentUser)) {
     return false;
   }
@@ -120,45 +73,24 @@ export function hasProjectAccess(projectId: number, user?: User | null): boolean
  * Check if user is suspended
  */
 export function isSuspended(user?: User | null): boolean {
-  if (user !== undefined) {
-    return user !== null && user.status === 'suspended';
-  }
-  
-  // Use store if no user provided
-  if (!browser) {
-    return false;
-  }
-  const state = get(userState);
-  return state.user !== null && state.user.status === 'suspended';
+  if (user === undefined) return false;
+  return user !== null && user.status === 'suspended';
 }
 
 /**
  * Check if user is pending approval
  */
 export function isPending(user?: User | null): boolean {
-  if (user !== undefined) {
-    return user !== null && user.status === 'pending';
-  }
-  
-  // Use store if no user provided
-  if (!browser) {
-    return false;
-  }
-  const state = get(userState);
-  return state.user !== null && state.user.status === 'pending';
+  if (user === undefined) return false;
+  return user !== null && user.status === 'pending';
 }
 
 /**
  * Get user's display name
  */
 export function getUserDisplayName(user?: User | null): string {
-  const currentUser =
-    user !== undefined
-      ? user
-      : browser
-        ? get(userState).user
-        : null;
-  
+  const currentUser = user ?? null;
+
   if (!currentUser) {
     return 'Anonymous';
   }
@@ -170,11 +102,7 @@ export function getUserDisplayName(user?: User | null): string {
  * Get current user from store
  */
 export function getCurrentUser(): User | null {
-  if (!browser) {
-    return null;
-  }
-  const state = get(userState);
-  return state.user;
+  return null;
 }
 
 /**
