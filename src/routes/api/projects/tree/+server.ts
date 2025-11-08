@@ -6,22 +6,43 @@ import type { RequestHandler } from './$types';
 import type { Project, ProjectWithDetails } from '$lib/types/database';
 import { buildProjectTree } from '$lib/utils/projectTree';
 import { ProjectStatsService } from '$lib/server/projects/project-stats.service';
+import { getUserVisibleProjects } from '$lib/server/permissions';
 
 const projectStatsService = new ProjectStatsService();
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
   try {
     const includeStats = url.searchParams.get('stats') !== 'false'; // Default to true
     const activeOnly = url.searchParams.get('active') !== 'false'; // Default to true
+    const user = locals.user ?? null;
 
     // Fetch all projects ordered by depth then name for proper tree structure
-    let query = db.select().from(projects);
+    let projectList: Project[] = [];
 
-    if (activeOnly) {
-      query = query.where(eq(projects.isActive, true)) as any;
+    if (user?.role === 'admin') {
+      let query = db.select().from(projects);
+
+      if (activeOnly) {
+        query = query.where(eq(projects.isActive, true)) as any;
+      }
+
+      projectList = await query.orderBy(projects.depth, projects.name) as Project[];
+    } else {
+      const visibleProjects = await getUserVisibleProjects(user?.id ?? null);
+      projectList = visibleProjects
+        .filter(project => (activeOnly ? project.isActive : true))
+        .map(project => {
+          // Strip permission metadata if present
+          const { userPermission, ...rest } = project as Project & { userPermission?: unknown };
+          return rest;
+        })
+        .sort((a, b) => {
+          if ((a.depth ?? 0) !== (b.depth ?? 0)) {
+            return (a.depth ?? 0) - (b.depth ?? 0);
+          }
+          return a.name.localeCompare(b.name);
+        });
     }
-
-    const projectList = await query.orderBy(projects.depth, projects.name) as Project[];
 
     if (!includeStats) {
       // Build tree without stats

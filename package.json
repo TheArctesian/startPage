@@ -10,6 +10,7 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test:projectTree": "rm -rf .tmp/project-tree-tests && mkdir -p .tmp/project-tree-tests && esbuild tests/projectTree.test.ts --bundle --platform=node --outfile=.tmp/project-tree-tests/test.cjs && node .tmp/project-tree-tests/test.cjs",
 		"format": "prettier --write .",
 		"lint": "prettier --check .",
 		"db:push": "drizzle-kit push",

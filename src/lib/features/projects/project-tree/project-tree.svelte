@@ -16,7 +16,8 @@
     onprojecttoggle,
     onexpandall,
     oncollapseall,
-    onrefresh
+    onrefresh,
+    canViewPrivateProjects = false
   } = $props<{
     treeData?: ProjectTreeData | null;
     activeProjectId?: number | null;
@@ -28,11 +29,19 @@
     onexpandall?: () => void;
     oncollapseall?: () => void;
     onrefresh?: () => void;
+    canViewPrivateProjects?: boolean;
   }>();
 
+  const visibleFilter = (project: ProjectNode) => canViewPrivateProjects || project.isPublic;
+
   // Flattened tree for rendering (respects expanded/collapsed state)
-  const flatProjects = $derived(treeData ? flattenTree(treeData.roots, true) : []);
-  const hasProjects = $derived(flatProjects.length > 0);
+  const flatProjects = $derived(
+    treeData ? flattenTree(treeData.roots, true, visibleFilter) : []
+  );
+  const allVisibleProjects = $derived(
+    treeData ? flattenTree(treeData.roots, false, visibleFilter) : []
+  );
+  const hasProjects = $derived(allVisibleProjects.length > 0);
 
   function handleProjectSelect(event: { project: ProjectNode }) {
     onprojectselect?.(event);
@@ -61,10 +70,10 @@
     }
 
     try {
-      // Toggle each project that isn't already expanded - store handles mutations
-      const togglePromises = Array.from(treeData.flatMap.entries()).map(([id, node]) => {
+      // Toggle each visible project that isn't already expanded - store handles mutations
+      const togglePromises = allVisibleProjects.map(node => {
         if (!node.isExpanded) {
-          return toggleProjectExpanded(id);
+          return toggleProjectExpanded(node.id);
         }
         return Promise.resolve();
       });
@@ -83,10 +92,10 @@
     }
 
     try {
-      // Toggle each project that is currently expanded - store handles mutations
-      const togglePromises = Array.from(treeData.flatMap.entries()).map(([id, node]) => {
+      // Toggle each visible project that is currently expanded - store handles mutations
+      const togglePromises = allVisibleProjects.map(node => {
         if (node.isExpanded) {
-          return toggleProjectExpanded(id);
+          return toggleProjectExpanded(node.id);
         }
         return Promise.resolve();
       });

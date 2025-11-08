@@ -8,12 +8,12 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	
-	let { children } = $props();
+	let { children, data } = $props();
 
-	const currentUser = $derived($page.data.user ?? null);
-	const isUserAuthenticated = $derived(Boolean($page.data.isAuthenticated));
-	const isUserAnonymous = $derived(
-		$page.data.isAnonymous ?? !$page.data.isAuthenticated
+	const currentUser = $derived.by(() => data.user ?? null);
+	const isUserAuthenticated = $derived.by(() => Boolean(data.isAuthenticated));
+	const isUserAnonymous = $derived.by(
+		() => data.isAnonymous ?? !data.isAuthenticated
 	);
 
 	const loginHref = $derived.by(() => {

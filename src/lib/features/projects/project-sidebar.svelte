@@ -15,6 +15,7 @@
 	} from '$lib/types/database';
 	import { navigateToProject, navigateToHome } from '$lib/utils/navigation';
 	import type { User } from '$lib/types/database';
+	import { toasts } from '$lib/stores/toasts';
 
 	let {
 		user = null,
@@ -32,8 +33,9 @@
 		oncollapse?: (event: { isCollapsed: boolean }) => void;
 	}>();
 
-	// Check if user can create projects (authenticated users only)
-	const canCreateProjects = $derived(Boolean(isAuthenticated && user && user.status === 'approved'));
+	// Check if user can see private content or create projects (authenticated users only)
+	const canViewPrivateProjects = $derived(Boolean(isAuthenticated && user && user.status === 'approved'));
+	const canCreateProjects = $derived(canViewPrivateProjects);
 
 	// Component state
 	let isCollapsed = $state(false);
@@ -43,9 +45,34 @@
 	const currentProject = $derived($activeProject);
 	const treeData = $derived($projectTreeData);
 
+	let lastPermissionState: boolean | null = null;
+
+	$effect(() => {
+		const current = canViewPrivateProjects;
+
+		if (lastPermissionState === null) {
+			lastPermissionState = current;
+			return;
+		}
+
+		if (current === lastPermissionState) return;
+
+		lastPermissionState = current;
+
+		if (!current) {
+			projectTreeData.set(null);
+		}
+
+		loadProjectTree(true);
+	});
 
 	// Handle project selection
 	async function selectProject(project: Project | ProjectNode) {
+		if (!canViewPrivateProjects && project.isPublic === false) {
+			toasts.error('Private project', 'Sign in to view this project.');
+			return;
+		}
+
 		// Set the active project in the store first
 		await setActiveProject(project);
 		// Navigate to project route
@@ -173,6 +200,7 @@
 			onrefresh={handleTreeRefresh}
 			onexpandall={handleTreeBulkChange}
 			oncollapseall={handleTreeBulkChange}
+			canViewPrivateProjects={canViewPrivateProjects}
 		/>
 	</div>
 

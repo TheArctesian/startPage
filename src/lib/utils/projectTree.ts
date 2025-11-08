@@ -122,16 +122,28 @@ export function buildProjectTree(projects: ProjectWithDetails[]): ProjectTreeDat
  * Flattens a tree structure into a depth-first ordered array
  * Respects expanded/collapsed state
  */
-export function flattenTree(nodes: ProjectNode[], showOnlyExpanded = true): ProjectNode[] {
+export function flattenTree(
+  nodes: ProjectNode[],
+  showOnlyExpanded = true,
+  filterFn?: (node: ProjectNode) => boolean
+): ProjectNode[] {
   const result: ProjectNode[] = [];
   
   function traverse(nodes: ProjectNode[], currentDepth = 0) {
     for (const node of nodes) {
-      result.push(node);
+      const passesFilter = filterFn ? filterFn(node) : true;
+      
+      if (passesFilter) {
+        result.push(node);
+      }
       
       if (node.children && node.children.length > 0) {
-        // Only traverse children if parent is expanded (or we're showing all)
-        if (!showOnlyExpanded || node.isExpanded) {
+        const shouldTraverseChildren =
+          !showOnlyExpanded ||
+          node.isExpanded ||
+          !passesFilter; // allow children of filtered parents
+
+        if (shouldTraverseChildren) {
           traverse(node.children, currentDepth + 1);
         }
       }
