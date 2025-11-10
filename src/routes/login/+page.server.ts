@@ -4,6 +4,7 @@ import {
   createSession,
   logUserActivity
 } from '$lib/server/auth';
+import { authLogger, logCookieOperation } from '$lib/server/auth/debug';
 import type { PageServerLoad, Actions } from './$types';
 
 function sanitizeRedirect(target: string | null | undefined): string {
@@ -61,31 +62,71 @@ export const actions: Actions = {
     }
 
     try {
-      console.log('Attempting to authenticate user:', username);
+      authLogger.info('Attempting authentication', { username });
       const user = await authenticateUser(username, password);
-      console.log('Authentication result:', user ? { id: user.id, username: user.username, status: user.status } : null);
-      
+
       if (!user) {
+        authLogger.warn('Authentication failed - invalid credentials', { username });
         return fail(400, { error: 'Invalid username or password' });
       }
 
+      authLogger.info('Authentication successful', {
+        userId: user.id,
+        username: user.username,
+        status: user.status
+      });
+
       if (user.status === 'pending') {
+        authLogger.info('User pending approval, redirecting', { userId: user.id });
         throw redirect(302, '/pending-approval');
       }
 
       if (user.status === 'suspended') {
+        authLogger.warn('Login attempt for suspended account', { userId: user.id });
         return fail(400, { error: 'Account suspended. Please contact an administrator.' });
       }
 
       // Create session
-      console.log('Creating session for user:', user.id);
+      authLogger.info('Creating session', { userId: user.id, username: user.username });
       const sessionId = await createSession(
-        user.id, 
-        getClientAddress(), 
+        user.id,
+        getClientAddress(),
         request.headers.get('user-agent') || undefined
       );
-      console.log('Session created:', sessionId);
-      
+      authLogger.info('Session created', { sessionId: sessionId.slice(0, 8) + '...', userId: user.id });
+
+      // Set secure cookie
+      cookies.set('session-id', sessionId, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 // 7 days
+      });
+
+      logCookieOperation('set', { sessionId: sessionId.slice(0, 8) + '...', success: true });
+
+      // CRITICAL: Verify cookie was actually set
+      const verifySessionId = cookies.get('session-id');
+      logCookieOperation('verify', {
+        expected: sessionId.slice(0, 8) + '...',
+        actual: verifySessionId?.slice(0, 8) + '...',
+        success: verifySessionId === sessionId
+      });
+
+      if (verifySessionId !== sessionId) {
+        authLogger.error('Cookie verification failed', {
+          expected: sessionId,
+          got: verifySessionId,
+          cookieOptions: { path: '/', httpOnly: true, sameSite: 'strict' }
+        });
+        return fail(500, {
+          error: 'Authentication succeeded but session cookie failed to set. Please try again.'
+        });
+      }
+
+      authLogger.info('Cookie verified successfully, redirecting', { userId: user.id });
+
       // Log login activity
       await logUserActivity(
         user.id,
@@ -95,17 +136,6 @@ export const actions: Actions = {
         getClientAddress(),
         { username: user.username }
       );
-      console.log('Activity logged');
-      
-      // Set secure cookie
-      cookies.set('session-id', sessionId, {
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 // 7 days
-      });
-      console.log('Cookie set, redirecting...');
 
       throw redirect(302, redirectTarget);
     } catch (error: any) {
@@ -126,13 +156,17 @@ export const actions: Actions = {
     );
 
     try {
+      authLogger.info('Creating anonymous session');
+
       // Create anonymous session
       const sessionId = await createSession(
         undefined, // no user ID for anonymous
         getClientAddress(),
         request.headers.get('user-agent') || undefined
       );
-      
+
+      authLogger.info('Anonymous session created', { sessionId: sessionId.slice(0, 8) + '...' });
+
       // Set secure cookie
       cookies.set('session-id', sessionId, {
         path: '/',
@@ -142,13 +176,35 @@ export const actions: Actions = {
         maxAge: 7 * 24 * 60 * 60 // 7 days
       });
 
+      logCookieOperation('set', { sessionId: sessionId.slice(0, 8) + '...', success: true });
+
+      // Verify cookie was set
+      const verifySessionId = cookies.get('session-id');
+      logCookieOperation('verify', {
+        expected: sessionId.slice(0, 8) + '...',
+        actual: verifySessionId?.slice(0, 8) + '...',
+        success: verifySessionId === sessionId
+      });
+
+      if (verifySessionId !== sessionId) {
+        authLogger.error('Anonymous session cookie verification failed', {
+          expected: sessionId,
+          got: verifySessionId
+        });
+        return fail(500, {
+          error: 'Failed to create browsing session. Please try again.'
+        });
+      }
+
+      authLogger.info('Anonymous session cookie verified, redirecting');
+
       throw redirect(302, redirectTarget);
     } catch (error: any) {
       // Re-throw redirects (they have status and location properties)
       if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
         throw error;
       }
-      console.error('Lurk session error:', error);
+      authLogger.error('Lurk session error', { error: String(error) });
       return fail(500, { error: 'Failed to create browsing session' });
     }
   }

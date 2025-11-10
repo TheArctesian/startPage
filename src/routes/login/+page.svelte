@@ -28,21 +28,27 @@
 			</div>
 		{/if}
 
-		<form 
-			method="post" 
+		<form
+			method="post"
 			action="?/login"
 			use:enhance={() => {
 				loading = true;
+				console.log('[Login] Form submitting...');
 				return async ({ result, update }) => {
 					loading = false;
+					console.log('[Login] Form result:', result.type);
 					if (result.type === 'redirect') {
+						console.log('[Login] Redirecting to:', result.location);
+						console.log('[Login] Invalidating all data...');
 						// Refresh all data after successful login
 						await invalidateAll();
+						console.log('[Login] Data invalidated');
 						// For redirect responses, we don't need to call update()
 						// The redirect will handle navigation
 						return;
 					}
 					// For non-redirect responses (errors), update the form state
+					console.log('[Login] Updating form state with error');
 					await update();
 				};
 			}}
@@ -108,21 +114,27 @@
 			<span class="divider-text">or</span>
 		</div>
 
-		<form 
-			method="post" 
+		<form
+			method="post"
 			action="?/lurk"
 			use:enhance={() => {
 				lurkLoading = true;
+				console.log('[Lurk] Form submitting...');
 				return async ({ result, update }) => {
 					lurkLoading = false;
+					console.log('[Lurk] Form result:', result.type);
 					if (result.type === 'redirect') {
+						console.log('[Lurk] Redirecting to:', result.location);
+						console.log('[Lurk] Invalidating all data...');
 						// Refresh all data after successful lurk session
 						await invalidateAll();
+						console.log('[Lurk] Data invalidated');
 						// For redirect responses, we don't need to call update()
 						// The redirect will handle navigation
 						return;
 					}
 					// For non-redirect responses (errors), update the form state
+					console.log('[Lurk] Updating form state with error');
 					await update();
 				};
 			}}

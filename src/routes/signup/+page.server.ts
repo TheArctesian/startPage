@@ -1,5 +1,6 @@
 import { redirect, fail } from '@sveltejs/kit';
 import { createUser, createSession, logUserActivity } from '$lib/server/auth';
+import { authLogger } from '$lib/server/auth/debug';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -49,8 +50,16 @@ export const actions: Actions = {
     }
 
     try {
+      authLogger.info('Creating new user account', { username: username.trim(), hasEmail: !!email });
+
       const newUser = await createUser(username.trim(), password, email?.trim());
-      
+
+      authLogger.info('User account created', {
+        userId: newUser.id,
+        username: newUser.username,
+        status: newUser.status
+      });
+
       // Log the signup activity
       await logUserActivity(
         newUser.id,
@@ -61,20 +70,23 @@ export const actions: Actions = {
         { username: newUser.username }
       );
 
-      // Redirect to pending approval page
+      authLogger.info('Redirecting to pending approval', { userId: newUser.id });
+
+      // Note: No session cookie is set during signup
+      // User must wait for admin approval before logging in
       throw redirect(302, '/pending-approval');
     } catch (error: any) {
       // Re-throw redirects (they have status and location properties)
       if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
         throw error;
       }
-      
-      console.error('Signup error:', error);
-      
+
+      authLogger.error('Signup error', { username: username.trim(), error: String(error) });
+
       if (error instanceof Error && error.message === 'Username already exists') {
         return fail(400, { error: 'Username already taken' });
       }
-      
+
       return fail(500, { error: 'Failed to create account' });
     }
   }
