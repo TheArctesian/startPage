@@ -75,14 +75,19 @@ export const handle: Handle = async ({ event, resolve }) => {
     authLogger.debug('No session cookie present');
   }
 
-  // Add cache control headers for authenticated pages
+  // Add cache control headers for all pages to ensure fresh auth state
   const response = await resolve(event);
 
+  // Set no-cache headers for all responses to prevent stale auth states
+  // This ensures that opening a new tab always validates the session cookie server-side
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+
   if (event.locals.user) {
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    response.headers.set('Pragma', 'no-cache');
-    response.headers.set('Expires', '0');
     authLogger.debug('Added no-cache headers for authenticated response');
+  } else {
+    authLogger.debug('Added no-cache headers for unauthenticated response');
   }
 
   return response;
