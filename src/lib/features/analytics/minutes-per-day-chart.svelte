@@ -241,21 +241,28 @@
       <div style="font-weight: var(--font-weight-medium)">${formattedDate}</div>
       <div>Minutes: ${d.minutes}</div>
       <div>Tasks: ${d.tasksCompleted}</div>
-    `)
-      .style('left', (event.pageX + 10) + 'px')
-      .style('top', (event.pageY - 10) + 'px');
+    `);
+    tooltip
+      .style('left', `${event.pageX + 10}px`)
+      .style('top', `${event.pageY - 10}px`);
   }
 
   function hideTooltip() {
     getTooltip().transition().duration(500).style('opacity', 0);
   }
 
-  function getTooltip() {
-    if (!browser) return d3.select(null as any);
+  type TooltipSelection = d3.Selection<HTMLDivElement, undefined, HTMLElement, any>;
 
-    let tooltip = d3.select('body').select('.minutes-chart-tooltip');
+  function getTooltip(): TooltipSelection {
+    if (!browser) {
+      return d3.select(null as unknown as HTMLDivElement) as TooltipSelection;
+    }
+
+    const bodySelection = d3.select<HTMLBodyElement>('body');
+    let tooltip = bodySelection.select<HTMLDivElement>('.minutes-chart-tooltip');
     if (tooltip.empty()) {
-      tooltip = d3.select('body').append('div')
+      tooltip = bodySelection
+        .append<HTMLDivElement>('div')
         .attr('class', 'minutes-chart-tooltip')
         .style('opacity', 0)
         .style('position', 'absolute')
@@ -267,7 +274,7 @@
         .style('pointer-events', 'none')
         .style('z-index', '1000');
     }
-    return tooltip;
+    return tooltip as TooltipSelection;
   }
 
   onMount(() => {

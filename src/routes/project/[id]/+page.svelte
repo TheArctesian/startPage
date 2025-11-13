@@ -205,7 +205,7 @@
 			const actualMinutes =
 				typeof timeSpent === 'number' && !Number.isNaN(timeSpent) ? timeSpent : undefined;
 
-			await completeTask(task.id, actualIntensity, actualMinutes);
+			await completeTask(task.id, actualIntensity as import('$lib/types/database').IntensityLevel, actualMinutes);
 			toasts.success('Task Completed', `"${task.title}" marked as done.`);
 			pendingCompletion = null;
 			closeModal();
@@ -224,14 +224,14 @@
 		closeModal();
 	}
 
-	function handleSubProjectCreated(event: CustomEvent<{ project: ProjectWithDetails }>) {
-		closeModal();
-		loadSubProjects();
-		toasts.success(
-			'Sub-project Created',
-			`"${event.detail.project.name}" has been added as a sub-project.`
-		);
-	}
+function handleSubProjectCreated(event: { project: ProjectWithDetails }) {
+	closeModal();
+	loadSubProjects();
+	toasts.success(
+		'Sub-project Created',
+		`"${event.project.name}" has been added as a sub-project.`
+	);
+}
 
 	function handleQuickLinkUpdated() {
 		// Store is automatically updated

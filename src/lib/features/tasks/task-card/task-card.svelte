@@ -104,7 +104,6 @@
       {task}
       {canEdit}
       {isAuthenticated}
-      {showTimer}
       {isMobile}
       {onEdit}
       {onDelete}

@@ -11,12 +11,21 @@
 	import QuickLinkCard from './QuickLinkCard.svelte';
 	import QuickLinkForm from './QuickLinkForm.svelte';
 
-	interface Props {
-		projectId: number | null;
-		canEdit?: boolean;
-	}
+interface Props {
+	projectId: number | null;
+	canEdit?: boolean;
+	onLinkEdit?: (link: QuickLink) => void;
+	onLinkUpdated?: () => void;
+	onLinkDeleted?: (linkId: number) => void;
+}
 
-	let { projectId, canEdit = false }: Props = $props();
+let {
+	projectId,
+	canEdit = false,
+	onLinkEdit,
+	onLinkUpdated,
+	onLinkDeleted
+}: Props = $props();
 
 	let links = $state<QuickLink[]>([]);
 	let loading = $state(true);
@@ -47,25 +56,28 @@
 		}
 	}
 
-	async function handleDelete(linkId: number) {
-		try {
-			await deleteQuickLink(linkId);
-			links = links.filter((l) => l.id !== linkId);
-		} catch (err) {
-			console.error('Failed to delete quick link:', err);
-		}
+async function handleDelete(linkId: number) {
+	try {
+		await deleteQuickLink(linkId);
+		links = links.filter((l) => l.id !== linkId);
+		onLinkDeleted?.(linkId);
+	} catch (err) {
+		console.error('Failed to delete quick link:', err);
 	}
+}
 
-	function handleEdit(link: QuickLink) {
-		editingLink = link;
-		showAddForm = false;
-	}
+function handleEdit(link: QuickLink) {
+	editingLink = link;
+	showAddForm = false;
+	onLinkEdit?.(link);
+}
 
-	function handleSave() {
-		showAddForm = false;
-		editingLink = null;
-		loadLinks();
-	}
+function handleSave() {
+	showAddForm = false;
+	editingLink = null;
+	loadLinks();
+	onLinkUpdated?.();
+}
 
 	function handleCancel() {
 		showAddForm = false;

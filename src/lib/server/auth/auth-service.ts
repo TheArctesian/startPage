@@ -98,9 +98,13 @@ export class AuthService {
     return {
       id: user.id,
       username: user.username,
+      email: user.email,
       role: user.role as 'admin' | 'member',
       status: user.status as 'pending' | 'approved' | 'suspended',
-      projectAccess: user.projectAccess
+      projectAccess: user.projectAccess,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     };
   }
 

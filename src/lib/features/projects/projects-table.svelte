@@ -20,9 +20,11 @@
     onprojectedit?: (event: { project: ProjectWithDetails }) => void;
   }>();
 
+  type ProjectWithChildren = ProjectWithDetails & { children: ProjectWithChildren[] };
+
   const projectsByStatus = $derived(
-    projects.reduce((acc, project) => {
-      const status = project.status || 'active';
+    projects.reduce((acc: Record<ProjectStatus, ProjectWithDetails[]>, project: ProjectWithDetails) => {
+      const status = (project.status ?? 'active') as ProjectStatus;
       if (!acc[status]) acc[status] = [];
       acc[status].push(project);
       return acc;
@@ -32,8 +34,8 @@
   const hierarchicalProjects = $derived(buildHierarchy(projects));
 
   function buildHierarchy(allProjects: ProjectWithDetails[]) {
-    const projectMap = new Map<number, ProjectWithDetails & { children: ProjectWithDetails[] }>();
-    const roots: (ProjectWithDetails & { children: ProjectWithDetails[] })[] = [];
+    const projectMap = new Map<number, ProjectWithChildren>();
+    const roots: ProjectWithChildren[] = [];
 
     // Initialize all projects with children array
     allProjects.forEach(project => {
@@ -52,12 +54,12 @@
       }
     });
 
-    roots.sort(compareProjectsByUpdatedAtDesc);
+    roots.sort((a, b) => compareProjectsByUpdatedAtDesc<ProjectWithChildren>(a, b));
 
-    function sortChildren(nodes: (ProjectWithDetails & { children: ProjectWithDetails[] })[]) {
+    function sortChildren(nodes: ProjectWithChildren[]) {
       for (const node of nodes) {
         if (node.children.length > 0) {
-          node.children.sort(compareProjectsByUpdatedAtDesc);
+          node.children.sort((a, b) => compareProjectsByUpdatedAtDesc<ProjectWithChildren>(a, b));
           sortChildren(node.children);
         }
       }

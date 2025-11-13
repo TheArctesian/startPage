@@ -1,13 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { projects, projectStats, setActiveProject, loadProjects } from '$lib/stores';
+  import { projectStats, setActiveProject, loadProjects } from '$lib/stores';
   import type { ProjectWithDetails } from '$lib/types/database';
 
   let { onProjectSelect = () => {} } = $props<{
     onProjectSelect?: (project: ProjectWithDetails) => void;
   }>();
 
+  type ProjectWithStats = ProjectWithDetails & { completionRate: number };
+
   let isLoading = false;
+  const typedProjectStats = $derived($projectStats as ProjectWithStats[]);
 
   onMount(async () => {
     isLoading = true;
@@ -44,7 +47,7 @@
       <div class="loading-spinner">◐</div>
       <p>Loading projects...</p>
     </div>
-  {:else if $projectStats.length === 0}
+  {:else if typedProjectStats.length === 0}
     <div class="empty-state">
       <div class="empty-icon">□</div>
       <h2 class="empty-title">No projects yet</h2>
@@ -57,7 +60,7 @@
     </div>
   {:else}
     <div class="projects-grid">
-      {#each $projectStats as project (project.id)}
+      {#each typedProjectStats as project (project.id)}
         <div 
           class="project-card"
           role="button"
@@ -88,7 +91,7 @@
               <span class="stat-label">Done</span>
             </div>
             <div class="stat">
-              <span class="stat-value">{formatTime(project.totalMinutes)}</span>
+              <span class="stat-value">{formatTime(project.totalMinutes ?? 0)}</span>
               <span class="stat-label">Time</span>
             </div>
           </div>

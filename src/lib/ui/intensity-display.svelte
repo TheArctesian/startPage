@@ -61,9 +61,9 @@
     }
   };
 
-  let currentSize = $derived(sizeClasses[size]);
-  let currentColor = $derived(intensityColors[intensity]);
-  let currentLabel = $derived(intensityLabels[intensity]);
+  let currentSize = $derived(sizeClasses[size as keyof typeof sizeClasses]);
+  let currentColor = $derived(intensityColors[intensity as keyof typeof intensityColors]);
+  let currentLabel = $derived(intensityLabels[intensity as keyof typeof intensityLabels]);
 </script>
 
 <div class="intensity-display" class:with-label={showLabel}>
@@ -74,7 +74,7 @@
         <div
           class="dot {currentSize.dot}"
           class:filled={level <= intensity}
-          style="--dot-color: {intensityColors[level]}"
+          style="--dot-color: {intensityColors[level as IntensityLevel]}"
           title="{currentLabel} ({intensity}/5)"
         ></div>
       {/each}

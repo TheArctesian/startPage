@@ -17,6 +17,9 @@ export interface UserWithPassword {
   status: string;
   projectAccess: string;
   email: string | null;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface UserRepository {
@@ -38,7 +41,10 @@ export class DbUserRepository implements UserRepository {
         role: users.role,
         status: users.status,
         projectAccess: users.projectAccess,
-        email: users.email
+        email: users.email,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
       })
       .from(users)
       .where(eq(users.username, username))

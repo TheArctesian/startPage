@@ -7,7 +7,7 @@
 
 <script lang="ts">
   import IntensityPicker from '$lib/ui/intensity-picker.svelte';
-  import type { TaskWithDetails } from '$lib/types/database';
+  import type { TaskWithDetails, IntensityLevel } from '$lib/types/database';
 
   interface Props {
     isOpen?: boolean;
@@ -23,7 +23,7 @@
     oncancel
   }: Props = $props();
 
-  let actualIntensity = $state(3); // Default to medium intensity
+  let actualIntensity = $state<IntensityLevel>(3); // Default to medium intensity
   let timeSpent = $state<number | null>(null);
   let reflection = $state('');
   let isSubmitting = $state(false);
@@ -34,7 +34,7 @@
       return;
     }
 
-    actualIntensity = task.estimatedIntensity || 3;
+    actualIntensity = (task.estimatedIntensity || 3) as IntensityLevel;
     timeSpent = null;
     reflection = '';
     isSubmitting = false;

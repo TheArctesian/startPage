@@ -172,7 +172,11 @@
     }
   }
 
-  function drawLineChart(g: d3.Selection<SVGGElement, unknown, null, undefined>, innerWidth: number, innerHeight: number) {
+  function drawLineChart(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    innerWidth: number,
+    innerHeight: number
+  ) {
     // Scales
     const xScale = d3.scaleTime()
       .domain(d3.extent(timeData, d => d.date) as [Date, Date])
@@ -189,12 +193,18 @@
       .y(d => yScale(d.value))
       .curve(d3.curveMonotoneX);
 
+    const dateFormatter = d3.timeFormat('%m/%d');
+    const formatAxisTick = (value: Date | d3.NumberValue) => {
+      const dateValue = value instanceof Date ? value : new Date(value.valueOf());
+      return dateFormatter(dateValue);
+    };
+
     // Add axes
     g.append('g')
       .attr('class', 'x-axis')
       .attr('transform', `translate(0,${innerHeight})`)
       .call(d3.axisBottom(xScale)
-        .tickFormat(d3.timeFormat(chartType === 'weekly' ? '%m/%d' : '%m/%d'))
+        .tickFormat((value) => formatAxisTick(value))
         .ticks(Math.min(timeData.length, 8))
       );
 
@@ -209,18 +219,20 @@
     g.append('g')
       .attr('class', 'grid')
       .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale)
-        .tickSize(-innerHeight)
-        .tickFormat(() => '')
-        .ticks(Math.min(timeData.length, 8))
+      .call(
+        d3.axisBottom(xScale)
+          .tickSize(-innerHeight)
+          .tickFormat(() => '')
+          .ticks(Math.min(timeData.length, 8))
       );
 
     g.append('g')
       .attr('class', 'grid')
-      .call(d3.axisLeft(yScale)
-        .tickSize(-innerWidth)
-        .tickFormat(() => '')
-        .ticks(5)
+      .call(
+        d3.axisLeft(yScale)
+          .tickSize(-innerWidth)
+          .tickFormat(() => '')
+          .ticks(5)
       );
 
     // Add area under curve
@@ -392,21 +404,28 @@
     tooltip.html(`
       <div style="font-weight: var(--font-weight-medium)">${d.label}</div>
       <div>Time: ${d.value} hours</div>
-    `)
-      .style('left', (event.pageX + 10) + 'px')
-      .style('top', (event.pageY - 10) + 'px');
+    `);
+    tooltip
+      .style('left', `${event.pageX + 10}px`)
+      .style('top', `${event.pageY - 10}px`);
   }
 
   function hideTooltip() {
     getTooltip().transition().duration(500).style('opacity', 0);
   }
 
-  function getTooltip() {
-    if (!browser) return d3.select(null as any);
+  type TooltipSelection = d3.Selection<HTMLDivElement, undefined, HTMLElement, any>;
 
-    let tooltip = d3.select('body').select('.time-chart-tooltip');
+  function getTooltip(): TooltipSelection {
+    if (!browser) {
+      return d3.select(null as unknown as HTMLDivElement) as TooltipSelection;
+    }
+
+    const bodySelection = d3.select<HTMLBodyElement>('body');
+    let tooltip = bodySelection.select<HTMLDivElement>('.time-chart-tooltip');
     if (tooltip.empty()) {
-      tooltip = d3.select('body').append('div')
+      tooltip = bodySelection
+        .append<HTMLDivElement>('div')
         .attr('class', 'time-chart-tooltip')
         .style('opacity', 0)
         .style('position', 'absolute')
@@ -418,7 +437,7 @@
         .style('pointer-events', 'none')
         .style('z-index', '1000');
     }
-    return tooltip;
+    return tooltip as TooltipSelection;
   }
 
   onMount(() => {

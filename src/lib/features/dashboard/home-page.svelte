@@ -223,12 +223,12 @@
 	</div>
 
 	<!-- Project Edit Modal -->
-	<ProjectEditModal
-		bind:isOpen={showProjectEdit}
-		project={projectToEdit}
-		on:close={handleProjectEditClose}
-		on:updated={handleProjectUpdated}
-	/>
+ <ProjectEditModal
+    bind:isOpen={showProjectEdit}
+    project={projectToEdit}
+    onclose={handleProjectEditClose}
+    onupdated={handleProjectUpdated}
+  />
 </div>
 
 <style>

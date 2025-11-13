@@ -63,9 +63,9 @@
         linkUrl: task.linkUrl || '',
         projectId: task.projectId || 0,
         estimatedMinutes: task.estimatedMinutes,
-        estimatedIntensity: task.estimatedIntensity,
+        estimatedIntensity: task.estimatedIntensity as IntensityLevel,
         priority: task.priority,
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : undefined
+        dueDate: task.dueDate ? new Date(task.dueDate) : undefined
       };
     } else {
       // New task

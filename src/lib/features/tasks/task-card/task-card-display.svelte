@@ -113,9 +113,21 @@
     <!-- Intensity display -->
     {#if task.estimatedIntensity && variant === 'detailed'}
       <div class="intensity-container">
-        <IntensityDisplay intensity={task.estimatedIntensity} label="Estimated" />
+        <div class="intensity-item">
+          <IntensityDisplay
+            intensity={task.estimatedIntensity as import('$lib/types/database').IntensityLevel}
+            showValue
+          />
+          <span class="intensity-label">Estimated</span>
+        </div>
         {#if task.actualIntensity}
-          <IntensityDisplay intensity={task.actualIntensity} label="Actual" />
+          <div class="intensity-item">
+            <IntensityDisplay
+              intensity={task.actualIntensity as import('$lib/types/database').IntensityLevel}
+              showValue
+            />
+            <span class="intensity-label">Actual</span>
+          </div>
         {/if}
       </div>
     {/if}
@@ -365,6 +377,17 @@
     display: flex !important;
     gap: 1rem !important;
     flex-wrap: wrap !important;
+  }
+
+  .intensity-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+
+  .intensity-label {
+    font-size: 0.75rem !important;
+    color: var(--text-secondary, var(--nord4)) !important;
   }
 
   .timestamps {

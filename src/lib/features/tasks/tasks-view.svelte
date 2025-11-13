@@ -64,15 +64,18 @@
 		return task.priority === priorityFilter;
 	}
 
-  let filters = $derived($taskFilters);
-	let baseFilteredTasks = $derived(tasks.filter(
-		(task) => matchesSearch(task, filters.search) && matchesPriority(task, filters.priority)
-	));
-	let statusFilteredTasks = $derived(
-		filters.status === 'all'
-			? baseFilteredTasks
-			: baseFilteredTasks.filter((task) => task.status === filters.status)
-	);
+let filters = $derived($taskFilters);
+let baseFilteredTasks = $derived(
+	tasks.filter(
+		(task: TaskWithDetails) =>
+			matchesSearch(task, filters.search) && matchesPriority(task, filters.priority)
+	)
+);
+let statusFilteredTasks = $derived(
+	filters.status === 'all'
+		? baseFilteredTasks
+		: baseFilteredTasks.filter((task: TaskWithDetails) => task.status === filters.status)
+);
 
 	// For kanban, apply base filters; for grid/list, apply status filters too
   let displayTasks = $derived($isKanbanView ? baseFilteredTasks : statusFilteredTasks);
@@ -99,8 +102,8 @@
 			<!-- Analytics Charts -->
 			{#if analyticsData && analyticsData.days.length > 0}
 				<div class="analytics-section">
-					<MinutesPerDayChart days={analyticsData.days} />
-					<TasksPerDayChart days={analyticsData.days} />
+					<MinutesPerDayChart />
+					<TasksPerDayChart />
 				</div>
 			{/if}
 		{:else if $isGridView}
@@ -136,8 +139,8 @@
 				<!-- Analytics Charts -->
 				{#if analyticsData && analyticsData.days.length > 0}
 					<div class="analytics-section">
-						<MinutesPerDayChart days={analyticsData.days} />
-						<TasksPerDayChart days={analyticsData.days} />
+						<MinutesPerDayChart />
+						<TasksPerDayChart />
 					</div>
 				{/if}
 			{/if}

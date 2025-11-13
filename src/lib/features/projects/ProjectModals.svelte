@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ProjectWithDetails, TaskWithDetails, QuickLink } from '$lib/types/database';
+	import type { ProjectWithDetails, TaskWithDetails, QuickLink, Task } from '$lib/types/database';
 	import TaskForm from '$lib/features/tasks/task-form.svelte';
 	import TaskCompletionModal from '$lib/features/tasks/task-completion-modal.svelte';
 	import ProjectEditModal from '$lib/features/projects/modals/project-edit-modal.svelte';
@@ -44,7 +44,7 @@
 			timeSpent?: number;
 		}) => void;
 		onProjectUpdated: () => void;
-		onSubProjectCreated: (event: CustomEvent<{ project: ProjectWithDetails }>) => void;
+		onSubProjectCreated: (event: { project: ProjectWithDetails }) => void;
 		onQuickLinkUpdated: () => void;
 		onQuickLinkDeleted: () => void;
 		onQuickLinkEdit: (event: CustomEvent<{ link: QuickLink }>) => void;
@@ -86,11 +86,11 @@
 		}
 	});
 
-	function handleTaskCreated(event: CustomEvent) {
+	function handleTaskCreated(_event: { task: Task }) {
 		onTaskCreated();
 	}
 
-	function handleTaskUpdated(event: CustomEvent) {
+	function handleTaskUpdated(_event: { task: Task }) {
 		onTaskUpdated();
 	}
 
@@ -106,15 +106,23 @@
 		onProjectUpdated();
 	}
 
-	function handleSubProjectCreated(event: CustomEvent<{ project: ProjectWithDetails }>) {
+	function handleSubProjectCreated(event: { project: ProjectWithDetails }) {
 		onSubProjectCreated(event);
 	}
 
-	function handleQuickLinkUpdated(event: CustomEvent) {
+	function handleQuickLinksEventUpdated(_event: CustomEvent) {
 		onQuickLinkUpdated();
 	}
 
-	function handleQuickLinkDeleted(event: CustomEvent) {
+	function handleQuickLinksEventDeleted(_event: CustomEvent) {
+		onQuickLinkDeleted();
+	}
+
+	function handleQuickLinkModalUpdated(_event: { link: QuickLink }) {
+		onQuickLinkUpdated();
+	}
+
+	function handleQuickLinkModalDeleted(_event: { linkId: number }) {
 		onQuickLinkDeleted();
 	}
 
@@ -189,8 +197,8 @@
 					{canEdit}
 					{isAuthenticated}
 					on:linkEdit={handleQuickLinkEdit}
-					on:linkUpdated={handleQuickLinkUpdated}
-					on:linkDeleted={handleQuickLinkDeleted}
+					on:linkUpdated={handleQuickLinksEventUpdated}
+					on:linkDeleted={handleQuickLinksEventDeleted}
 				/>
 			</div>
 		</div>
@@ -202,8 +210,8 @@
 	isOpen={isEditQuickLinkOpen}
 	link={modalState.data?.link}
 	onclose={() => onClose()}
-	onupdated={handleQuickLinkUpdated}
-	ondeleted={handleQuickLinkDeleted}
+	onupdated={handleQuickLinkModalUpdated}
+	ondeleted={handleQuickLinkModalDeleted}
 />
 
 <!-- Analytics Dashboard -->

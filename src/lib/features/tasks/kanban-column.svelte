@@ -102,27 +102,33 @@
 	}
 
 	// Column stats
-	const totalTime = $derived(tasks.reduce((sum: number, task: TaskWithDetails) => {
-		const timeSpent = task.timeSessions?.reduce((acc: number, session: any) => acc + session.duration, 0) || 0;
+const totalTime = $derived(
+	tasks.reduce((sum: number, task: TaskWithDetails) => {
+		const timeSpent = task.actualMinutes ?? 0;
 		return sum + timeSpent;
-	}, 0));
+	}, 0)
+);
 
 	const taskCount = $derived(tasks.length);
 
 	// Column styling based on status
-	const columnClass = $derived(({
-		'todo': 'border-nord-blue-500',
-		'in_progress': 'border-nord-yellow-500',
-		'done': 'border-nord-green-500',
-		'archived': 'border-nord-comment'
-	} as Record<TaskStatus, string>)[status] || 'border-nord-comment');
+const columnClass = $derived(
+	({
+		todo: 'border-nord-blue-500',
+		in_progress: 'border-nord-yellow-500',
+		done: 'border-nord-green-500',
+		archived: 'border-nord-comment'
+	} as Record<TaskStatus, string>)[status as TaskStatus] || 'border-nord-comment'
+);
 
-	const headerClass = $derived(({
-		'todo': 'text-nord-blue-500',
-		'in_progress': 'text-nord-yellow-500',
-		'done': 'text-nord-green-500',
-		'archived': 'text-nord-comment'
-	} as Record<TaskStatus, string>)[status] || 'text-nord-comment');
+const headerClass = $derived(
+	({
+		todo: 'text-nord-blue-500',
+		in_progress: 'text-nord-yellow-500',
+		done: 'text-nord-green-500',
+		archived: 'text-nord-comment'
+	} as Record<TaskStatus, string>)[status as TaskStatus] || 'text-nord-comment'
+);
 
 	function getColumnIcon(status: TaskStatus) {
 		switch (status) {

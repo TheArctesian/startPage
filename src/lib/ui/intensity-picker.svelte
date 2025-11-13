@@ -73,7 +73,7 @@
     }
   };
 
-  let currentSize = $derived(sizeClasses[size]);
+  let currentSize = $derived(sizeClasses[size as keyof typeof sizeClasses]);
 </script>
 
 <div class="intensity-picker" class:disabled>
@@ -96,7 +96,7 @@
   {#if showLabels}
     <div class="current-value">
       <span class="value-text">
-        {intensityLabels[value]} ({value}/5)
+        {intensityLabels[value as keyof typeof intensityLabels]} ({value}/5)
       </span>
     </div>
   {/if}
@@ -110,15 +110,15 @@
           class="dot {currentSize.dot}"
           class:filled={level <= value}
           class:selected={level === value}
-          onclick={() => selectIntensity(level)}
-          onkeydown={(e) => handleKeydown(e, level)}
+          onclick={() => selectIntensity(level as IntensityLevel)}
+          onkeydown={(e) => handleKeydown(e, level as IntensityLevel)}
           {disabled}
-          title="{intensityLabels[level]} ({level}/5)"
-          aria-label="{intensityLabels[level]} ({level}/5)"
+          title="{intensityLabels[level as IntensityLevel]} ({level}/5)"
+          aria-label="{intensityLabels[level as IntensityLevel]} ({level}/5)"
           role="radio"
           aria-checked={level === value}
         >
-          <span class="sr-only">{intensityLabels[level]}</span>
+          <span class="sr-only">{intensityLabels[level as IntensityLevel]}</span>
         </button>
       {/each}
     </div>
@@ -132,11 +132,11 @@
           type="button"
           class="number-btn {currentSize.button}"
           class:selected={level === value}
-          onclick={() => selectIntensity(level)}
-          onkeydown={(e) => handleKeydown(e, level)}
+          onclick={() => selectIntensity(level as IntensityLevel)}
+          onkeydown={(e) => handleKeydown(e, level as IntensityLevel)}
           {disabled}
-          title="{intensityLabels[level]} ({level}/5)"
-          aria-label="{intensityLabels[level]} ({level}/5)"
+          title="{intensityLabels[level as IntensityLevel]} ({level}/5)"
+          aria-label="{intensityLabels[level as IntensityLevel]} ({level}/5)"
           role="radio"
           aria-checked={level === value}
         >
@@ -158,8 +158,8 @@
         {disabled}
         {name}
         class="intensity-slider"
-        title="{intensityLabels[value]} ({value}/5)"
-        aria-label="{intensityLabels[value]} ({value}/5)"
+        title="{intensityLabels[value as keyof typeof intensityLabels]} ({value}/5)"
+        aria-label="{intensityLabels[value as keyof typeof intensityLabels]} ({value}/5)"
       />
       <div class="slider-labels">
         {#each [1, 2, 3, 4, 5] as level}

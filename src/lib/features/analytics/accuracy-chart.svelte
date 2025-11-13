@@ -163,12 +163,18 @@
       .y(d => yScale(d.intensityAccuracy!))
       .curve(d3.curveMonotoneX);
 
+    const tickLabel = d3.timeFormat('%m/%d');
+    const formatAxisTick = (value: Date | d3.NumberValue) => {
+      const dateValue = value instanceof Date ? value : new Date(value.valueOf());
+      return tickLabel(dateValue);
+    };
+
     // Add axes
     g.append('g')
       .attr('class', 'x-axis')
       .attr('transform', `translate(0,${innerHeight})`)
       .call(d3.axisBottom(xScale)
-        .tickFormat(d3.timeFormat('%m/%d'))
+        .tickFormat((value) => formatAxisTick(value))
         .ticks(d3.timeDay.every(Math.max(1, Math.floor(accuracyData.length / 7))))
       );
 
