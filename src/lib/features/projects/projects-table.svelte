@@ -54,12 +54,14 @@
       }
     });
 
-    roots.sort((a, b) => compareProjectsByUpdatedAtDesc<ProjectWithChildren>(a, b));
+    const compareProjects = compareProjectsByUpdatedAtDesc as (a: ProjectWithChildren, b: ProjectWithChildren) => number;
+
+    roots.sort(compareProjects);
 
     function sortChildren(nodes: ProjectWithChildren[]) {
       for (const node of nodes) {
         if (node.children.length > 0) {
-          node.children.sort((a, b) => compareProjectsByUpdatedAtDesc<ProjectWithChildren>(a, b));
+          node.children.sort(compareProjects);
           sortChildren(node.children);
         }
       }
