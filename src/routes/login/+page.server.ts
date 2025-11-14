@@ -100,7 +100,7 @@ export const actions: Actions = {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax', // Lax keeps CSRF protection while letting Firefox send cookies after reloads
         maxAge: 7 * 24 * 60 * 60 // 7 days
       });
 
@@ -118,7 +118,7 @@ export const actions: Actions = {
         authLogger.error('Cookie verification failed', {
           expected: sessionId,
           got: verifySessionId,
-          cookieOptions: { path: '/', httpOnly: true, sameSite: 'strict' }
+          cookieOptions: { path: '/', httpOnly: true, sameSite: 'lax' }
         });
         return fail(500, {
           error: 'Authentication succeeded but session cookie failed to set. Please try again.'
@@ -172,7 +172,7 @@ export const actions: Actions = {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax', // Required so Firefox can reuse the cookie on fresh navigations
         maxAge: 7 * 24 * 60 * 60 // 7 days
       });
 

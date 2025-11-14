@@ -39,7 +39,17 @@
 
   // Reactive values
   let currentProject = $derived($activeProject);
-  let availableProjects = $derived($projects ?? []);
+  let availableProjects = $derived(() => {
+    const projectList = $projects ?? [];
+    const active = currentProject;
+
+    if (active && !projectList.some((project) => project.id === active.id)) {
+      // Ensure the focused project is always selectable even if the global list isn't loaded yet
+      return [...projectList, active];
+    }
+
+    return projectList;
+  });
   let isEditing = $derived(task !== null);
   let submitLabel = $derived(isEditing ? 'Update Task' : 'Create Task');
 
