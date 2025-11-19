@@ -5,7 +5,7 @@
 	import KanbanMobileNav from './kanban-mobile-nav.svelte';
 	import TaskForm from './task-form.svelte';
 	import Icon from '$lib/ui/icon.svelte';
-	import { todoTasks, inProgressTasks, doneTasks, updateTask, loadingTasks } from '$lib/stores';
+	import { todoTasks, inProgressTasks, doneTasks, updateTask, loadingTasks, activeProject } from '$lib/stores';
 	import type { TaskWithDetails, TaskStatus } from '$lib/types/database';
 
 	// Permission props passed from parent
@@ -86,6 +86,7 @@
 // Form state
 let isFormOpen = $state(false);
 let editingTask = $state<TaskWithDetails | null>(null);
+const currentProject = $derived($activeProject);
 
 	// Task operation handlers
 async function handleTaskDrop(detail: { task: TaskWithDetails; newStatus: TaskStatus }) {
@@ -224,6 +225,7 @@ function handleTaskFormCancel() {
 <TaskForm
 	isOpen={isFormOpen}
 	task={editingTask}
+	projectContext={currentProject}
 	onsubmit={handleTaskFormSubmit}
 	oncancel={handleTaskFormCancel}
 	onclose={handleTaskFormCancel}

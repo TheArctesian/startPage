@@ -134,6 +134,7 @@
 <!-- New Task Modal -->
 <TaskForm
 	isOpen={isNewTaskOpen}
+	projectContext={project}
 	onsubmit={handleTaskCreated}
 	oncancel={() => onClose()}
 	onclose={() => onClose()}
@@ -143,6 +144,7 @@
 <TaskForm
 	isOpen={isEditTaskOpen}
 	task={modalState.data?.task}
+	projectContext={project}
 	onsubmit={handleTaskUpdated}
 	oncancel={() => onClose()}
 	onclose={() => onClose()}

@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
   import IntensityPicker from '$lib/ui/intensity-picker.svelte';
-  import { activeProject, projects, createTask, updateTask } from '$lib/stores';
-  import type { TaskFormData, Task, IntensityLevel, Priority } from '$lib/types/database';
+  import { activeProject, projects, createTask, updateTask, loadProjects } from '$lib/stores';
+  import type { TaskFormData, Task, IntensityLevel, Priority, Project } from '$lib/types/database';
 
   interface Props {
     task?: Task | null;
+    projectContext?: Project | null;
     isOpen?: boolean;
     autoFocus?: boolean;
     onsubmit?: (event: { task: Task }) => void;
@@ -14,6 +16,7 @@
 
   let {
     task = null,
+    projectContext = null,
     isOpen = false,
     autoFocus = true,
     onsubmit,
@@ -39,16 +42,18 @@
 
   // Reactive values
   let currentProject = $derived($activeProject);
-  let availableProjects = $derived(() => {
-    const projectList = $projects ?? [];
-    const active = currentProject;
+  let availableProjects = $state<Project[]>([]);
+  $effect(() => {
+    let projectList = $projects ?? [];
+    const active = projectContext || currentProject;
 
     if (active && !projectList.some((project) => project.id === active.id)) {
-      // Ensure the focused project is always selectable even if the global list isn't loaded yet
-      return [...projectList, active];
+      projectList = [...projectList, active];
+    } else {
+      projectList = [...projectList];
     }
 
-    return projectList;
+    availableProjects = projectList;
   });
   let isEditing = $derived(task !== null);
   let submitLabel = $derived(isEditing ? 'Update Task' : 'Create Task');
@@ -64,18 +69,23 @@
   ];
 
   // Initialize form when task or project changes
-  function initializeForm() {
-    if (task) {
+  let hasRequestedProjects = false;
+
+  function initializeForm(
+    currentTask: Task | null = task,
+    project: Project | null = projectContext || currentProject
+  ) {
+    if (currentTask) {
       // Editing existing task
       formData = {
-        title: task.title,
-        description: task.description || '',
-        linkUrl: task.linkUrl || '',
-        projectId: task.projectId || 0,
-        estimatedMinutes: task.estimatedMinutes,
-        estimatedIntensity: task.estimatedIntensity as IntensityLevel,
-        priority: task.priority,
-        dueDate: task.dueDate ? new Date(task.dueDate) : undefined
+        title: currentTask.title,
+        description: currentTask.description || '',
+        linkUrl: currentTask.linkUrl || '',
+        projectId: currentTask.projectId || 0,
+        estimatedMinutes: currentTask.estimatedMinutes,
+        estimatedIntensity: currentTask.estimatedIntensity as IntensityLevel,
+        priority: currentTask.priority,
+        dueDate: currentTask.dueDate ? new Date(currentTask.dueDate) : undefined
       };
     } else {
       // New task
@@ -83,14 +93,35 @@
         title: '',
         description: '',
         linkUrl: '',
-        projectId: currentProject?.id || 0,
+        projectId: project?.id || 0,
         estimatedMinutes: 30,
         estimatedIntensity: 3 as IntensityLevel,
         priority: 'medium' as Priority,
-        dueDate: undefined
+        dueDate: undefined,
+        tags: []
       };
     }
     errors = {};
+  }
+
+  async function ensureProjectOptions() {
+    if (hasRequestedProjects) {
+      return;
+    }
+
+    const projectList = get(projects);
+    if (Array.isArray(projectList) && projectList.length > 0) {
+      return;
+    }
+
+    hasRequestedProjects = true;
+    try {
+      await loadProjects();
+    } catch (error) {
+      console.error('Failed to load projects for task form:', error);
+    } finally {
+      hasRequestedProjects = false;
+    }
   }
 
   // Watch for changes to task or current project
@@ -98,7 +129,8 @@
     if (!isOpen) {
       return;
     }
-    initializeForm();
+    ensureProjectOptions();
+    initializeForm(task, currentProject);
   });
 
   // Form validation
@@ -168,7 +200,7 @@
 
   // Handle cancel
   function handleCancel() {
-    initializeForm();
+    initializeForm(task, currentProject);
     oncancel?.();
   }
 
